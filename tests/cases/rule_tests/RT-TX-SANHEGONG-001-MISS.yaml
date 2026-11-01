@@ -1,6 +1,10 @@
+# RT-TX-SANHEGONG-001-MISS
 case_id: RT-TX-SANHEGONG-001-MISS
 kind: rule_test
 rule_id: TX-SANHEGONG-001
 expected: miss
-note: 天星规则 MISS：facts.tianxing.* 起例待实现 → unknown。
-overrides: {}
+note: 天星 sanhe_gongzhao 显式覆盖（真星历实现后可实测，覆盖金标准 ctx）。
+overrides:
+  facts:
+    tianxing:
+      sanhe_gongzhao: false

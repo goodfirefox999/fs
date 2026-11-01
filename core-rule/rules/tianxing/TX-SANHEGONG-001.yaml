@@ -38,8 +38,7 @@ citation:
 tests:
 - RT-TX-SANHEGONG-001-HIT
 - RT-TX-SANHEGONG-001-MISS
-explanation: 日月三合拱照（天星派）。须 Swiss Ephemeris/skyfield 真实星历计算，禁止查表近似。宿度按用事年份校正岁差。
+explanation: 三合照临（天星派）。facts.tianxing.sanhe_gongzhao = 日月居坐山三合之位（如坐子，日在申或辰）；仅十二支山可判，八干四维山输出 null（纳甲/挨星归属属流派分歧）。
 supersedes: null
 notes: >-
-  日月三合拱照。spec §2.5：须真实星历（Swiss Ephemeris/skyfield），四余不可用时标 PARTIAL。
-  二十八宿用不等宽宿度并按年校正岁差（禁 360/28 均分）。
+  三合照临。spec §2.5 已落实：真星历判定；八干四维山不静默判 False，输出 null 挂 needs_human_review。规则保持待考证/慎用。

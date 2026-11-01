@@ -1,6 +1,10 @@
+# RT-TX-JIAFU-001-MISS
 case_id: RT-TX-JIAFU-001-MISS
 kind: rule_test
 rule_id: TX-JIAFU-001
 expected: miss
-note: 天星规则 MISS：facts.tianxing.* 起例待实现 → unknown。
-overrides: {}
+note: 天星 jiafu 显式覆盖（真星历实现后可实测，覆盖金标准 ctx）。
+overrides:
+  facts:
+    tianxing:
+      jiafu: false

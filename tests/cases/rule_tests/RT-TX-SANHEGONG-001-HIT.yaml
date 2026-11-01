@@ -1,6 +1,10 @@
+# RT-TX-SANHEGONG-001-HIT
 case_id: RT-TX-SANHEGONG-001-HIT
 kind: rule_test
 rule_id: TX-SANHEGONG-001
 expected: hit
-note: 天星规则 HIT：facts.tianxing.* 需 Swiss Ephemeris（dev-only 依赖，测试标 miss=已知限制）。
-overrides: {}
+note: 天星 sanhe_gongzhao 显式覆盖（真星历实现后可实测，覆盖金标准 ctx）。
+overrides:
+  facts:
+    tianxing:
+      sanhe_gongzhao: true

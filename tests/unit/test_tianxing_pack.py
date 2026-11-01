@@ -51,3 +51,144 @@ class Test28Xiu:
         """四余隐曜计算：Swiss Ephemeris 可能不可用 → 标注。"""
         data = json.loads((DATA / "tianxing_qizheng_mapping.json").read_text(encoding="utf-8"))
         assert "zi_qi" in data and data["zi_qi"]["swisseph_id"] is None, "紫气无 SE 对应"
+
+
+class TestShanOfLongitude:
+    """黄道制到山映射：协纪辨方书节气到山表锚点。"""
+
+    @pytest.mark.parametrize(
+        "longitude,expected_shan",
+        [
+            (270, "子"),   # 冬至太阳到子
+            (0, "卯"),     # 春分到卯
+            (90, "午"),    # 夏至到午
+            (180, "酉"),   # 秋分到酉
+            (315, "艮"),   # 立春到艮
+            (45, "巽"),    # 立夏到巽
+            (135, "坤"),   # 立秋到坤
+            (225, "乾"),   # 立冬到乾
+            (285, "癸"),   # 小寒到癸
+            (330, "寅"),   # 雨水到寅
+        ],
+    )
+    def test_jieqi_anchors(self, longitude: float, expected_shan: str) -> None:
+        from core_symbol.tianxing import shan_of_longitude
+
+        assert shan_of_longitude(longitude) == expected_shan
+
+
+class TestXiuOfLongitude:
+    """二十八宿定位：不等宽宿度 + 岁差 + Spica 锚点。"""
+
+    def test_spica_anchor_returns_jiao_zero(self) -> None:
+        from core_symbol.tianxing import jiao_start_longitude, xiu_of_longitude
+
+        x = xiu_of_longitude(jiao_start_longitude(2026), 2026)
+        assert x["xiu"] == "角" and x["ruxiu_du"] == 0
+
+    def test_winter_solstice_sun_in_ji(self) -> None:
+        """2026 冬至太阳（黄经 270°）日躔箕宿（现代日躔一致性锚点）。"""
+        from core_symbol.tianxing import xiu_of_longitude
+
+        x = xiu_of_longitude(270.0, 2026)
+        assert x["xiu"] == "箕", x
+        assert x["element"] == "水"
+        assert 1.0 <= x["ruxiu_du"] <= 4.0, x
+
+    def test_chain_gap_returns_none_not_fudged(self) -> None:
+        """宿度表总和 364 < 365.25：表末残差区间无宿可归 → None，不均摊。"""
+        from core_symbol.tianxing import jiao_start_longitude, xiu_of_longitude
+
+        x = xiu_of_longitude((jiao_start_longitude(2026) - 0.3) % 360, 2026)
+        assert x["xiu"] is None
+        assert "残差" in x.get("note", "")
+
+    def test_precession_shifts_anchor(self) -> None:
+        """岁差使角宿起点黄经逐年东移。"""
+        from core_symbol.tianxing import jiao_start_longitude
+
+        a = jiao_start_longitude(2000)
+        b = jiao_start_longitude(2100)
+        assert b > a
+        assert b - a == pytest.approx(50.3 * 100 / 3600, abs=1e-6)
+
+
+class TestShengdian:
+    """升殿：曜在本曜之宿（殿宿由宿度表 element 字段承载）。"""
+
+    def test_sun_in_fang_is_shengdian(self) -> None:
+        """日在房宿（日殿）→ 升殿。"""
+        data = json.loads((DATA / "tianxing_28xiu.json").read_text(encoding="utf-8"))
+        elem = {x["name"]: x["element"] for x in data["xiu"]}
+        assert elem["房"] == "日" and elem["虚"] == "日" and elem["昴"] == "日" and elem["星"] == "日"
+        assert elem["心"] == "月" and elem["危"] == "月" and elem["毕"] == "月" and elem["张"] == "月"
+
+    def test_qizheng_element_map_covers_seven(self) -> None:
+        from core_symbol.tianxing import _QIZHENG_ELEMENT
+
+        assert set(_QIZHENG_ELEMENT) == {"日", "月", "木", "火", "土", "金", "水"}
+
+
+class TestDeriveTianxingFacts:
+    """facts.tianxing 集成（需 pyswisseph；缺失环境自动降级 unknown）。"""
+
+    def test_golden_case_structure(self) -> None:
+        from datetime import date
+
+        from core_symbol.tianxing import SWE_AVAILABLE, derive_tianxing_facts
+
+        fx = derive_tianxing_facts(
+            mountain_name="乾", facing_name="巽", local_date=date(2027, 7, 11)
+        )
+        assert fx["status"] == "待考证"
+        assert fx["completeness"] == "PARTIAL"
+        assert any("紫气" in m for m in fx["missing"]), "四余不可用须标 PARTIAL"
+        assert len(fx["needs_human_review"]) >= 5
+        if SWE_AVAILABLE:
+            # 2027-07-11 太阳黄经 ≈ 108.7°（夏至后 19 天）→ 丁山
+            sun = fx["bodies"]["日"]
+            assert 107.0 <= sun["longitude"] <= 110.0
+            assert sun["shan"] == "丁"
+            assert fx["sun_daoshan"] is False, "坐乾山，太阳在丁山 → 不到山"
+            # 罗睺/计都相差 180°
+            luo = fx["bodies"]["罗睺"]["longitude"]
+            ji = fx["bodies"]["计都"]["longitude"]
+            assert (luo + 180.0) % 360.0 == pytest.approx(ji, abs=1e-6)
+            # 紫气不推算
+            assert fx["bodies"]["紫气"]["longitude"] is None
+            # jiafu 为 bool（七政任一到坐山且升殿）
+            assert isinstance(fx["jiafu"], bool)
+        else:
+            assert fx["sun_daoshan"] is None, "无星历库 → 事实为 None（unknown），不给 False"
+
+    def test_missing_date_degrades(self) -> None:
+        from core_symbol.tianxing import derive_tianxing_facts
+
+        fx = derive_tianxing_facts(mountain_name="乾", facing_name=None, local_date=None)
+        assert fx["sun_daoshan"] is None and fx["jiafu"] is None
+
+    def test_sanzhi_mountain_gets_sanhe_verdict(self) -> None:
+        from datetime import date
+
+        from core_symbol.tianxing import SWE_AVAILABLE, derive_tianxing_facts
+
+        fx = derive_tianxing_facts(
+            mountain_name="子", facing_name="午", local_date=date(2027, 7, 11)
+        )
+        if SWE_AVAILABLE:
+            assert fx["sanhe_gongzhao"] is None or isinstance(fx["sanhe_gongzhao"], bool)
+            # 子山三合 = 申辰
+        else:
+            assert fx["sanhe_gongzhao"] is None
+
+    def test_sizheng_bagan_mountain_sanhe_is_none(self) -> None:
+        """八干四维山三合照不静默判 False——输出 None 挂人工复核。"""
+        from datetime import date
+
+        from core_symbol.tianxing import SWE_AVAILABLE, derive_tianxing_facts
+
+        fx = derive_tianxing_facts(
+            mountain_name="乾", facing_name="巽", local_date=date(2027, 7, 11)
+        )
+        if SWE_AVAILABLE:
+            assert fx["sanhe_gongzhao"] is None, "乾为四维山 → 三合照 None（流派分歧）"

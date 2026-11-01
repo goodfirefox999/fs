@@ -38,8 +38,7 @@ citation:
 tests:
 - RT-TX-SUNDAO-001-HIT
 - RT-TX-SUNDAO-001-MISS
-explanation: 太阳到山（天星派）。须 Swiss Ephemeris/skyfield 真实星历计算，禁止查表近似。宿度按用事年份校正岁差。
+explanation: 太阳到山（天星派）。facts.tianxing.sun_daoshan 由 core_symbol/tianxing.py 按 pyswisseph Moshier 真星历（黄道制，冬至太阳到子/春分到卯锚定；用事日北京正午取象）真实计算，禁查表近似。
 supersedes: null
 notes: >-
-  太阳到山。spec §2.5：须真实星历（Swiss Ephemeris/skyfield），四余不可用时标 PARTIAL。
-  二十八宿用不等宽宿度并按年校正岁差（禁 360/28 均分）。
+  太阳到山。spec §2.5 已落实：pyswisseph 真实星历；二十八宿不等宽宿度+岁差校正（禁 360/28 均分）；四余紫气未推算 → completeness=PARTIAL。到山制式（黄道/赤道）与用时刻（正午/用辰）属流派分歧，见 facts.tianxing.needs_human_review。规则保持待考证/慎用。

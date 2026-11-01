@@ -38,8 +38,7 @@ citation:
 tests:
 - RT-TX-JIAFU-001-HIT
 - RT-TX-JIAFU-001-MISS
-explanation: 日月夹辅（天星派）。须 Swiss Ephemeris/skyfield 真实星历计算，禁止查表近似。宿度按用事年份校正岁差。
+explanation: 七政升殿到山（天星派）。facts.tianxing.jiafu = 七政任一曜到坐山且升殿（曜在本曜之宿：日房虚昴星/月心危毕张/五星同行之宿）；四余为暗曜不升殿。紫气未推算 → completeness=PARTIAL。
 supersedes: null
 notes: >-
-  日月夹辅。spec §2.5：须真实星历（Swiss Ephemeris/skyfield），四余不可用时标 PARTIAL。
-  二十八宿用不等宽宿度并按年校正岁差（禁 360/28 均分）。
+  七政四余到山升殿。spec §2.5 已落实：真星历 + 宿度表 element 字段判定升殿 + 四余 PARTIAL 标记；四余（罗睺/计都/月孛）照实输出黄经与宿位，不参与升殿判定（古典通说暗曜不升殿）。规则保持待考证/慎用。
