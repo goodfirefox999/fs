@@ -135,9 +135,17 @@ def coverage_report(contexts_meta: list[tuple]) -> list[str]:
     lines.append(f"④ 节气邻近：{len(moments)} 时刻中距最近节气 <24h 的 {near} 个，"
                  f"最小间距 {min_gap/3600:.1f}h（月柱边界覆盖度）")
     # ⑤ 农历日维度（评审第十三轮：杨公忌日类规则判农历特定日，与日支不同坐标系）
+    # lunar_python 为 dev-only oracle 依赖——CI/生产环境可能未安装，缺 lxml 时跳过此维度
     from collections import defaultdict as _dd
 
-    from lunar_python import Solar
+    try:
+        from lunar_python import Solar
+        has_lunar = True
+    except ImportError:
+        has_lunar = False
+    if not has_lunar:
+        lines.append("⑤ 农历日覆盖：跳过（lunar_python 未安装——dev-only oracle 依赖）")
+        return lines
 
     lunar_days: dict = _dd(int)
     leap_months: set = set()
