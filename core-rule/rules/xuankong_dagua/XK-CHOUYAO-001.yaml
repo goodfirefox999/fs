@@ -17,9 +17,13 @@ applies_to:
   node_kinds: []
   strictness_min: normal
 condition:
-  fact: facts.xuankong.chouyao.matched_dayun
-  op: eq
-  value: true
+  any:
+  - fact: facts.xuankong.chouyao.ding_score
+    op: eq
+    value: 1
+  - fact: facts.xuankong.chouyao.cai_score
+    op: eq
+    value: 1
 score_weight: null
 citation:
   kind: classic
@@ -38,7 +42,9 @@ citation:
 tests:
 - RT-XK-CHOUYAO-001-HIT
 - RT-XK-CHOUYAO-001-MISS
-explanation: 抽爻换象（玄空大卦）。facts.xuankong.chouyao = 坐山山心所临之爻（384 爻精度）抽变得变卦；matched_dayun = 变卦卦运 == 当前大卦运。丁爻/财爻判定属流派分歧，ding_cai 恒 null。
+explanation: 抽爻换象（玄空大卦）。坐山山心所临之爻（384 爻精度）抽变得变卦；变卦内卦与外卦经卦运数配生成数 → 丁爻（ding_score=1，旺丁），合十/合五/合十五 → 财爻（cai_score=1，旺财）——丁/财分列输出，不合并为单一吉凶（spec §2.4 硬性输出）。
 supersedes: null
 notes: >-
-  抽爻换象（丁爻/财爻分列）。spec §2.4 硬性要求已落实：384 爻精度（山心定爻抽变）；卦运按阳爻 9 年阴爻 6 年。丁爻/财爻分列的判定属流派分歧未实现，挂 needs_human_review。
+  抽爻换象（丁爻/财爻分列）。spec §2.4 已落实：384 爻精度（山心定爻抽变）；
+  丁爻/财爻拆分为 ding_score 与 cai_score 两个独立字段，不得合并；
+  生成数/合十口径按河图表（xuankong_hetu.json）声明。卦运按阳爻 9 年阴爻 6 年。

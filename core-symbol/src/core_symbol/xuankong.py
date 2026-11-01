@@ -21,8 +21,9 @@
    （河图数关系，``xuankong_hetu.json``）。日课四柱配卦属流派分歧，
    未实现 → needs_human_review，相关维度输出 None。
 5. **抽爻换象**：取坐山山心所临之爻（384 爻精度）抽变（阳变阴／阴变阳）
-   得变卦，输出变卦卦运及其与当前元运的当旺关系；丁爻／财爻的判定属
-   流派分歧 → needs_human_review，输出 None。
+   得变卦；丁/财以变卦内外卦经卦运数配河图关系判定：生成数 → 丁爻
+   （ding_score=1），合十/合五/合十五 → 财爻（cai_score=1）——两格分列，
+   不合并（spec §2.4 硬性输出）。丁财定义他派另说 → needs_human_review。
 
 事实中不含吉凶断语，只含结构事实与当旺比对；吉凶由规则层（status=待考证、
 confidence=低）表达。
@@ -188,6 +189,21 @@ def changed_gua_name(binary: str, yao: int) -> str:
     raise AssertionError(f"变卦二进制不在 64 卦表内: {flipped}")  # pragma: no cover
 
 
+def _ding_cai_scores(changed_gua: dict[str, Any]) -> tuple[int, int]:
+    """变卦的丁爻/财爻计分（spec §2.4：丁/财分列，不合并）。
+
+    以变卦**内卦与外卦的经卦运数**配河图关系：
+    - 配生成数（1-6/2-7/3-8/4-9）→ 丁爻（旺丁），ding_score=1
+    - 合十（和 10）/合五（和 5）/合十五（和 15）→ 财爻（旺财），cai_score=1
+    两格互斥（生成对与合十对不相交）；纯卦（内外同卦）两格皆 0。
+    """
+    inner = _load_64gua()["hexagrams"][changed_gua["lower"]]["guayun"]
+    outer = _load_64gua()["hexagrams"][changed_gua["upper"]]["guayun"]
+    ding = 1 if {inner, outer} in ({1, 6}, {2, 7}, {3, 8}, {4, 9}) else 0
+    cai = 1 if inner != outer and inner + outer in (5, 10, 15) else 0
+    return ding, cai
+
+
 def derive_xuankong_facts(
     *,
     mountain: Mountain,
@@ -251,19 +267,24 @@ def derive_xuankong_facts(
             "course_gua_relation": None,  # 日课配卦流派分歧，未实现
         }
 
-    # ---- 抽爻换象：坐山山心所临之爻抽变 ----
+    # ---- 抽爻换象：坐山山心所临之爻抽变（丁爻/财爻分列，spec §2.4 硬性输出）----
+    #   丁爻：变卦内卦与外卦配**生成数**（1-6/2-7/3-8/4-9）→ 旺丁
+    #   财爻：变卦内卦与外卦**合十/合五/合十五** → 旺财
+    #   两格分别计分输出，不得合并为单一吉凶（spec §2.4）。
     chouyao: dict[str, Any] | None = None
     if cur_yun is not None:
         changed = changed_gua_name(sit["binary"], sit_cell.yao)
-        changed_gy = hexagrams[changed]["guayun"]
+        changed_g = hexagrams[changed]
+        ding, cai = _ding_cai_scores(changed_g)
         chouyao = {
             "sitting_gua": sit_cell.gua,
             "yao_pos": sit_cell.yao,
             "yao_yang": sit_cell.yang,
             "changed_gua": changed,
-            "changed_guayun": changed_gy,
-            "matched_dayun": changed_gy == cur_yun,
-            "ding_cai": None,  # 丁爻/财爻判定流派分歧，未实现
+            "changed_guayun": changed_g["guayun"],
+            "matched_dayun": changed_g["guayun"] == cur_yun,
+            "ding_score": ding,
+            "cai_score": cai,
         }
 
     return {
@@ -276,13 +297,12 @@ def derive_xuankong_facts(
             "guayun": "别卦卦运取内卦经卦运数（张心言方图行运）",
             "dayun": "上元甲子起一运，阳爻9年阴爻6年累计，180 年周期，无五运",
             "guaqi": "以坐/向两卦卦运论河图关系（合十/合五/合十五/合生成）",
-            "chouyao": "坐山山心所临之爻抽变得变卦",
+            "chouyao": "山心之爻抽变得变卦；丁=内外卦配生成数，财=合十/五/十五（张心言系河图口径）",
         },
         "needs_human_review": [
             "圆图卦界对齐方式（乾起午中 vs 卦心对午）两说",
             "大卦元运锚定年（上元甲子 vs 与三元九运对齐）两说",
             "日课四柱配卦流派分歧——卦气/抽爻的课卦维度未实现",
-            "抽爻换象丁爻/财爻判定流派分歧",
             "卦运数据源 verification_status=unverified",
         ],
         "status": "待考证",

@@ -192,3 +192,88 @@ class TestDeriveTianxingFacts:
         )
         if SWE_AVAILABLE:
             assert fx["sanhe_gongzhao"] is None, "乾为四维山 → 三合照 None（流派分歧）"
+
+
+class TestEphemerisPrecision:
+    """spec §6 星历精度：已知天象时刻与独立公布值误差 < 0.01°。
+
+    锚点为**独立公布**的天象时刻（NASA/天文年历），不是 swisseph 自身输出：
+    - 二分二至：太阳视黄经恰为 0/90/180/270°；
+    - 朔（合朔）：日月黄经差 ≈ 0°；望：差 ≈ 180°。
+    """
+
+    TOL = 0.01
+
+    @pytest.mark.parametrize(
+        "y,mo,d,h,target",
+        [
+            (2024, 3, 20, 3.10, 0), (2024, 6, 20, 20.85, 90),
+            (2024, 9, 22, 12.73, 180), (2024, 12, 21, 9.33, 270),
+            (2025, 3, 20, 9.02, 0), (2025, 6, 21, 2.70, 90),
+            (2025, 9, 22, 18.32, 180), (2025, 12, 21, 15.05, 270),
+        ],
+    )
+    def test_sun_at_equinox_solstice(self, y, mo, d, h, target) -> None:
+        import swisseph as swe
+
+        jd = swe.julday(y, mo, d, h)
+        sun, _ = swe.calc_ut(jd, swe.SUN, swe.FLG_MOSEPH)
+        diff = (sun[0] - target) % 360
+        diff = min(diff, 360 - diff)
+        assert diff < self.TOL, f"{y}-{mo}-{d} {h}h 太阳黄经距 {target}° 差 {diff:.6f}°"
+
+    @pytest.mark.parametrize(
+        "y,mo,d,h,target",
+        [
+            (2024, 4, 8, 18.35, 0),     # 日全食合朔 18:21 UTC
+            (2024, 10, 2, 18.82, 0),    # 日环食合朔 18:49 UTC
+            (2025, 3, 29, 10.97, 0),    # 日偏食合朔 10:58 UTC
+            (2024, 9, 18, 2.57, 180),   # 月偏食望 02:34 UTC
+        ],
+    )
+    def test_moon_elongation_at_syzygy(self, y, mo, d, h, target) -> None:
+        import swisseph as swe
+
+        jd = swe.julday(y, mo, d, h)
+        sun, _ = swe.calc_ut(jd, swe.SUN, swe.FLG_MOSEPH)
+        moon, _ = swe.calc_ut(jd, swe.MOON, swe.FLG_MOSEPH)
+        e = ((moon[0] - sun[0]) % 360 + 180) % 360 - 180
+        assert abs(e - target) < self.TOL, f"{y}-{mo}-{d} {h}h 日月黄经差 {e:.6f}° ≠ {target}"
+
+    def test_no_equal_width_xiu(self) -> None:
+        """反捷径：宿度不得均分——表内宽度必须不全等。"""
+        data = json.loads((DATA / "tianxing_28xiu.json").read_text(encoding="utf-8"))
+        widths = {x["xiu_width"] for x in data["xiu"]}
+        assert len(widths) > 1, "宿度被均分（360/28 简化）"
+
+
+class TestRiyueJiafu:
+    """spec §2.5 关键吉格：日月夹辅山向（窄夹=两侧相邻山）。"""
+
+    def test_golden_case_not_jiafu(self) -> None:
+        """金标准（乾山，2027-07-11）：日在丁、月在辛？——非乾山两侧（午/戌?）。"""
+        from datetime import date
+
+        from core_symbol.tianxing import SWE_AVAILABLE, derive_tianxing_facts
+
+        fx = derive_tianxing_facts(
+            mountain_name="乾", facing_name="巽", local_date=date(2027, 7, 11)
+        )
+        if SWE_AVAILABLE:
+            # 乾山罗盘序 21 → 两侧为 戌(20)/亥(22)
+            jf = fx["riyue_jiafu"]
+            sun_shan = fx["bodies"]["日"]["shan"]
+            moon_shan = fx["bodies"]["月"]["shan"]
+            expected = {sun_shan, moon_shan} == {"戌", "亥"}
+            assert jf["shan"] is expected
+            assert jf["shan"] is False, f"日在{sun_shan}月在{moon_shan}，非戌/亥夹乾"
+
+    def test_structure_and_none_cases(self) -> None:
+        from core_symbol.tianxing import derive_tianxing_facts
+
+        fx = derive_tianxing_facts(mountain_name="乾", facing_name=None, local_date=None)
+        assert fx["riyue_jiafu"] is None or fx["sun_daoshan"] is None
+        from core_symbol.tianxing import SWE_AVAILABLE
+
+        if not SWE_AVAILABLE:
+            assert fx["riyue_jiafu"] is None

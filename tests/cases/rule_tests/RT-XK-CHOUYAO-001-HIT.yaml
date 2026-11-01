@@ -3,9 +3,10 @@ case_id: RT-XK-CHOUYAO-001-HIT
 kind: rule_test
 rule_id: XK-CHOUYAO-001
 expected: hit
-note: 抽爻后变卦卦运当旺
+note: 变卦配生成数 → 丁爻当格。
 overrides:
-    facts:
-      xuankong:
-        chouyao:
-          matched_dayun: true
+  facts:
+    xuankong:
+      chouyao:
+        ding_score: 1
+        cai_score: 0

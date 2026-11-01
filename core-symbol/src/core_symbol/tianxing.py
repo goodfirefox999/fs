@@ -18,6 +18,9 @@
    星曜落入该区间时宿位输出 ``None`` 并注记，不做均摊/归一化处理。
 4. **升殿**：曜在其本曜之宿（日=房虚昴星、月=心危毕张，五星在同行之宿）；
    宿曜属性行取自宿度表 ``element`` 字段。四余为暗曜不升殿（古典通说）。
+4a. **日月夹辅**（spec §2.5 关键吉格）：太阳与太阴分居目标（坐山/向山）
+   两侧**相邻山**（罗盘序 ±1）→ 夹辅成立；只取相邻一山的窄夹，
+   宽夹（±2/三合夹）他派另说 → needs_human_review。
 5. **三合照**：太阳/太阴居坐山三合之位（如坐子，日在申或辰）；仅十二支山
    可判——八干四维山的纳甲/挨星归属属流派分歧 → 输出 ``None``。
 6. **四余**：罗睺=平交点（swisseph MEAN_NODE）、计都=罗睺+180°、月孛=月远地点
@@ -173,6 +176,7 @@ def derive_tianxing_facts(
         return {
             "sun_daoshan": None, "moon_daoshan": None,
             "sanhe_gongzhao": None, "jiafu": None,
+            "riyue_jiafu": None,
             "bodies": None,
             "completeness": "PARTIAL",
             "missing": ["pyswisseph 未安装——全部天星事实降级 unknown，不以近似表替代"],
@@ -184,6 +188,7 @@ def derive_tianxing_facts(
         return {
             "sun_daoshan": None, "moon_daoshan": None,
             "sanhe_gongzhao": None, "jiafu": None,
+            "riyue_jiafu": None,
             "bodies": None,
             "completeness": "PARTIAL",
             "missing": ["缺少用事日期，无法取星象"],
@@ -232,6 +237,16 @@ def derive_tianxing_facts(
         if bodies[n]["shan"] is not None
     )
 
+    # 日月夹辅（spec §2.5 关键吉格）：日月分居目标两侧相邻山（罗盘序 ±1）
+    def _jia_fu(target: str | None) -> bool | None:
+        if target is None or sun["shan"] is None or moon["shan"] is None:
+            return None
+        ti = MOUNTAINS_24.index(target)
+        si, mi = MOUNTAINS_24.index(sun["shan"]), MOUNTAINS_24.index(moon["shan"])
+        return {si, mi} == {(ti - 1) % 24, (ti + 1) % 24}
+
+    riyue_jiafu = {"shan": _jia_fu(mountain_name), "xiang": _jia_fu(facing_name)}
+
     return {
         "sun_daoshan": sun_daoshan,
         "moon_daoshan": moon_daoshan,
@@ -239,6 +254,7 @@ def derive_tianxing_facts(
         "moon_daoxiang": moon_daoxiang,
         "sanhe_gongzhao": sanhe_gongzhao,
         "jiafu": jiafu,
+        "riyue_jiafu": riyue_jiafu,
         "bodies": bodies,
         "completeness": "PARTIAL",
         "missing": ["紫气（传统隐曜，推算口径未裁定——不推算）"],
@@ -247,6 +263,7 @@ def derive_tianxing_facts(
             "moment": "用事日北京正午（UT 04:00）",
             "xiu_anchor": "角宿距星=角宿一 J2000 黄经 203.84°，岁差 50.3″/年",
             "shengdian": "曜在本曜之宿（日房虚昴星/月心危毕张/五星同行之宿）；四余不升殿",
+            "jiafu_riyue": "日月分居目标两侧相邻山（罗盘序 ±1）为夹辅；宽夹他派另说",
             "ephemeris": "pyswisseph Moshier（无数据文件），禁查表近似",
         },
         "needs_human_review": base_review,

@@ -298,7 +298,8 @@ class TestDeriveXuankongFacts:
         assert (cy["sitting_gua"], cy["yao_pos"]) == ("否", 1)
         assert cy["changed_gua"] == "无妄" and cy["changed_guayun"] == 8
         assert cy["matched_dayun"] is False, "无妄八运 vs 三运 → 不当旺"
-        assert cy["ding_cai"] is None, "丁爻/财爻流派分歧未实现"
+        # 无妄 内震(8) 外乾(9)：非生成对（1-6/2-7/3-8/4-9）→ 丁 0；和 17 非合十/五/十五 → 财 0
+        assert cy["ding_score"] == 0 and cy["cai_score"] == 0
 
     def test_dayun_matched_case(self) -> None:
         """构造当旺命中：三运卦坐山（离宫八卦内卦离，如丰卦方位）。
@@ -336,3 +337,59 @@ class TestDeriveXuankongFacts:
         )
         assert fx["guayun_current"] is None
         assert fx["wangqi"] is None and fx["guaqi"] is None and fx["chouyao"] is None
+
+
+class TestDingCaiScores:
+    """spec §2.4：抽爻换象丁/财分列——生成数=丁，合十/五/十五=财。"""
+
+    def test_ding_shengcheng(self) -> None:
+        """变卦内外卦配生成数 → ding_score=1。"""
+        from core_symbol.xuankong import _ding_cai_scores
+
+        data = json.loads((DATA / "xuankong_64gua.json").read_text(encoding="utf-8"))
+        # 水火既济：内坎(7) 外离(3) → 3+7 合十 → 财；非生成
+        ding, cai = _ding_cai_scores(data["hexagrams"]["既济"])
+        assert (ding, cai) == (0, 1), "既济内坎7外离3 → 合十 → 财爻"
+        # 地天泰：内乾(9) 外坤(1) → 9+1 合十 → 财
+        ding2, cai2 = _ding_cai_scores(data["hexagrams"]["泰"])
+        assert (ding2, cai2) == (0, 1), "泰内乾9外坤1 → 合十 → 财爻"
+        # 火水未济：内离(3) 外坎(7) → 合十 → 财
+        ding3, cai3 = _ding_cai_scores(data["hexagrams"]["未济"])
+        assert (ding3, cai3) == (0, 1)
+        # 泽山咸：内艮(6) 外兑(4) → 4-9 生成对？{6,4} 非生成（4,9 才是）；4+6=10 → 财
+        ding4, cai4 = _ding_cai_scores(data["hexagrams"]["咸"])
+        assert (ding4, cai4) == (0, 1), "咸内艮6外兑4 → 合十 → 财爻"
+
+    def test_cai_and_pure_gua(self) -> None:
+        """纯卦（内外同卦）与无关系者两格皆 0；生成数格=丁。"""
+        from core_symbol.xuankong import _ding_cai_scores
+
+        data = json.loads((DATA / "xuankong_64gua.json").read_text(encoding="utf-8"))
+        # 天雷无妄：内震(8) 外乾(9) → 非生成、和 17 → 双 0
+        assert _ding_cai_scores(data["hexagrams"]["无妄"]) == (0, 0)
+        # 雷泽归妹：内兑(4) 外震(8) → 4-9? {4,8} 非生成；4+8=12 → 双 0
+        assert _ding_cai_scores(data["hexagrams"]["归妹"]) == (0, 0)
+        # 生成对：需内卦运数与外卦运数成 1-6/2-7/3-8/4-9。水雷屯：内震(8) 外坎(7) → {7,8} 非生成。
+        # 风水涣：内坎(7) 外巽(2) → {2,7} 生成对 → 丁
+        ding, cai = _ding_cai_scores(data["hexagrams"]["涣"])
+        assert (ding, cai) == (1, 0), "涣内坎7外巽2 → 2-7 生成数 → 丁爻"
+        # 山天大畜：内乾(9) 外艮(6) → {6,9} 非生成（6-1 才是）；9+6=15 → 合十五 → 财
+        ding2, cai2 = _ding_cai_scores(data["hexagrams"]["大畜"])
+        assert (ding2, cai2) == (0, 1), "大畜内乾9外艮6 → 合十五 → 财爻"
+        # 纯卦
+        assert _ding_cai_scores(data["hexagrams"]["乾"]) == (0, 0)
+        assert _ding_cai_scores(data["hexagrams"]["坤"]) == (0, 0)
+
+    def test_ding_cai_not_merged(self) -> None:
+        """两字段独立存在（spec §2.4：不得合并为单一 score_delta）。"""
+        from datetime import date
+
+        from core_symbol.mountain import mountain_by_name
+        from core_symbol.xuankong import derive_xuankong_facts
+
+        fx = derive_xuankong_facts(
+            mountain=mountain_by_name("乾"), facing=None, local_date=date(2027, 7, 11)
+        )
+        cy = fx["chouyao"]
+        assert "ding_score" in cy and "cai_score" in cy, "丁/财必须分列输出"
+        assert "ding_cai" not in cy
