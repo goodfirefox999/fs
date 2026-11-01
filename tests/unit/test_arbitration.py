@@ -249,3 +249,33 @@ class TestEngineIntegration:
             "煞贡不能推翻 Layer 3 reject——必须显式标注"
         )
         assert rejected_scored_disjoint(out)
+
+    def test_sansha_reject_with_zhengwuxing_favorable(self, base_ctx, reg) -> None:
+        """spec §6 仲裁金测试（字面场景）：正五行 favorable + 三煞 reject
+        → rejected_dates，董公吉星（直星）不能覆盖 Layer 3。"""
+        from tests.conftest import deep_merge
+
+        ctx = deep_merge(base_ctx, {
+            "facts": {
+                "sansha": {"year": {"hit_mountain": True}},      # 三煞占山（Layer 3）
+                "donggong": {"star": "直星"},                    # 董公吉星值日
+                "tongguan": {"conflicts": [{"a": "金", "b": "木"}]},  # 正五行通关命中 → favorable
+            },
+        })
+        cfg = EvalConfig(
+            task_kind="修造", strictness="strict",
+            allow_unverified=True, demo_veto=True,
+        )
+        ev = evaluate(ctx, reg, cfg)
+        assert ev.tier == TIER_REJECTED, "三煞占山 → Layer 3 reject"
+        fso = ev.manifest["five_school_output"]
+        assert fso["zhengwuxing"]["overall_tendency"] == "favorable", (
+            "通关命中（演示路由按声明可用）→ 正五行 favorable"
+        )
+        out = build_spec_output([(ev, ctx)])
+        entry = out["rejected_dates"][0]
+        assert "PUB-SANSHA-001" in entry["reject_rules"], entry["reject_rules"]
+        assert entry["school_override_attempted"] == SHAGONG_CANNOT_OVERRIDE, (
+            "直星值日不能推翻三煞 reject——必须显式标注"
+        )
+        assert rejected_scored_disjoint(out)
