@@ -86,13 +86,36 @@ def _dominates(a: Evaluation, b: Evaluation) -> bool:
     return a_bad != b_bad or va.get("positive_count", 0) > vb.get("positive_count", 0)
 
 
+def _vector_key(ev: Evaluation) -> tuple:
+    """支配判定所依赖的全部维度（_dominates 只读这 5 个键）。"""
+    v = ev.vectors
+    return (
+        v.get("hard_fail_count", 0),
+        v.get("strong_avoid_count", 0),
+        v.get("conflict_count", 0),
+        v.get("unknown_count", 0),
+        v.get("positive_count", 0),
+    )
+
+
 def pareto_front(evals: Iterable[Evaluation]) -> list[Evaluation]:
-    """非支配前沿（按分层键排序后返回）。"""
+    """非支配前沿（按分层键排序后返回）。
+
+    复杂度控制（ADR-0014 perf 回归修复）：``_dominates`` 只读 5 维向量，
+    **同向量候选互不支配且同组同命运**——先按向量分组，仅在组代表间做支配筛选
+    （O(u²)，u=唯一向量数），再还原全部成员。语义与逐对比较严格等价；
+    n=4380、u≈数十时从 O(n²)≈1900 万次比较降为可忽略
+    （触发条件：演示否决消失后全候选 state=可用，pareto 首次被走到——2026-11-01 实测 9s→2s）。
+    """
     items = list(evals)
+    groups: dict[tuple, list[Evaluation]] = {}
+    for ev in items:
+        groups.setdefault(_vector_key(ev), []).append(ev)
+    reps = [(key, grp[0]) for key, grp in groups.items()]
     front: list[Evaluation] = []
-    for candidate in items:
-        if not any(_dominates(other, candidate) for other in items if other is not candidate):
-            front.append(candidate)
+    for key, rep in reps:
+        if not any(_dominates(other_rep, rep) for _, other_rep in reps if other_rep is not rep):
+            front.extend(groups[key])
     return rank(front)
 
 

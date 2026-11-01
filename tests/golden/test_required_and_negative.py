@@ -554,3 +554,68 @@ class TestAdr0014EvidenceCap:
                 assert f.default is not MISSING or f.default_factory is not MISSING, (
                     f"{f.name} 必须带默认值（旧构造点/旧 JSON 兼容）"
                 )
+
+    def test_lint_check_id_groups_exact_sets(self) -> None:
+        """评审第十轮：lint 机器行按 check id 分组，各组断言精确集合（非计数）。"""
+        import json as _json
+        import os
+        import subprocess
+        import sys
+
+        root = Path(__file__).resolve().parents[2]
+        env = dict(os.environ)
+        env["PYTHONPATH"] = ":".join(
+            [str(root / p) for p in ("core-time/src", "core-symbol/src", "core-rule/src", "core-eval/src", "app-zeri/src")]
+            + [str(root)]
+        )
+        proc = subprocess.run(
+            [sys.executable, "-m", "app_zeri.cli", "rules", "lint"],
+            capture_output=True, text=True, cwd=root, env=env, timeout=180,
+        )
+        assert proc.returncode == 0, proc.stdout[-800:]
+        groups: dict[str, list] = {}
+        for line in proc.stdout.splitlines():
+            for name in ("cap_applied", "unverified_progress", "quote_unsigned", "coverage_gaps"):
+                if line.startswith(name + ":"):
+                    groups[name] = _json.loads(line.split(":", 1)[1])
+        assert set(groups.get("cap_applied", [])) == {
+            "PUB-CHONGMING-001", "PUB-CHONGSHAN-001", "PUB-MING-SANSHA-001", "PUB-SANSHA-001",
+            "PUB-SANSHA-002", "PUB-SIJUE-001", "PUB-SILI-001", "PUB-SUIPO-001",
+            "PUB-WUHUANG-001", "PUB-YUEPO-001",
+        }, groups.get("cap_applied")
+        assert set(groups.get("quote_unsigned", [])) == {"PUB-SANSHA-003", "PUB-TAISUI-001"}
+        assert set(groups.get("unverified_progress", [])) == set(groups.get("cap_applied", [])), (
+            "当前构造下两组恰好同集（10 条待考证+禁用）；语义不同，见 lint 输出注释"
+        )
+        assert groups.get("coverage_gaps") == ["GAP-TAISUI-FACING"], "覆盖缺口机器行"
+
+    def test_adr0014_anchor_markers_present(self) -> None:
+        """评审第十轮：行号是 db11804 快照，符号/标记注释才是机器可校验锚点——漂移即测试失败。"""
+        root = Path(__file__).resolve().parents[2]
+        markers = {
+            "core-eval/src/core_eval/engine.py": "ADR-0014 决策 1：单一来源 cap",
+            "core-eval/src/core_eval/ranker.py": "ADR-0014 perf 回归修复",
+            "app-zeri/src/app_zeri/cli.py": "ADR-0014 决策 1：声明/生效双显示",
+            "app-zeri/src/app_zeri/report.py": "声明/生效严重度差异（ADR-0014 上限",
+            "core-rule/src/core_rule/loader.py": "ADR-0014 决策 1：声明>上限",
+        }
+        for rel, marker in markers.items():
+            assert marker in (root / rel).read_text(encoding="utf-8"), (
+                f"{rel} 的 ADR-0014 锚点标记丢失——若调用点迁移，请同步更新 ADR-0014 决策 1 的位置表"
+            )
+
+    def test_fingerprint_distinguishes_content(self, golden_ctx, registry) -> None:
+        """第三次串味实证的机制化验证：同 id 同 version 不同内容 → 指纹不同 → 缓存不串味。"""
+        a = _synthetic_rule()  # condition: site.mountain == 乾, version=1
+        b = dc_replace(
+            _synthetic_rule(), rule_id="TEST-VERIFIED-001", version=1,
+            condition={"fact": "site.mountain", "op": "eq", "value": "子"},
+        )  # 同 id 同 version，内容不同
+        reg_a = _registry_with(registry, a)
+        reg_b = _registry_with(registry, b)
+        assert reg_a.ruleset.fingerprint != reg_b.ruleset.fingerprint, "内容指纹必须区分同 id 同 version 的不同内容"
+        ev_a = evaluate(golden_ctx, reg_a, EvalConfig(task_kind="修造", strictness="strict"))
+        ev_b = evaluate(golden_ctx, reg_b, EvalConfig(task_kind="修造", strictness="strict"))
+        hit_a = self._hits(ev_a, "vetoes", "TEST-VERIFIED-001")
+        hit_b = self._hits(ev_b, "vetoes", "TEST-VERIFIED-001")
+        assert hit_a and not hit_b, "同 id 同 version 不同 condition：两次评估不得串味（_select_cached key 含指纹）"

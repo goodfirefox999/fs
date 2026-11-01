@@ -293,6 +293,8 @@ EVALUATION_SCHEMA: dict[str, Any] = {
             "enum": ["REJECTED", "NEEDS_REVIEW", "ACCEPTABLE", "PREFERRED"],
         },
         "publishable": {"type": "boolean"},
+        "schema_version": {"type": "integer", "minimum": 2,
+                           "description": "v2 = ADR-0014（source_status/doubt/declared_severity/controversial/demo_hits）"},
         "vectors": {
             "type": "object",
             "required": [

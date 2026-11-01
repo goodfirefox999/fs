@@ -1,0 +1,11 @@
+api_version: 1
+# 已知未覆盖的原文硬禁（Q-012 联动；评审第十轮：机器可读，闭环不靠人记）。
+# C18（向首侧 fact 产出）完成时删除对应条目，lint 的 coverage_gaps 行自动少一项。
+gaps:
+  - id: GAP-TAISUI-FACING
+    claim: 向太岁硬禁
+    quote_ref: P1「坐三煞，向太歲，此不能制者也，不可犯也」；P5「向太歲則坐于歲破矣，雖有吉星，不能解也」
+    evidence_level: A（预检逐字核到，待影印复核+签名）
+    blocked_by: C18（向首侧 fact 产出，ADR-0014 落地清单）
+    owner_question: Q-012（H1 勾选后启动 C18）
+    note: 期间系统不拦向太岁日课；必需集维持 8 条不因裁定增加

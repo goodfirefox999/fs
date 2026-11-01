@@ -61,6 +61,11 @@ class RuleSet:
     #: ADR-0014 决策 1：声明>上限的规则 id 集（load 期预计算；cap 警告按 run 聚合，
     #: 不进 per-candidate 循环）。__post_init__ 派生，dc_replace 也会重算。
     cap_applied_ids: frozenset[str] = frozenset()
+    #: 规则库**内容指纹**（ADR-0012 教训的机制化，第三次串味实证后引入）：
+    #: version 只是 (rule_id, version) 哈希——同 id 同 version 改内容/状态不改变 version。
+    #: fingerprint 覆盖 (id, version, status, severity, hard_veto, condition 内容哈希)，
+    #: 所有缓存 key 必须含它；手写 key 的路径由评审要求逐步收拢到本字段。
+    fingerprint: str = ""
 
     def __post_init__(self) -> None:
         object.__setattr__(
@@ -68,6 +73,23 @@ class RuleSet:
             "cap_applied_ids",
             frozenset(
                 r.rule_id for r in self.rules if effective_severity(r) != r.severity
+            ),
+        )
+        object.__setattr__(
+            self,
+            "fingerprint",
+            stable_hash(
+                sorted(
+                    (
+                        r.rule_id,
+                        r.version,
+                        r.status,
+                        r.severity,
+                        r.hard_veto,
+                        stable_hash(r.condition),
+                    )
+                    for r in self.rules
+                )
             ),
         )
 

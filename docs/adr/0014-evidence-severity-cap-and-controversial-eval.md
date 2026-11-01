@@ -3,6 +3,9 @@
 - 状态：**已实施**（2026-11-01 第九轮批准施工，同日完成；验收数据见文末"施工验收"节）
 - 考证周期计数锚点（ADR-0013 D3）：tag `baseline-pre-adr0014` = 提交 `eac493d`；
   D3 上限计量单位为**提交区间**（自该 tag 起），非 PR（仓库无 PR 流程，评审第九轮第 8 条）
+- **锚点有效性约定（评审第十轮）**：本文所有 `文件:行号` 仅为 `db11804` 时点快照，
+  主键是**文件 + 符号/标记注释**；标记由 `test_adr0014_anchor_markers_present` 机器校验，
+  漂移即测试失败并提示更新本文。位置有效性以 `git log --follow <file>` 为准
 - 触发：
   - D6 只排"有争议"不排"待考证"——五黄在 strict 档下仍被升级（评审第五轮）
   - "待考证→MEDIUM_AVOID 上限"不可执行——tier 分量与 severity 词汇错位（评审第六轮）
@@ -58,20 +61,27 @@
 （`cap_severity` / `effective_severity` / `participates_in_tier` / `cap_warning`）。
 三处调用点（施工实测）：
 
-| 调用点 | 位置（文件:行，施工实测） |
+| 调用点 | 符号主键（行号为 db11804 快照备注） |
 |---|---|
-| ① 评估路由 | `core-eval/src/core_eval/engine.py:618`（`severity = cap_severity(declared, rule.status)`）、`:683`（veto 显式守卫 `route_severity == "禁用" and rule.hard_veto`）、`:692`（strict 分支 `participates_in_tier(rule)`） |
-| ② lint | `app-zeri/src/app_zeri/cli.py:287-289`（`cap_warning()` 逐条）+ `:301`（`cap_applied_ids` 机器可读行）；预计算 `core-rule/src/core_rule/loader.py:63-68`（`RuleSet.cap_applied_ids`，`__post_init__` 派生） |
-| ③ 报告 | `app-zeri/src/app_zeri/report.py:247-250`（"声明/生效严重度差异"行）；关联渲染：`:201`（demo_veto 首行标注）、`:242`（存疑命中提示）、`:312`（未激活合并块） |
+| ① 评估路由 | `core_eval/engine.py::_evaluate_school`——标记注释「ADR-0014 决策 1：单一来源 cap」处（db11804 时 L618）；veto 守卫 `route_severity == "禁用" and rule.hard_veto`（L683）；strict 分支 `participates_in_tier(rule)`（L692） |
+| ② lint | `app_zeri/cli.py::cmd_rules_lint` 第 10 节——标记「ADR-0014 决策 1：声明/生效双显示」（db11804 时 L287-289）+ 机器行 `cap_applied/unverified_progress/quote_unsigned`（评审第十轮分组化）；预计算 `core_rule/loader.py::RuleSet.__post_init__`（L63-68） |
+| ③ 报告 | `app_zeri/report.py::render_markdown`——"声明/生效严重度差异"行（L247-250）；关联：`:201` demo_veto 首行标注、`:242` 存疑命中提示、`:312` 未激活合并块 |
 
 **load 期预计算**：`RuleSet.cap_applied_ids`（`loader.py` `__post_init__` 派生，
 dc_replace 自动重算）；cap 警告按 run 聚合，不进 per-candidate 循环。
 
-**lint 预期命中精确集合（基线，测试按集合断言而非计数——评审第九轮第 6 条）**：
-`PUB-CHONGMING-001, PUB-CHONGSHAN-001, PUB-MING-SANSHA-001, PUB-SANSHA-001,
-PUB-SANSHA-002, PUB-SIJUE-001, PUB-SILI-001, PUB-SUIPO-001, PUB-WUHUANG-001, PUB-YUEPO-001`
-（10 条，全部待考证+声明禁用；修正第六轮稿的"6 条"——漏计 SILI/SIJUE/CHONGMING/MING-SANSHA）。
-实测 lint 输出 `cap_applied_ids` 与该集合**逐字一致**。
+**lint 机器行按 check id 分组（基线，测试按组断言精确集合——评审第九/十轮）**：
+
+| check id | 基线精确集合 | 语义 |
+|---|---|---|
+| `cap_applied` | PUB-CHONGMING-001, PUB-CHONGSHAN-001, PUB-MING-SANSHA-001, PUB-SANSHA-001, PUB-SANSHA-002, PUB-SIJUE-001, PUB-SILI-001, PUB-SUIPO-001, PUB-WUHUANG-001, PUB-YUEPO-001（10 条，待考证+声明禁用） | 声明>上限，生效被 cap（随签名消失） |
+| `unverified_progress` | 当前与 cap_applied **恰好同集**（10 条）——语义不同：必需集待考证进度提示，组内规则可带任何 severity | 必需集考证进度面板 |
+| `quote_unsigned` | PUB-SANSHA-003, PUB-TAISUI-001（2 条） | 已录引文未经人类签名 |
+| `coverage_gaps` | GAP-TAISUI-FACING（1 条） | 已知未覆盖原文硬禁（coverage_gaps.yaml，C18 完成自动消除） |
+
+修正记录：第六轮稿"6 条"为漏计；第九轮稿"10 条"未区分 check id——两组当前同集属巧合
+（所有待考证必需规则恰为禁用级），**集合断言按 check id 分别进行**
+（`test_lint_check_id_groups_exact_sets`），状态变化时失败信息直接指出是哪组、哪条。
 
 ## 决策 2：可行动性必须结构化——`source_status` / `doubt` 字段
 
@@ -139,14 +149,31 @@ PUB-SANSHA-002, PUB-SIJUE-001, PUB-SILI-001, PUB-SUIPO-001, PUB-WUHUANG-001, PUB
   移除的 veto 全部为 `PUB-SANSHA-001`（待考证，演示否决消失）×20，**非法新增 veto = 0**；
   tier 372 REJECTED → 372 NEEDS_REVIEW 全部由 (a) 归因；(b) 有争议默认参与仅出现在渲染层
   （controversial 条目），不动 tier——与甲案一致。
-- **C16 矩阵**：2026 全年 12 月 × 4 坐向，**48 格全对角**；有争议命中 22 次（触发守卫有效，
-  坐向集含 180°=坐午向子，同时触发 TAISUI-001 与 SANSHA-003）——甲案不变式集成级确认。
-- **perf**：预算测试受环境噪声干扰（本次 9.15s vs 历史中位 1.95s，同机早前轮次 2.08s）——
-  如实登记；**相对基线百分比判定**（评审要求的 `perf_baseline.json` 相对劣化门禁）列为
-  唯一未完成的 S2 子项，与日级事实缓存同批处理。
-- **现场证据（指纹缺口）**：T8 编写时发现同 `rule_id+version` 不同内容的两个规则对象经
-  `_select_cached` 串味（ADR-0012 踩坑的缓存 key 仍非内容身份）——测试以 version 区分绕开，
-  **ruleset_fingerprint 升级建议列为下一批第一优先**（评审第六轮已提，本轮获得实证）。
+  **(c) schema 字段新增**（评审第十轮补枚举）：`Judgment.to_dict` 新增
+  source_status/doubt/declared_severity、SchoolResult 新增 controversial/demo_hits、
+  Evaluation 新增 `schema_version: 2`（契约 schema 同步声明，test_contract 抓漏验证有效）——
+  结构层 diff 只比较 veto 规则 id 集合，对新增键天然免疫；
+  历史报告兼容承诺 = 旧键全保留 + 新键可选（序列化测试断言；系统不读回 JSON，无旧→新解析方向问题）。
+- **C16 矩阵**：2026 全年 12 月 × 4 坐向，**48 格全对角**；有争议命中 22 次，
+  **分规则：PUB-TAISUI-001 × 11、PUB-SANSHA-003 × 11**（评审第十轮要求拆分防样本偏斜；
+  守卫升级为"两条关键规则各 ≥1 次命中，缺一即 FAIL"）——甲案不变式集成级确认。
+- **perf：评审的怀疑是对的——4.1× 是真实回归，已定位并修复（"环境噪声"归因撤回）**。
+  同解释器同机 A/B（5 次中位）：基线 `eac493d` **2.223s** vs 施工后 **9.072s**；
+  单月对照仅 1.22× → 超线性，与单次评估无关。根因：`ranker.pareto_front` 为 **O(n²)**
+  逐对支配比较——基线时全候选 state=不可用 → `generator.py` no_solution 短路，pareto
+  **从未被调用**；本 PR 使演示否决消失 → 全候选 state=可用 → 4380 个首次进入 O(n²) 路径。
+  **修复**：按 5 维向量分组、仅组代表间筛选（同向量互不支配且同组同命运，语义与逐对严格等价）。
+  修复后（3 次中位）：demo_veto=False **1.895s**、True **1.878s**——预算 2.0s 达标，比基线快 ~15%。
+  bench 全绿（含两预算测试）。教训登记：**"环境噪声"归因在被二分排除前是未证实结论**
+  （与"9/10 是假的"同类错误，第二次犯——评审第十轮第三节）。
+- **ruleset_fingerprint：第三次串味实证 → 本轮机制化（不再排下一批）**。
+  生产影响判定：CLI 单次进程每次重建 ruleset 不受影响；**但 `loader.py` 的 version
+  只是 (rule_id, version) 哈希**——热加载/服务化场景同 id 同 version 改内容（ADR-0013
+  即改 YAML 未 bump version）必然串味。修复：`RuleSet.fingerprint`（`__post_init__` 派生，
+  覆盖 id/version/status/severity/hard_veto/condition 内容哈希），`_select_cached` key 首位
+  加入；`test_fingerprint_distinguishes_content` 断言同 id 同 version 不同 condition
+  指纹不同且评估不串味。**统一 cache_key 收拢（所有缓存点过单一函数 + 手写 key lint）登记为 C19**，
+  本轮先堵实测点。
 
 ## 与 ADR-0012 / 0013 的关系
 

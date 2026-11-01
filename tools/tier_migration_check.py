@@ -53,6 +53,7 @@ def main() -> int:
     reg = default_registry()
     reg2 = registry_without_controversial(reg)
     controversial_hits = 0
+    per_rule: dict[str, int] = {}
     rows: list[str] = []
     failures: list[str] = []
 
@@ -68,6 +69,9 @@ def main() -> int:
             ev_full = evaluate(ctx, reg, EvalConfig(task_kind="修造"))
             ev_no = evaluate(ctx, reg2, EvalConfig(task_kind="修造"))
             controversial_hits += int(ev_full.vectors.get("controversial_count", 0))
+            for res in ev_full.per_school.values():
+                for j in res.controversial:
+                    per_rule[j.rule_id] = per_rule.get(j.rule_id, 0) + 1
             if ev_full.tier == ev_no.tier:
                 rows.append(f"| {YEAR}-{month:02d} | {az:.0f} | {ev_full.tier} | ✅ 一致 |")
             else:
@@ -79,9 +83,15 @@ def main() -> int:
     print("|---|---|---|---|")
     print("\n".join(rows))
     print(f"\n有争议规则命中次数：{controversial_hits}")
+    print("分规则命中数（防样本偏斜，评审第十轮）：")
+    for rid in sorted(per_rule):
+        print(f"  - {rid}: {per_rule[rid]}")
 
-    if controversial_hits == 0:
-        print("\n❌ FAIL：窗口集未触发任何有争议规则——矩阵全对角只证明'没触发'（假阳性），请更换坐向集")
+    key_rules = ("PUB-TAISUI-001", "PUB-SANSHA-003")
+    missing = [r for r in key_rules if per_rule.get(r, 0) == 0]
+    if controversial_hits == 0 or missing:
+        print("\n❌ FAIL：窗口集未触发有争议规则（或关键规则样本缺失："
+              + ", ".join(missing) + "）——全对角只证明'没触发'（假阳性），请更换坐向集")
         return 2
     if failures:
         print(f"\n❌ FAIL：{len(failures)} 处非对角迁移（存疑规则影响了 tier，违反甲案不变式）：")

@@ -106,6 +106,7 @@ def _select_cached(
     # 动态构造的 RuleSet（测试 fixture、未来热加载）可能复用同一 version，
     # 只用 version 会导致缓存串味：合成规则被带到后续评估里（已踩过）。
     key = (
+        ruleset.fingerprint,  # ADR-0014：内容身份（同 id 同 version 改内容不再串味，第三次实证后引入）
         ruleset.version,
         ruleset.rule_ids or tuple(r.rule_id for r in ruleset.rules),
         schools,
@@ -414,6 +415,7 @@ class Evaluation:
     def to_dict(self) -> dict[str, Any]:
         return {
             "candidate": self.candidate,
+            "schema_version": 2,  # v2 = ADR-0014（source_status/doubt/declared_severity/controversial/demo_hits）；v1 = 此前
             "state": self.state,
             "tier": self.tier,
             "publishable": self.publishable,

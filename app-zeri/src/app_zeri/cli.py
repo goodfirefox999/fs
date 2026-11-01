@@ -298,7 +298,30 @@ def cmd_rules_lint(args: argparse.Namespace) -> int:
     print(json.dumps(stats, ensure_ascii=False, indent=2))
     print(f"事项模板：{len(reg.task_kinds)} 个")
     print(f"派别：{', '.join(reg.policy.enabled_schools())}（启用） / {', '.join(reg.policy.schools)}（全部）")
-    print(f"cap_applied_ids: {json.dumps(sorted(rs.cap_applied_ids), ensure_ascii=False)}")
+    # 机器可读分组行（ADR-0014，评审第十轮：按 check id 分组，测试按组断言精确集合；
+    # cap_applied 与 unverified_progress 当前恰好同集，但语义不同——前者随签名消失，后者随考证进度消失）
+    unverified_progress = sorted(
+        rid for rid in reg.required_rules.all_rule_ids()
+        if rs.by_id.get(rid) is not None and rs.by_id[rid].status == "待考证"
+    )
+    quote_unsigned = sorted(
+        rule.rule_id for rule in rs.rules
+        if rule.status != "定义级" and rule.citation.has_quote and not rule.citation.verified_by
+    )
+    print(f"cap_applied: {json.dumps(sorted(rs.cap_applied_ids), ensure_ascii=False)}")
+    print(f"unverified_progress: {json.dumps(unverified_progress, ensure_ascii=False)}")
+    print(f"quote_unsigned: {json.dumps(quote_unsigned, ensure_ascii=False)}")
+    # 已知未覆盖的原文硬禁（coverage_gaps.yaml，Q-012/C18；机器可读闭环）
+    gaps_path = Path("core-rule/config/coverage_gaps.yaml")
+    if gaps_path.exists():
+        gaps_data = yaml.safe_load(gaps_path.read_text(encoding="utf-8")) or {}
+        gap_ids = [str(g.get("id")) for g in (gaps_data.get("gaps") or [])]
+        print(f"coverage_gaps: {json.dumps(gap_ids, ensure_ascii=False)}")
+        if gap_ids:
+            warnings.append(
+                "已知未覆盖原文硬禁 " + str(len(gap_ids)) + " 条：" + ", ".join(gap_ids)
+                + "（见 coverage_gaps.yaml；C18 完成后自动消除）"
+            )
     if warnings:
         print("\n提示（不阻断）：")
         for w in warnings:
