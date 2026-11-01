@@ -1,0 +1,40 @@
+# 本文件由 tools/gen_rules.py 生成，结构统一；规则内容（条件/解释/出处）需人类考证者复核。
+# status: 待考证 = 口诀常见但原文未核，默认不参与正式判定，命中时仅登记为 unknown。
+# citation.quote 为 null 表示「尚未核对原文」，不是缺漏，禁止为填满字段而编造引文。
+api_version: 1
+rule_id: DEF-REPEAT-001
+version: 1
+school: public
+category: 地支重复结构
+status: 定义级
+hard_veto: false
+severity: 记录
+target: day
+applies_to:
+  task_kinds: []
+  node_kinds: []
+  strictness_min: normal
+condition:
+  fact: facts.structure.max_repeat
+  op: gte
+  value: 3
+score_weight: null
+citation:
+  kind: spec
+  source: core-symbol spec §3.3 重复计数
+  edition: null
+  juan: null
+  pian: null
+  entry: null
+  quote_kind: 原文
+  quote: max_repeat = 四柱地支中同一支出现次数的最大值。重复是计数事实，不预设吉凶。
+  url_or_path: null
+  verified_by: null
+  verified_at: null
+  confidence: 低
+tests:
+- RT-DEF-REPEAT-001-HIT
+- RT-DEF-REPEAT-001-MISS
+explanation: 四柱地支出现三见以上重复（最多{facts.structure.max_repeat}见），该结构确定成立。
+supersedes: null
+notes: severity=记录：只陈述重复次数。是否「三见为滞」属断言，见 ASSERT-REPEAT-001；伏吟是否成立由流派规则解释。

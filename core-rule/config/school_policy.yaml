@@ -1,0 +1,53 @@
+api_version: 1
+# 派别策略：启用哪些派、各派是否参与否决、权重、场景路由。
+# 铁律：路由必须是数据（task_kind → 派别列表），禁止在代码里写 if-else。
+schools:
+  public:
+    enabled: true
+    participates_in_veto: true
+    weight: 1.0
+    description: 公共否决层（三煞/冲山/岁破/月破/四离四绝等通用项），规则前缀 PUB
+  zhengwuxing:
+    enabled: false
+    participates_in_veto: false
+    weight: 0.8
+    description: 正五行（扶山补龙相主），规则前缀 ZWX。默认关闭，需显式 --school 启用
+  doushou:
+    enabled: false
+    participates_in_veto: false
+    weight: 0.5
+    description: 斗首。争议大，默认只进参考层，不参与否决
+  xuankong:
+    enabled: false
+    participates_in_veto: false
+    weight: 0.5
+    description: 玄空大卦。争议大，默认只进参考层，不参与否决
+
+# 场景路由：事项 → 参与派别。未列出者用 default_route。
+routing:
+  动土: [public]
+  修造: [public]
+  上梁: [public]
+  竖柱: [public]
+  安门: [public]
+  安灶: [public]
+  入宅: [public]
+  移徙: [public]
+  安葬: [public]
+  破土: [public]
+  立碑: [public]
+  修坟: [public]
+  修祠: [public]
+  安龛: [public]
+  升座: [public]
+  开光: [public]
+  嫁娶: [public]
+  纳采: [public]
+  出行: [public]
+  签约: [public]
+  开业: [public]
+  交易: [public]
+  求医: [public]
+  祭祀: [public]
+
+default_route: [public]

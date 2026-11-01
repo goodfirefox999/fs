@@ -1,0 +1,43 @@
+# 本文件由 tools/gen_rules.py 生成，结构统一；规则内容（条件/解释/出处）需人类考证者复核。
+# status: 待考证 = 口诀常见但原文未核，默认不参与正式判定，命中时仅登记为 unknown。
+# citation.quote 为 null 表示「尚未核对原文」，不是缺漏，禁止为填满字段而编造引文。
+api_version: 1
+rule_id: PUB-SANG-002
+version: 1
+school: public
+category: 三丧日（安葬专属）
+status: 待考证
+hard_veto: false
+severity: 慎用
+target: day
+applies_to:
+  task_kinds:
+  - 安葬
+  - 破土
+  - 立碑
+  - 修坟
+  node_kinds: []
+  strictness_min: normal
+condition:
+  fact: facts.sang.value
+  op: exists
+score_weight: null
+citation:
+  kind: classic
+  source: 《象吉通书》
+  edition: null
+  juan: null
+  pian: null
+  entry: null
+  quote_kind: null
+  quote: null
+  url_or_path: null
+  verified_by: null
+  verified_at: null
+  confidence: 低
+tests:
+- RT-PUB-SANG-002-HIT
+- RT-PUB-SANG-002-UNKNOWN
+explanation: 三丧日本系统未内置推算表，安葬用事须人工复核。
+supersedes: null
+notes: 待考证：三丧日推算表。

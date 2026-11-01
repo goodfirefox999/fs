@@ -1,0 +1,19 @@
+api_version: 1
+# 规则库清单：rules lint 会校验"磁盘实际加载数 == 本清单声明数"，防止文档与实现漂移。
+# 变更规则时必须同步更新本文件（否则 lint 失败）。
+expected_total: 52
+expected_by_status:
+  待考证: 40
+  有争议: 2
+  定义级: 10
+expected_by_school:
+  public: 47
+  zhengwuxing: 3
+  doushou: 1
+  xuankong: 1
+note: |
+  10 条定义级（DEF-*）为干支算术推论，citation.kind=spec，severity=记录，不影响 tier；
+  42 条断言级（PUB-*/ASSERT-*/ZWX-*/DS-*/XK-*）等待人类考证者补原文。
+  其中 8 条 ASSERT-* 是从 DEF-* 拆出的"吉凶主张"部分（ADR-0009）。
+  2026-11-01（ADR-0013）：PUB-SANSHA-003 / PUB-TAISUI-001 改 status=有争议
+  （建模方向与原典相反），已录 A 级预检引文（待人类签名），二者已移出必需集（修造 10→8）。

@@ -1,0 +1,59 @@
+# 本文件由 tools/gen_rules.py 生成，结构统一；规则内容（条件/解释/出处）需人类考证者复核。
+# status: 有争议 = 建模方向与已核原文冲突（ADR-0013 D1），不参与否决，命中仅登记为慎用演示。
+# citation.quote 为 A 级预检引文（识典古籍在线本逐字核到）；verified_by 为空表示「尚未经人类签名复核」，
+# 按 AGENTS.md 考证签名必须由人类完成，签名前不得升级为已考证。
+api_version: 1
+rule_id: PUB-SANSHA-003
+version: 1
+school: public
+category: 三煞占向
+status: 有争议
+hard_veto: false
+severity: 慎用
+target: facing
+applies_to:
+  task_kinds:
+  - 动土
+  - 修造
+  - 上梁
+  - 竖柱
+  - 安门
+  - 安灶
+  - 入宅
+  - 安葬
+  - 破土
+  - 立碑
+  - 修坟
+  - 修祠
+  - 安龛
+  - 升座
+  node_kinds: []
+  strictness_min: normal
+condition:
+  fact: facts.sansha.year.hit_facing
+  op: eq
+  value: true
+score_weight: null
+citation:
+  kind: classic
+  source: 《协纪辨方书》
+  edition: null
+  juan: 三十四（四库本；通行转载本归卷三十三，以篇次为准）
+  pian: 利用一·制煞要法
+  entry: 制煞要法（引《选择宗镜》）
+  quote_kind: 原文
+  quote: 坐三煞，向太歲，此不能制者也，不可犯也。……三煞在方在向，及陰府在山，此可制而不易制者也，不可輕也。……太歲可坐不可向，三煞可向不可坐，不易之論也。
+  url_or_path: https://www.shidianguji.com/zh/book/SK1619/chapter/1l9lm1c8n5hr6 （识典古籍在线本；四库影印对照待复核）
+  verified_by: null
+  verified_at: null
+  confidence: 中
+tests:
+- RT-PUB-SANSHA-003-HIT
+- RT-PUB-SANSHA-003-MISS
+explanation: 向首{site.facing}落于年支三合局所临三煞之方。原典（制煞要法）：「三煞可向不可坐」「三煞在方在向……此可制而不易制者也，不可轻也」——向三煞属可制级，本系统不建模制化，按「不可轻」登记为慎用，不作硬否决。
+supersedes: null
+notes: |
+  ADR-0013 D1：原建模（向三煞 = hard_veto/禁用）与原典口径相反，已移出必需集。
+  三句引文为 A 级预检（识典古籍在线本逐字核到）；句间省略号表示原文中或有间隔文字，
+  先后位置以四库影印页复核为准；verified_by 待人类签名。
+  strict 档不升级本条（ADR-0013 D6）。

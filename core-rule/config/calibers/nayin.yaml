@@ -1,0 +1,38 @@
+api_version: 1
+caliber_set: nayin
+description: 坐山纳音取用体系。决定阴府等"以坐山纳音为据"的规则能否判定。
+default: undecided
+
+calibers:
+  undecided:
+    status: 有争议
+    description: 未裁定（默认）。相关规则一律 unknown，并给出三个体系的对比提示
+    note: |
+      这是刻意的默认值：在没有人类裁定之前，系统不得自行选择体系。
+      选择任一具体体系请用 --caliber nayin=chuanshan 显式声明，报告会回显。
+    requires: []
+
+  chuanshan:
+    status: 待考证
+    description: 穿山七十二龙（每山三龙，配六十甲子 + 十二空亡）
+    note: 需七十二龙完整干支表与空亡处理规则；本系统未内置该表。
+    requires:
+      - 穿山七十二龙坐山干支表
+      - 空亡龙的处理规则
+
+  fenjin:
+    status: 待考证
+    description: 一百二十分金（每山五分，配六十甲子重复两次）
+    note: 需一百二十分金分金干支表；本系统仅提供角度→槽位映射，不给干支名。
+    requires:
+      - 一百二十分金分金干支表
+      - 分金取用（取内/外圈）规则
+
+  zhengzhen:
+    status: 有争议
+    description: 正针（只取山家地支五行，不论纳音）
+    note: |
+      正针不取纳音，因此严格说无法用于阴府判定；
+      若采用本口径，阴府规则应整体停用而非判为"不犯"。
+    requires:
+      - 明确"阴府是否可用正针五行替代纳音"的裁定

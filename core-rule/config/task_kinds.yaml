@@ -1,0 +1,125 @@
+api_version: 1
+# 事项模板。required_nodes 为该事项必须落定的节点；
+# applicable_rule_tags / forbidden_rule_tags 供规则按事项过滤（tag 由规则 category 或 notes 声明）。
+# default_strictness: strict 用于修旧宅、宗祠、安葬等"加严"场景。
+task_kinds:
+  动土:
+    required_nodes: [动土]
+    applicable_rule_tags: [年煞, 月煞, 日时, 方位, 相主]
+    default_strictness: normal
+    description: 破土开挖，含地基开掘
+  修造:
+    required_nodes: [修造]
+    applicable_rule_tags: [年煞, 月煞, 日时, 方位, 相主]
+    default_strictness: normal
+    description: 建造修缮（新建或大修）
+  上梁:
+    required_nodes: [上梁]
+    applicable_rule_tags: [年煞, 月煞, 日时, 方位, 相主]
+    default_strictness: normal
+    description: 架梁，结构封顶环节
+  竖柱:
+    required_nodes: [竖柱]
+    applicable_rule_tags: [年煞, 月煞, 日时, 方位, 相主]
+    default_strictness: normal
+    description: 立柱
+  安门:
+    required_nodes: [安门]
+    applicable_rule_tags: [年煞, 月煞, 日时, 方位]
+    default_strictness: normal
+    description: 安装门扇、门框
+  安灶:
+    required_nodes: [安灶]
+    applicable_rule_tags: [年煞, 月煞, 日时, 方位]
+    default_strictness: normal
+    description: 砌灶、安灶
+  入宅:
+    required_nodes: [入宅]
+    applicable_rule_tags: [年煞, 月煞, 日时, 相主]
+    default_strictness: normal
+    description: 迁入新居
+  移徙:
+    required_nodes: [移徙]
+    applicable_rule_tags: [日时, 相主]
+    default_strictness: normal
+    description: 搬迁（不含入宅仪式）
+  安葬:
+    required_nodes: [破土, 安葬]
+    applicable_rule_tags: [年煞, 月煞, 日时, 方位, 相主, 安葬专属]
+    default_strictness: strict
+    description: 下葬，含破土与安葬两节点
+  破土:
+    required_nodes: [破土]
+    applicable_rule_tags: [年煞, 月煞, 日时, 方位]
+    default_strictness: normal
+    description: 阴宅开穴破土
+  立碑:
+    required_nodes: [立碑]
+    applicable_rule_tags: [日时, 方位, 相主]
+    default_strictness: normal
+    description: 立墓碑
+  修坟:
+    required_nodes: [修坟]
+    applicable_rule_tags: [年煞, 月煞, 日时, 方位, 相主]
+    default_strictness: strict
+    description: 修整旧坟
+  修祠:
+    required_nodes: [动土, 上梁, 安龛, 升座]
+    applicable_rule_tags: [年煞, 月煞, 日时, 方位, 相主, 修旧宅加严]
+    default_strictness: strict
+    description: 宗祠修缮，默认加严
+  安龛:
+    required_nodes: [安龛]
+    applicable_rule_tags: [日时, 方位, 相主]
+    default_strictness: strict
+    description: 安放神龛/祖宗牌位
+  升座:
+    required_nodes: [升座]
+    applicable_rule_tags: [日时, 方位, 相主]
+    default_strictness: strict
+    description: 神像升座
+  开光:
+    required_nodes: [开光]
+    applicable_rule_tags: [日时, 相主]
+    default_strictness: normal
+    description: 神像开光
+  嫁娶:
+    required_nodes: [嫁娶]
+    applicable_rule_tags: [日时, 相主, 嫁娶专属]
+    default_strictness: normal
+    description: 结婚典礼
+  纳采:
+    required_nodes: [纳采]
+    applicable_rule_tags: [日时, 相主]
+    default_strictness: normal
+    description: 订婚、过大礼
+  出行:
+    required_nodes: [出行]
+    applicable_rule_tags: [日时, 相主]
+    default_strictness: normal
+    description: 远行
+  签约:
+    required_nodes: [签约]
+    applicable_rule_tags: [日时, 相主]
+    default_strictness: normal
+    description: 签订契约
+  开业:
+    required_nodes: [开业]
+    applicable_rule_tags: [日时, 相主]
+    default_strictness: normal
+    description: 开业、开市
+  交易:
+    required_nodes: [交易]
+    applicable_rule_tags: [日时]
+    default_strictness: normal
+    description: 买卖交割
+  求医:
+    required_nodes: [求医]
+    applicable_rule_tags: [日时, 相主]
+    default_strictness: normal
+    description: 就诊、求医（不构成医疗建议）
+  祭祀:
+    required_nodes: [祭祀]
+    applicable_rule_tags: [日时]
+    default_strictness: normal
+    description: 祭祖、拜祭

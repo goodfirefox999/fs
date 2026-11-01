@@ -1,0 +1,40 @@
+# 本文件由 tools/gen_rules.py 生成，结构统一；规则内容（条件/解释/出处）需人类考证者复核。
+# status: 待考证 = 口诀常见但原文未核，默认不参与正式判定，命中时仅登记为 unknown。
+# citation.quote 为 null 表示「尚未核对原文」，不是缺漏，禁止为填满字段而编造引文。
+api_version: 1
+rule_id: DEF-SANHE-MOUNTAIN-001
+version: 1
+school: public
+category: 山家三合结构
+status: 定义级
+hard_veto: false
+severity: 记录
+target: mountain
+applies_to:
+  task_kinds: []
+  node_kinds: []
+  strictness_min: normal
+condition:
+  fact: facts.structure.sanhe_with_mountain
+  op: count_gte
+  value: 1
+score_weight: null
+citation:
+  kind: spec
+  source: core-symbol spec §3.5 山家三合
+  edition: null
+  juan: null
+  pian: null
+  entry: null
+  quote_kind: 原文
+  quote: 山家三合：坐山（含兼山）地支与日课地支构成完整三合局（三支齐现）。
+  url_or_path: null
+  verified_by: null
+  verified_at: null
+  confidence: 低
+tests:
+- RT-DEF-SANHE-MOUNTAIN-001-HIT
+- RT-DEF-SANHE-MOUNTAIN-001-MISS
+explanation: 坐山山家{site.shan_jia_zhi}与日课地支构成完整三合局，该结构确定成立。
+supersedes: null
+notes: severity=记录：中性结构事实。是否「扶山为吉」属断言，见 PUB-SANHEFU-001（待考证）。

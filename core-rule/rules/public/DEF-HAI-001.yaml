@@ -1,0 +1,40 @@
+# 本文件由 tools/gen_rules.py 生成，结构统一；规则内容（条件/解释/出处）需人类考证者复核。
+# status: 待考证 = 口诀常见但原文未核，默认不参与正式判定，命中时仅登记为 unknown。
+# citation.quote 为 null 表示「尚未核对原文」，不是缺漏，禁止为填满字段而编造引文。
+api_version: 1
+rule_id: DEF-HAI-001
+version: 1
+school: public
+category: 六害结构
+status: 定义级
+hard_veto: false
+severity: 记录
+target: day
+applies_to:
+  task_kinds: []
+  node_kinds: []
+  strictness_min: normal
+condition:
+  fact: facts.structure.hai_pairs
+  op: count_gte
+  value: 1
+score_weight: null
+citation:
+  kind: spec
+  source: core-symbol spec §3.1 六害表
+  edition: null
+  juan: null
+  pian: null
+  entry: null
+  quote_kind: 原文
+  quote: 六害：子未、丑午、寅巳、卯辰、申亥、酉戌。
+  url_or_path: null
+  verified_by: null
+  verified_at: null
+  confidence: 低
+tests:
+- RT-DEF-HAI-001-HIT
+- RT-DEF-HAI-001-MISS
+explanation: 四柱地支构成六害，该结构确定成立。
+supersedes: null
+notes: severity=记录：只陈述害的事实。是否「害即为凶」属断言，见 ASSERT-HAI-001。

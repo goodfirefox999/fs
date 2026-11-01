@@ -1,0 +1,477 @@
+"""CLI（应用层，零第三方依赖，用 argparse 实现）。
+
+命令
+----
+``zeri verify``      复核单个日课
+``zeri gen``         时间窗内生成候选
+``zeri cases run``   运行案例库
+``zeri rules lint``  校验规则库（DSL / 引用完整性 / 签名 / 覆盖率）
+``zeri rules diff``  比较两版规则库
+
+全局参数：``--allow-unverified``、``--school``（可多次）、``--param key=value``、``--json``、
+``--fail-on-veto``（供 CI 使用）。
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from datetime import date, datetime
+from pathlib import Path
+from typing import Any, Sequence
+from zoneinfo import ZoneInfo
+
+import yaml
+
+from core_rule import default_registry
+from core_rule.loader import load_ruleset
+from core_time import CalendarConfig
+
+from .generator import generate
+from .report import render_generation_markdown, render_json, render_markdown
+from .schemas import PersonSpec, SiteSpec, TaskSpec
+from .verifier import verify
+
+__all__ = ["main", "build_parser"]
+
+
+def _parse_dt(text: str, tz_name: str) -> datetime:
+    """解析 ``YYYY-MM-DDTHH:MM[+08:00]``；无时区时按配置时区补齐。"""
+    try:
+        dt = datetime.fromisoformat(text)
+    except ValueError as exc:
+        raise SystemExit(f"无法解析时间: {text}（示例：2027-07-11T14:00）") from exc
+    return dt if dt.tzinfo else dt.replace(tzinfo=ZoneInfo(tz_name))
+
+
+def _parse_date(text: str) -> date:
+    try:
+        return date.fromisoformat(text)
+    except ValueError as exc:
+        raise SystemExit(f"无法解析日期: {text}（示例：2027-07-11）") from exc
+
+
+def _load_yaml(path: str | None) -> dict[str, Any]:
+    if not path:
+        return {}
+    data = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise SystemExit(f"{path} 顶层必须是映射")
+    return data
+
+
+def _site_from_args(args: argparse.Namespace) -> SiteSpec:
+    data = _load_yaml(args.site)
+    azimuth = args.azimuth if args.azimuth is not None else data.get("azimuth_deg")
+    if azimuth is None:
+        raise SystemExit("缺少坐向：请用 --azimuth 度数 或 --site site.yaml（含 azimuth_deg）")
+    return SiteSpec(
+        azimuth_deg=float(azimuth),
+        lat=float(data.get("lat", 0.0)),
+        lon=float(data.get("lon", 0.0)),
+        mountain=data.get("mountain"),
+        facing=data.get("facing"),
+        fenjin=data.get("fenjin"),
+        measure_method=str(data.get("measure_method", "unspecified")),
+        angle_uncertainty_deg=float(data.get("angle_uncertainty_deg", 0.0)),
+    )
+
+
+def _person_from_args(args: argparse.Namespace) -> PersonSpec | None:
+    data = _load_yaml(args.person)
+    if not data:
+        return None
+    birth = data.get("birth_dt")
+    return PersonSpec(
+        name=data.get("name"),
+        birth_dt=datetime.fromisoformat(birth) if birth else None,
+        birth_lon=data.get("birth_lon"),
+        birth_lat=data.get("birth_lat"),
+        gender=data.get("gender"),
+        year_zhi=data.get("year_zhi"),
+        year_gz=data.get("year_gz"),
+        lunar_override=bool(data.get("lunar_override", False)),
+    )
+
+
+def _cal_from_args(args: argparse.Namespace) -> CalendarConfig:
+    overrides: dict[str, Any] = {}
+    for item in args.param or []:
+        if "=" not in item:
+            raise SystemExit(f"--param 需形如 key=value，得到 {item}")
+        key, value = item.split("=", 1)
+        if value.lower() in ("true", "false"):
+            overrides[key] = value.lower() == "true"
+        else:
+            try:
+                overrides[key] = int(value)
+            except ValueError:
+                overrides[key] = value
+    if args.true_solar_time:
+        overrides["use_true_solar_time"] = True
+    if args.day_boundary:
+        overrides["day_boundary"] = args.day_boundary
+    if args.year_boundary:
+        overrides["year_boundary"] = args.year_boundary
+    cal = CalendarConfig()
+    return cal.with_overrides(**overrides) if overrides else cal
+
+
+def _schools(args: argparse.Namespace) -> tuple[str, ...] | None:
+    return tuple(args.school) if args.school else None
+
+
+def _caliber_selection(args: argparse.Namespace) -> dict[str, str]:
+    out: dict[str, str] = {}
+    for item in getattr(args, "caliber", None) or []:
+        if "=" not in item:
+            raise SystemExit(f"--caliber 需形如 key=value，得到 {item}")
+        key, value = item.split("=", 1)
+        out[key] = value
+    return out
+
+
+def _registry_with_calibers(args: argparse.Namespace):
+    reg = default_registry()
+    selection = _caliber_selection(args)
+    return reg.with_calibers(selection) if selection else reg
+
+
+# --------------------------------------------------------------------------- #
+# 子命令实现
+# --------------------------------------------------------------------------- #
+def cmd_verify(args: argparse.Namespace) -> int:
+    cal = _cal_from_args(args)
+    site = _site_from_args(args)
+    person = _person_from_args(args)
+    task = TaskSpec(kind=args.task, nodes=(args.node,) if args.node else (), strictness=args.strictness)
+    result = verify(
+        dt=_parse_dt(args.course, cal.timezone),
+        site=site,
+        task=task,
+        person=person,
+        node=args.node,
+        cal=cal,
+        registry=_registry_with_calibers(args),
+        schools=_schools(args),
+        allow_unverified=args.allow_unverified,
+    )
+    text = render_json(result) if args.json else render_markdown(result)
+    if args.out:
+        Path(args.out).write_text(text, encoding="utf-8")
+        print(f"已写入 {args.out}", file=sys.stderr)
+    else:
+        print(text)
+    if args.fail_on_veto and result.evaluation.vectors["hard_fail_count"] > 0:
+        return 2
+    return 0
+
+
+def cmd_gen(args: argparse.Namespace) -> int:
+    cal = _cal_from_args(args)
+    site = _site_from_args(args)
+    person = _person_from_args(args)
+    if "/" not in args.window:
+        raise SystemExit("--window 需形如 2027-01-01/2027-12-31")
+    start_s, end_s = args.window.split("/", 1)
+    task = TaskSpec(kind=args.task, strictness=args.strictness, granularity=args.granularity)
+    result = generate(
+        start=_parse_date(start_s),
+        end=_parse_date(end_s),
+        site=site,
+        task=task,
+        person=person,
+        node=args.node,
+        cal=cal,
+        registry=_registry_with_calibers(args),
+        schools=_schools(args),
+        allow_unverified=args.allow_unverified,
+        top=args.top,
+        with_sensitivity=args.sensitivity,
+        with_robustness=args.robustness,
+    )
+    text = render_json(result) if args.json else render_generation_markdown(result)
+    if args.out:
+        Path(args.out).write_text(text, encoding="utf-8")
+        print(f"已写入 {args.out}", file=sys.stderr)
+    else:
+        print(text)
+    return 0
+
+
+def cmd_rules_lint(args: argparse.Namespace) -> int:
+    reg = default_registry()
+    rs = reg.ruleset
+    problems: list[str] = []
+
+    # 1) 引用完整性：tests 指向的用例必须存在
+    case_dir = Path(args.cases or "tests/cases/rule_tests")
+    existing = {p.stem for p in case_dir.glob("*.yaml")} if case_dir.exists() else set()
+    for rule in rs.rules:
+        for case_id in rule.tests:
+            if case_dir.exists() and case_id not in existing:
+                problems.append(f"{rule.rule_id}: tests 引用的用例不存在 -> {case_id}")
+
+    # 2) 已考证规则必须有完整引文
+    for rule in rs.rules:
+        if rule.status == "已考证" and not rule.citation.has_quote:
+            problems.append(f"{rule.rule_id}: 已考证但 citation.quote 为空")
+
+    # 3) veto 规则不得有 score_weight
+    for rule in rs.rules:
+        if rule.hard_veto and rule.score_weight is not None:
+            problems.append(f"{rule.rule_id}: veto 规则不得设置 score_weight")
+
+    # 4) 覆盖率：每条规则至少 2 个测试向量
+    for rule in rs.rules:
+        if len(rule.tests) < 2:
+            problems.append(f"{rule.rule_id}: tests 少于 2 项")
+
+    # 5) 派别一致性：规则 school 必须已在 school_policy 声明
+    for rule in rs.rules:
+        if rule.school not in reg.policy.schools:
+            problems.append(f"{rule.rule_id}: school '{rule.school}' 未在 school_policy 声明")
+
+    # 6) 规则清单一致性（防止"文档说 44 条、实际 52 条"的漂移）
+    manifest_path = Path(args.manifest or "core-rule/config/rules_manifest.yaml")
+    if manifest_path.exists():
+        manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8")) or {}
+        stats_now = rs.stats()
+        if manifest.get("expected_total") is not None and stats_now["total"] != manifest["expected_total"]:
+            problems.append(
+                f"规则总数 {stats_now['total']} 与 MANIFEST 声明 {manifest['expected_total']} 不一致"
+            )
+        for status, expected in (manifest.get("expected_by_status") or {}).items():
+            actual = stats_now["by_status"].get(status, 0)
+            if actual != expected:
+                problems.append(f"status={status} 实际 {actual} 条，MANIFEST 声明 {expected} 条")
+        for school, expected in (manifest.get("expected_by_school") or {}).items():
+            actual = stats_now["by_school"].get(school, 0)
+            if actual != expected:
+                problems.append(f"school={school} 实际 {actual} 条，MANIFEST 声明 {expected} 条")
+
+    # 7) 必需集准入四条 + 可判定闭合（Q-011 元规则，ADR-0012）
+    problems.extend(_check_required_set(reg))
+
+    # 8) 定义级 severity 白名单（ADR-0009 的 CI 兜底）
+    for rule in rs.rules:
+        if rule.status == "定义级" and rule.severity != "记录":
+            problems.append(f"{rule.rule_id}: 定义级 severity 必须为「记录」，得到「{rule.severity}」")
+        if rule.status != "定义级" and rule.severity == "记录":
+            problems.append(f"{rule.rule_id}: severity=「记录」仅限定义级")
+
+    # 9) 非阻断提示（warning，不影响返回码，ADR-0013）
+    warnings: list[str] = []
+    for rid in sorted(reg.required_rules.all_rule_ids()):
+        wrule = rs.by_id.get(rid)
+        if wrule is not None and wrule.status == "待考证":
+            warnings.append(f"{rid} 待考证：补原文并签名后可解锁 publishable 进度")
+    for rule in rs.rules:
+        if rule.status != "定义级" and rule.citation.has_quote and not rule.citation.verified_by:
+            warnings.append(
+                f"{rule.rule_id}: citation.quote 已填但 verified_by 为空（未经人类签名，不得升级已考证）"
+            )
+
+    stats = rs.stats()
+    print("规则库统计：")
+    print(json.dumps(stats, ensure_ascii=False, indent=2))
+    print(f"事项模板：{len(reg.task_kinds)} 个")
+    print(f"派别：{', '.join(reg.policy.enabled_schools())}（启用） / {', '.join(reg.policy.schools)}（全部）")
+    if warnings:
+        print("\n提示（不阻断）：")
+        for w in warnings:
+            print(f"  - {w}")
+
+    if problems:
+        print("\n发现问题：")
+        for p in problems:
+            print(f"  - {p}")
+        return 1
+    print("\n✅ lint 通过（无引用/签名/结构问题）")
+    return 0
+
+
+def _fact_roots(rule) -> set[str]:
+    from core_rule.dsl import collect_fact_paths
+
+    return {p.split(".")[0] for p in collect_fact_paths(rule.condition)}
+
+
+def _check_required_set(reg) -> list[str]:
+    """必需集准入四条 + 可判定闭合。
+
+    任何一条不满足 → ``required_set_unresolvable``，并列出阻塞链。
+    否则会出现"报告说必需集 9/10，但 publishable 恒 false"的荒诞状态。
+    """
+    problems: list[str] = []
+    rs = reg.ruleset
+    required = reg.required_rules
+    criteria = required.criteria or {}
+    allowed_targets = set(criteria.get("allowed_targets") or ["mountain", "facing", "day", "person"])
+    forbidden_schools = set(criteria.get("forbidden_schools") or ["doushou", "xuankong"])
+    require_veto = bool(criteria.get("require_hard_veto", True))
+
+    def _check_group(rids, *, group: str, task_kind: str) -> None:
+        for rid in rids:
+            where = f"required_rules[{task_kind}].{group}"
+            if rid not in rs.by_id:
+                problems.append(f"required_set_unresolvable: {where} 引用了不存在的规则 {rid}")
+                continue
+            rule = rs.by_id[rid]
+            if require_veto and not rule.hard_veto:
+                problems.append(
+                    f"required_set_unresolvable: {where} 的 {rid} 不是硬否决（hard_veto=false），"
+                    "按准入条件不得进必需集"
+                )
+            if rule.target not in allowed_targets:
+                problems.append(
+                    f"required_set_unresolvable: {where} 的 {rid} target={rule.target} 不在允许集合"
+                    f" {sorted(allowed_targets)}（hour 级规则换时辰即可规避，不构成必需）"
+                )
+            if rule.school in forbidden_schools:
+                problems.append(
+                    f"required_set_unresolvable: {where} 的 {rid} 属于参考层派别 {rule.school}"
+                )
+            if rule.status == "有争议":
+                problems.append(
+                    f"required_set_controversial: {where} 的 {rid} status=有争议，"
+                    "出处核查未通过（ADR-0013），不得作为发布门槛"
+                )
+            roots = _fact_roots(rule)
+            if group == "core" and "person" in roots:
+                problems.append(
+                    f"required_set_unresolvable: {where} 的 {rid} 依赖 person.*，"
+                    "应移到 person_dependent（否则用户不填命主时永久 unknown）"
+                )
+            if group == "person_dependent" and "person" not in roots:
+                problems.append(
+                    f"required_set_unresolvable: {where} 的 {rid} 不依赖 person.*，"
+                    "应放在 core 组"
+                )
+
+    _check_group(required.core, group="core", task_kind="default")
+    _check_group(required.person_dependent, group="person_dependent", task_kind="default")
+    for task_kind, ov in required.overrides.items():
+        if task_kind not in reg.task_kinds:
+            problems.append(f"required_set_unresolvable: overrides 引用了未知事项 {task_kind}")
+        _check_group(ov.get("add") or (), group="add", task_kind=task_kind)
+        for rid in ov.get("remove") or ():
+            if rid not in rs.by_id:
+                problems.append(
+                    f"required_set_unresolvable: required_rules[{task_kind}].remove 引用了不存在的规则 {rid}"
+                )
+
+    # 每个 task_kind 至少要有 1 条必需规则（否则 publishable 失去意义）
+    for task_kind in reg.task_kinds:
+        if not reg.required_for(task_kind):
+            problems.append(f"required_set_unresolvable: 事项 {task_kind} 的必需集为空")
+    return problems
+
+
+def cmd_rules_diff(args: argparse.Namespace) -> int:
+    old = load_ruleset(args.old)
+    new = load_ruleset(args.new)
+    old_ids, new_ids = set(old.by_id), set(new.by_id)
+    added = sorted(new_ids - old_ids)
+    removed = sorted(old_ids - new_ids)
+    changed = sorted(
+        rid for rid in old_ids & new_ids if old.by_id[rid].to_dict() != new.by_id[rid].to_dict()
+    )
+    print(json.dumps(
+        {
+            "old_version": old.version,
+            "new_version": new.version,
+            "added": added,
+            "removed": removed,
+            "changed": changed,
+        },
+        ensure_ascii=False,
+        indent=2,
+    ))
+    return 0
+
+
+def cmd_cases_run(args: argparse.Namespace) -> int:
+    from .case_runner import run_cases
+
+    report = run_cases(Path(args.cases_dir), grade=args.grade, out_dir=Path(args.out) if args.out else None)
+    print(json.dumps(report.summary, ensure_ascii=False, indent=2))
+    return 0 if report.summary.get("failed", 0) == 0 else 1
+
+
+# --------------------------------------------------------------------------- #
+# 解析器
+# --------------------------------------------------------------------------- #
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(prog="zeri", description="择日引擎（离线、确定性、可审计）")
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    def add_common(p: argparse.ArgumentParser) -> None:
+        p.add_argument("--task", required=True, help="事项，如 修祠/动土/安葬")
+        p.add_argument("--node", default=None, help="节点，如 上梁/安龛")
+        p.add_argument("--strictness", default="normal", choices=["normal", "strict"])
+        p.add_argument("--site", default=None, help="site.yaml（azimuth_deg/lat/lon/fenjin）")
+        p.add_argument("--azimuth", type=float, default=None, help="坐山方位角（度）")
+        p.add_argument("--person", default=None, help="person.yaml（year_zhi/birth_dt）")
+        p.add_argument("--school", action="append", default=None, help="启用派别，可多次")
+        p.add_argument("--allow-unverified", action="store_true", help="允许待考证规则参与判定（仅联调）")
+        p.add_argument("--param", action="append", default=None, help="历法参数覆盖 key=value")
+        p.add_argument(
+            "--caliber", action="append", default=None,
+            help="口径选择 key=value（如 nayin=chuanshan / sansha=named_sansha），可多次",
+        )
+        p.add_argument("--true-solar-time", action="store_true", help="启用真太阳时")
+        p.add_argument("--day-boundary", choices=["early", "late"], default=None)
+        p.add_argument("--year-boundary", choices=["lichun", "newyear"], default=None)
+        p.add_argument("--json", action="store_true", help="输出 JSON")
+        p.add_argument("--out", default=None, help="写入文件")
+
+    p_verify = sub.add_parser("verify", help="复核单个日课")
+    p_verify.add_argument("--course", required=True, help="日课时刻，如 2027-07-11T14:00")
+    add_common(p_verify)
+    p_verify.add_argument("--fail-on-veto", action="store_true", help="命中否决时返回码 2")
+    p_verify.set_defaults(func=cmd_verify)
+
+    p_gen = sub.add_parser("gen", help="生成候选")
+    p_gen.add_argument("--window", required=True, help="2027-01-01/2027-12-31")
+    p_gen.add_argument("--top", type=int, default=20)
+    p_gen.add_argument("--granularity", default="day_hour", choices=["day", "day_hour"])
+    p_gen.add_argument("--sensitivity", action="store_true", help="执行敏感性分析")
+    p_gen.add_argument(
+        "--robustness", action="store_true",
+        help="执行稳健性评估（坐向 ±uncertainty + 口径开关），输出稳健集/敏感集",
+    )
+    add_common(p_gen)
+    p_gen.set_defaults(func=cmd_gen)
+
+    p_lint = sub.add_parser("rules", help="规则库操作")
+    lint_sub = p_lint.add_subparsers(dest="rules_command", required=True)
+    p_lint_cmd = lint_sub.add_parser("lint", help="校验规则库")
+    p_lint_cmd.add_argument("--cases", default=None)
+    p_lint_cmd.add_argument("--manifest", default=None, help="规则清单路径（默认 core-rule/config/rules_manifest.yaml）")
+    p_lint_cmd.set_defaults(func=cmd_rules_lint)
+    p_diff = lint_sub.add_parser("diff", help="比较两版规则库")
+    p_diff.add_argument("old")
+    p_diff.add_argument("new")
+    p_diff.set_defaults(func=cmd_rules_diff)
+
+    p_cases = sub.add_parser("cases", help="案例库")
+    cases_sub = p_cases.add_subparsers(dest="cases_command", required=True)
+    p_run = cases_sub.add_parser("run", help="运行案例")
+    p_run.add_argument("--grade", default="A", choices=["A", "B", "C", "all"])
+    p_run.add_argument("--cases-dir", default="cases")
+    p_run.add_argument("--out", default=None)
+    p_run.set_defaults(func=cmd_cases_run)
+
+    return parser
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    return int(args.func(args))
+
+
+if __name__ == "__main__":  # pragma: no cover
+    raise SystemExit(main())

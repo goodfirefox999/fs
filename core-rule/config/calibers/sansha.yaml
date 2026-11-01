@@ -1,0 +1,24 @@
+api_version: 1
+caliber_set: sansha
+description: 三煞推算口径。决定"判到哪一层"：只判方位组，还是判到劫煞/灾煞/岁煞。
+default: direction_group
+
+calibers:
+  direction_group:
+    status: 有争议
+    description: 只判定到方位组（三山），不区分劫煞/灾煞/岁煞
+    note: |
+      当前实现的粗化版本：按三合局取三山（寅午戌煞北→亥子丑），
+      报告只声称"坐山落在三煞方位组内"，不声称具体是哪一煞。
+      粗化不是错，但把粗化当成精确就是错 —— 因此本口径标"有争议"。
+    requires: []
+
+  named_sansha:
+    status: 待考证
+    description: 判定到劫煞/灾煞/岁煞三个具体煞名
+    note: |
+      需要原文确认三山与劫/灾/岁的**一一对应**（顺序流派有差异），
+      以及是否按年/月/日/时四层分别起煞。未确认前本口径不参与判定。
+    requires:
+      - 《协纪辨方书》义例·三煞条原文
+      - 三山与劫/灾/岁对应表

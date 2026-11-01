@@ -1,0 +1,12 @@
+tests/.tmp/
+__pycache__/
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+*.egg-info/
+.venv/
+dist/
+build/
+out/
+.hypothesis/

@@ -1,0 +1,54 @@
+# 本文件由 tools/gen_rules.py 生成，结构统一；规则内容（条件/解释/出处）需人类考证者复核。
+# status: 待考证 = 口诀常见但原文未核，默认不参与正式判定，命中时仅登记为 unknown。
+# citation.quote 为 null 表示「尚未核对原文」，不是缺漏，禁止为填满字段而编造引文。
+api_version: 1
+rule_id: PUB-SANHEFU-001
+version: 1
+school: public
+category: 三合扶山
+status: 待考证
+hard_veto: false
+severity: 推荐
+target: mountain
+applies_to:
+  task_kinds:
+  - 动土
+  - 修造
+  - 上梁
+  - 竖柱
+  - 安门
+  - 安灶
+  - 入宅
+  - 安葬
+  - 破土
+  - 立碑
+  - 修坟
+  - 修祠
+  - 安龛
+  - 升座
+  node_kinds: []
+  strictness_min: normal
+condition:
+  fact: facts.structure.sanhe_with_mountain
+  op: count_gte
+  value: 1
+score_weight: 1.0
+citation:
+  kind: classic
+  source: 《协纪辨方书》
+  edition: null
+  juan: null
+  pian: null
+  entry: null
+  quote_kind: null
+  quote: null
+  url_or_path: null
+  verified_by: null
+  verified_at: null
+  confidence: 低
+tests:
+- RT-PUB-SANHEFU-001-HIT
+- RT-PUB-SANHEFU-001-MISS
+explanation: 日课地支与山家{site.shan_jia_zhi}构成三合局，按本规则记为正向结构证据。
+supersedes: null
+notes: 正向证据不等于可用结论：仍须通过否决层。是否需局生山家，待考证。

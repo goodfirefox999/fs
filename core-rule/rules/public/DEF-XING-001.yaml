@@ -1,0 +1,40 @@
+# 本文件由 tools/gen_rules.py 生成，结构统一；规则内容（条件/解释/出处）需人类考证者复核。
+# status: 待考证 = 口诀常见但原文未核，默认不参与正式判定，命中时仅登记为 unknown。
+# citation.quote 为 null 表示「尚未核对原文」，不是缺漏，禁止为填满字段而编造引文。
+api_version: 1
+rule_id: DEF-XING-001
+version: 1
+school: public
+category: 三刑结构
+status: 定义级
+hard_veto: false
+severity: 记录
+target: day
+applies_to:
+  task_kinds: []
+  node_kinds: []
+  strictness_min: normal
+condition:
+  fact: facts.structure.xing_pairs
+  op: count_gte
+  value: 1
+score_weight: null
+citation:
+  kind: spec
+  source: core-symbol spec §3.1 三刑表
+  edition: null
+  juan: null
+  pian: null
+  entry: null
+  quote_kind: 原文
+  quote: 三刑：寅巳申、丑戌未、子卯。自刑（辰午酉亥）单列。
+  url_or_path: null
+  verified_by: null
+  verified_at: null
+  confidence: 低
+tests:
+- RT-DEF-XING-001-HIT
+- RT-DEF-XING-001-MISS
+explanation: 四柱地支构成三刑（寅巳申/丑戌未/子卯），该结构确定成立。
+supersedes: null
+notes: severity=记录：自刑单列于 DEF-ZIXING-001。是否「刑即为凶」属断言，见 ASSERT-XING-001。

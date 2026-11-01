@@ -1,0 +1,59 @@
+case_id: GS-2027-0711
+title: 乾山巽向兼亥巳·换修天面·2027-07-11 未时
+grade: A
+source:
+  snapshot_path: raw_snapshots/GS-2027-0711.md
+  url: null
+  collected_at: "2026-11-01"
+  license_note: 内部案例快照；不对外分发，不入公开仓库
+input:
+  course: "2027-07-11T14:00:00+08:00"
+  azimuth_deg: 320.0
+  task_kind: 修造
+  lat: 23.13
+  lon: 113.26
+  nodes:
+    - 修造
+  strictness: strict
+  person_year_zhi: null
+  fenjin: null
+params_assumed:
+  - "坐山方位角按「乾山兼亥」取 320°：偏乾山中心 315° 达 5°，超过 3° 兼向阈值，故判兼亥、山家地支取亥。"
+  - "「换修天面」按最接近的事项模板归入「修造」；因涉旧宅翻修，strictness 取 strict。"
+  - "命主未提供（原文未载生肖），相主类规则一律降级为 unknown，不得视为通过。"
+  - "经纬度按广州（23.13N, 113.26E）代入，仅影响启用真太阳时后的时辰归属。"
+author_claim:
+  raw: |
+    乾山巽向兼亥巳，换修天面，2027-07-11 未时，丁未年丁未月辛卯日乙未时。
+    一、亥卯未三合扶山，为正向结构，不可忽略。
+    二、年、月、时三支皆未，属地支重复，应作结构提示；未未不是自刑，自刑只有辰辰、午午、酉酉、亥亥。
+    三、大煞为独立凶项，不得以「仅一项」为由忽略。
+    四、未时存在流派分歧：一派以天德论吉，一派以勾陈论凶、诸事不宜；应并列呈现，不得单方面认定吉时。
+    五、阴府以日课天干丁、丁、辛、乙论，严格派下「单干亦忌」应入存疑，不得静默通过。
+    六、日冲酉、时冲丑（按地支六冲），须结合主事人生肖检查。
+    七、综上，不得判为上吉（PREFERRED），至少应为需复核。
+  verdict: 存疑
+  notes: 作者原判为「需复核」，未给单一吉凶结论；本系统不得把多派结论合并为单一总分。
+expected:
+  must_include_positive:
+    - PUB-SANHEFU-001
+  must_not_include_veto:
+    - PUB-ZIXING-001
+  must_be_unknown:
+    - PUB-YINFU-001
+  must_not_tier:
+    - PREFERRED
+  structure:
+    max_repeat: 3
+    repeated_zhi:
+      - 未
+    weiwei_self_punishment: false
+  pillar_check:
+    bazi: 丁未 丁未 辛卯 乙未
+notes: |
+  本案例是全系统的金标准回归用例。它同时检验：
+  (a) 历法内核四柱是否正确（丁未 丁未 辛卯 乙未）；
+  (b) 结构检测是否把「三未重复」与「未未自刑」正确区分；
+  (c) 三合扶山是否作为独立正向证据；
+  (d) 阴府这类「本系统不提供」的事实是否降级为 unknown 而非静默通过；
+  (e) 推荐等级是否被 unknown 拉离 PREFERRED。

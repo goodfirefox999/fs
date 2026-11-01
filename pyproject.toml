@@ -1,0 +1,66 @@
+[project]
+name = "zeri-engine"
+version = "0.1.0"
+description = "择日引擎（Zeri Engine）：离线、确定性、可审计的择日计算与复核工具"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Proprietary-Internal" }
+authors = [{ name = "Zeri Engine Contributors" }]
+dependencies = ["pyyaml>=6.0"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "pytest-cov>=5", "hypothesis>=6", "ruff>=0.5", "mypy>=1.10"]
+
+[project.scripts]
+zeri = "app_zeri.cli:main"
+
+[tool.uv.workspace]
+members = ["core-time", "core-symbol", "core-rule", "core-eval", "app-zeri"]
+
+[tool.uv.sources]
+core-time = { workspace = true }
+core-symbol = { workspace = true }
+core-rule = { workspace = true }
+core-eval = { workspace = true }
+app-zeri = { workspace = true }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+markers = [
+  "slow: 性能/全量穷举测试（CI 默认包含；本地可用 -m 'not slow' 跳过）",
+  "golden: 金标准回归（失败即阻断合并）",
+]
+filterwarnings = ["error::DeprecationWarning:core_.*"]
+
+[tool.coverage.run]
+branch = true
+source = [
+  "core-time/src/core_time",
+  "core-symbol/src/core_symbol",
+  "core-rule/src/core_rule",
+  "core-eval/src/core_eval",
+  "app-zeri/src/app_zeri",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+  "pragma: no cover",
+  "if TYPE_CHECKING:",
+  "raise AssertionError",
+  "def __repr__",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM"]
+ignore = ["E501", "B008", "SIM108"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_unused_ignores = true
+ignore_missing_imports = true
+check_untyped_defs = true

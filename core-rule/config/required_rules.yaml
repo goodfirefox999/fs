@@ -1,0 +1,92 @@
+api_version: 1
+# 事项必需规则集：决定 publishable 的判定范围。
+#
+# ⚠️ 语义边界（必读，ADR-0012）：
+#   publishable = true 的含义是【安全底线语义】——
+#   "该事项的必需规则集已全部可判定，系统不会漏判这些规则覆盖的风险"。
+#   它**不**表示"规则集完备、这个日期可用"：
+#   未列入必需集的断言级规则仍可能命中（登记为「演示命中」），
+#   也可能存在尚未建模的风险（如大煞、月五黄）；
+#   已建模但因口径与原典冲突而移出必需集的规则（三煞占向、太岁占山，ADR-0013 D1/D2）
+#   在任何档位（含 strict）都不再产生否决（D6）。修造必需集为 8 条。
+#   报告必须原样引用这句话，不得简写为"可发布 = 可用"。
+#
+# 准入四条（必须同时满足，rules lint 会逐条校验）：
+#   1. hard_veto: true            —— 能单独把候选判为"不可用"
+#   2. target ∈ {mountain, facing, day, person}
+#                                 —— 排除 hour：换时辰就能规避，不构成"必须知道"
+#   3. 不属于参考层派别（doushou/xuankong 默认 participates_in_veto=false）
+#   4. 可判定闭合                —— 依赖的输入字段必须可提供；依赖命主的规则
+#                                  只能进 person_dependent，未提供命主时不进必需集
+#
+# 为什么拆 core / person_dependent：
+#   若把"日冲命"这类依赖命主的规则放进 core，用户不填命主时它会永久 unknown，
+#   导致 publishable 恒 false —— 阻塞点藏在依赖链里，验收信号失效（Q-011 元规则）。
+
+admission_criteria:
+  require_hard_veto: true
+  allowed_targets: [mountain, facing, day, person]
+  forbidden_schools: [doushou, xuankong]
+  require_resolvable: true
+
+default:
+  # 无输入依赖：只要给了时间 + 坐向就能判定
+  core:
+    - PUB-SUIPO-001       # 岁破占山（mountain）
+    - PUB-SANSHA-001      # 三煞占山（年）（mountain）
+    - PUB-SANSHA-002      # 三煞占山（月）（mountain）
+    - PUB-WUHUANG-001     # 五黄占山（mountain）
+    - PUB-YUEPO-001       # 月破占山（mountain）
+    - PUB-CHONGSHAN-001   # 日冲山（day）
+    - PUB-SILI-001        # 四离日（day）
+    - PUB-SIJUE-001       # 四绝日（day）
+  # 依赖命主：未提供 person.year_zhi 时不进必需集（避免永久 unknown）
+  person_dependent:
+    - PUB-CHONGMING-001   # 日冲命（person）
+    - PUB-MING-SANSHA-001 # 年命三煞（person）
+
+overrides:
+  # 安葬：事项专属否决（重丧/三丧）目前是慎用级（待考证），
+  # 按准入条件 hard_veto=true 暂不入必需集，仅登记为参考层。
+  # 若人类裁定其应为硬否决，改 severity=禁用 + hard_veto=true 后在此 add。
+  安葬:
+    add: []
+    remove: []
+  修祠:
+    add: []
+    remove: []
+  嫁娶:
+    # 嫁娶不涉坐山，山向类必需规则对它是噪声
+    remove:
+      - PUB-SUIPO-001
+      - PUB-SANSHA-001
+      - PUB-SANSHA-002
+      - PUB-WUHUANG-001
+      - PUB-YUEPO-001
+      - PUB-CHONGSHAN-001
+  纳采:
+    remove:
+      - PUB-SUIPO-001
+      - PUB-SANSHA-001
+      - PUB-SANSHA-002
+      - PUB-WUHUANG-001
+      - PUB-YUEPO-001
+      - PUB-CHONGSHAN-001
+  出行:
+    remove: [PUB-SUIPO-001, PUB-SANSHA-001, PUB-SANSHA-002,
+             PUB-WUHUANG-001, PUB-YUEPO-001, PUB-CHONGSHAN-001]
+  签约:
+    remove: [PUB-SUIPO-001, PUB-SANSHA-001, PUB-SANSHA-002,
+             PUB-WUHUANG-001, PUB-YUEPO-001, PUB-CHONGSHAN-001]
+  开业:
+    remove: [PUB-SUIPO-001, PUB-SANSHA-001, PUB-SANSHA-002,
+             PUB-WUHUANG-001, PUB-YUEPO-001, PUB-CHONGSHAN-001]
+  交易:
+    remove: [PUB-SUIPO-001, PUB-SANSHA-001, PUB-SANSHA-002,
+             PUB-WUHUANG-001, PUB-YUEPO-001, PUB-CHONGSHAN-001]
+  求医:
+    remove: [PUB-SUIPO-001, PUB-SANSHA-001, PUB-SANSHA-002,
+             PUB-WUHUANG-001, PUB-YUEPO-001, PUB-CHONGSHAN-001]
+  祭祀:
+    remove: [PUB-SUIPO-001, PUB-SANSHA-001, PUB-SANSHA-002,
+             PUB-WUHUANG-001, PUB-YUEPO-001, PUB-CHONGSHAN-001]

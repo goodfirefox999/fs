@@ -1,0 +1,40 @@
+# 本文件由 tools/gen_rules.py 生成，结构统一；规则内容（条件/解释/出处）需人类考证者复核。
+# status: 待考证 = 口诀常见但原文未核，默认不参与正式判定，命中时仅登记为 unknown。
+# citation.quote 为 null 表示「尚未核对原文」，不是缺漏，禁止为填满字段而编造引文。
+api_version: 1
+rule_id: DS-HUAQI-001
+version: 1
+school: doushou
+category: 斗首化气
+status: 待考证
+hard_veto: false
+severity: 可用
+target: day
+applies_to:
+  task_kinds: []
+  node_kinds: []
+  strictness_min: normal
+condition:
+  fact: facts.structure.gan_he_pairs
+  op: count_gte
+  value: 1
+score_weight: null
+citation:
+  kind: classic
+  source: 《鳌头通书》
+  edition: null
+  juan: null
+  pian: null
+  entry: null
+  quote_kind: null
+  quote: null
+  url_or_path: null
+  verified_by: null
+  verified_at: null
+  confidence: 低
+tests:
+- RT-DS-HUAQI-001-HIT
+- RT-DS-HUAQI-001-MISS
+explanation: 日课天干见五合，斗首视角记为化气参考（不参与否决）。
+supersedes: null
+notes: 待考证：斗首化气起例、是否参与否决。默认 participates_in_veto=false。

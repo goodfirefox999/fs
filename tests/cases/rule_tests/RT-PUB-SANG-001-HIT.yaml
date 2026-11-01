@@ -1,0 +1,11 @@
+# 由 tools/gen_rules.py 生成；overrides 相对金标准基准 ctx 深合并。
+case_id: RT-PUB-SANG-001-HIT
+kind: rule_test
+rule_id: PUB-SANG-001
+expected: hit
+note: 规则级测试向量：仅验证 DSL 求值是否符合预期，不构成择日断言。
+overrides:
+  facts:
+    sang:
+      value:
+        table: 待人工录入

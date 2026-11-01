@@ -1,0 +1,56 @@
+# 本文件由 tools/gen_rules.py 生成，结构统一；规则内容（条件/解释/出处）需人类考证者复核。
+# status: 待考证 = 口诀常见但原文未核，默认不参与正式判定，命中时仅登记为 unknown。
+# citation.quote 为 null 表示「尚未核对原文」，不是缺漏，禁止为填满字段而编造引文。
+api_version: 1
+rule_id: PUB-CHONGSHAN-001
+version: 1
+school: public
+category: 日冲山
+status: 待考证
+hard_veto: true
+severity: 禁用
+target: day
+applies_to:
+  task_kinds:
+  - 动土
+  - 修造
+  - 上梁
+  - 竖柱
+  - 安门
+  - 安灶
+  - 入宅
+  - 安葬
+  - 破土
+  - 立碑
+  - 修坟
+  - 修祠
+  - 安龛
+  - 升座
+  node_kinds: []
+  strictness_min: normal
+condition:
+  fact: site.shan_jia_zhi
+  op: same_group
+  value:
+    path: course.day.zhi
+    kind: chong
+score_weight: null
+citation:
+  kind: classic
+  source: 《协纪辨方书》
+  edition: null
+  juan: null
+  pian: null
+  entry: null
+  quote_kind: null
+  quote: null
+  url_or_path: null
+  verified_by: null
+  verified_at: null
+  confidence: 低
+tests:
+- RT-PUB-CHONGSHAN-001-HIT
+- RT-PUB-CHONGSHAN-001-MISS
+explanation: 日支{course.day.zhi}与坐山山家{site.shan_jia_zhi}相冲，按本规则判为禁用。
+supersedes: null
+notes: 待考证：四维山无地支时如何取山家；兼向取何山。

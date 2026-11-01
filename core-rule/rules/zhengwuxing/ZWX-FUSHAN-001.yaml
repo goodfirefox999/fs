@@ -1,0 +1,54 @@
+# 本文件由 tools/gen_rules.py 生成，结构统一；规则内容（条件/解释/出处）需人类考证者复核。
+# status: 待考证 = 口诀常见但原文未核，默认不参与正式判定，命中时仅登记为 unknown。
+# citation.quote 为 null 表示「尚未核对原文」，不是缺漏，禁止为填满字段而编造引文。
+api_version: 1
+rule_id: ZWX-FUSHAN-001
+version: 1
+school: zhengwuxing
+category: 扶山（正五行）
+status: 待考证
+hard_veto: false
+severity: 推荐
+target: mountain
+applies_to:
+  task_kinds:
+  - 动土
+  - 修造
+  - 上梁
+  - 竖柱
+  - 安门
+  - 安灶
+  - 入宅
+  - 安葬
+  - 破土
+  - 立碑
+  - 修坟
+  - 修祠
+  - 安龛
+  - 升座
+  node_kinds: []
+  strictness_min: normal
+condition:
+  fact: facts.structure.sanhe_with_mountain
+  op: count_gte
+  value: 1
+score_weight: 1.0
+citation:
+  kind: classic
+  source: 《协纪辨方书》
+  edition: null
+  juan: null
+  pian: null
+  entry: null
+  quote_kind: null
+  quote: null
+  url_or_path: null
+  verified_by: null
+  verified_at: null
+  confidence: 低
+tests:
+- RT-ZWX-FUSHAN-001-HIT
+- RT-ZWX-FUSHAN-001-MISS
+explanation: 日课与山家构成三合局，正五行视角记为扶山正向证据。
+supersedes: null
+notes: 待考证：是否须局五行生山家五行、补龙与扶山是否同论。

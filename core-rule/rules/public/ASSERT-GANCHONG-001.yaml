@@ -1,0 +1,40 @@
+# 本文件由 tools/gen_rules.py 生成，结构统一；规则内容（条件/解释/出处）需人类考证者复核。
+# status: 待考证 = 口诀常见但原文未核，默认不参与正式判定，命中时仅登记为 unknown。
+# citation.quote 为 null 表示「尚未核对原文」，不是缺漏，禁止为填满字段而编造引文。
+api_version: 1
+rule_id: ASSERT-GANCHONG-001
+version: 1
+school: public
+category: 天干相冲为凶
+status: 待考证
+hard_veto: false
+severity: 慎用
+target: day
+applies_to:
+  task_kinds: []
+  node_kinds: []
+  strictness_min: normal
+condition:
+  fact: facts.structure.gan_chong_pairs
+  op: count_gte
+  value: 1
+score_weight: null
+citation:
+  kind: classic
+  source: 《象吉通书》
+  edition: null
+  juan: null
+  pian: null
+  entry: null
+  quote_kind: null
+  quote: null
+  url_or_path: null
+  verified_by: null
+  verified_at: null
+  confidence: 低
+tests:
+- RT-ASSERT-GANCHONG-001-HIT
+- RT-ASSERT-GANCHONG-001-MISS
+explanation: 四柱天干构成相冲（甲庚/乙辛/丙壬/丁癸），按本规则判为慎用。
+supersedes: null
+notes: 断言级：天干相冲在择日中是否成立，需原文确认。结构事实见 DEF-GANCHONG-001。
