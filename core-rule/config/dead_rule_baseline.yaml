@@ -33,11 +33,11 @@ window:
   allow_unverified: true
   enabled_schools_only: true
 statistic: 命中候选数/参与评估候选数，按（规则×年份）分组；判据=适用域内零命中
-denominator: 43
+denominator: 47
 suspected_ratchet: 0
 rationale: 可达性归因（docs/research/reachability-2026-11.md）：12 条未验证（unknown 门控：命主3/口径未定1/起例未实现8）、1
   条可疑（XIUJIU exists 语义待裁定 Q-014）；verified_exempt（已验证非死规则）=0，豁免基线为空——'豁免'仅限已验证（评审第十四轮）
-recorded_at: '2026-11-02T03:16:16'
+recorded_at: '2026-11-02T03:56:02'
 entries:
 - rule_id: DG-JIANCHU-001
   classification: unverified_unknown_gated
@@ -76,6 +76,18 @@ entries:
   classification: unverified_unknown_gated
   blocked_by: Q-005（纳音口径未定）
 - rule_id: SH-LIUHE-001
+  classification: unverified_unknown_gated
+  blocked_by: 起例未实现（FACT_REGISTRY 本系统不提供）
+- rule_id: TX-JIAFU-001
+  classification: unverified_unknown_gated
+  blocked_by: 起例未实现（FACT_REGISTRY 本系统不提供）
+- rule_id: TX-MOONDAO-001
+  classification: unverified_unknown_gated
+  blocked_by: 起例未实现（FACT_REGISTRY 本系统不提供）
+- rule_id: TX-SANHEGONG-001
+  classification: unverified_unknown_gated
+  blocked_by: 起例未实现（FACT_REGISTRY 本系统不提供）
+- rule_id: TX-SUNDAO-001
   classification: unverified_unknown_gated
   blocked_by: 起例未实现（FACT_REGISTRY 本系统不提供）
 - rule_id: XK-CHOUYAO-001

@@ -1,6 +1,6 @@
 case_id: RT-TX-SUNDAO-001-HIT
 kind: rule_test
 rule_id: TX-SUNDAO-001
-expected: miss
+expected: hit
 note: 天星规则 HIT：facts.tianxing.* 需 Swiss Ephemeris（dev-only 依赖，测试标 miss=已知限制）。
 overrides: {}
