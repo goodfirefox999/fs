@@ -1,0 +1,45 @@
+# Phase 5 三合规则包：冲山冲命标记（spec §2.2 SH_CHONG_SHAN_CHONG_MING）
+# 此规则不重复评分——Layer 3 的 PUB-CHONGSHAN-001 已做 reject；本条仅输出标记。
+api_version: 1
+rule_id: SH-CHONGSHAN-MARKER-001
+version: 1
+school: sanhe
+category: 冲山冲命标记（三合派）
+status: 待考证
+hard_veto: false
+severity: 慎用
+target: mountain
+evaluable: true
+applies_to:
+  task_kinds:
+  - 安葬
+  - 修造
+  node_kinds: []
+  strictness_min: normal
+condition:
+  fact: facts.suipo.hit_mountain
+  op: eq
+  value: true
+score_weight: null
+citation:
+  kind: classic
+  source: 《协纪辨方书》
+  edition: null
+  juan: null
+  pian: null
+  entry: 冲山
+  quote_kind: null
+  quote: null
+  url_or_path: null
+  verified_by: null
+  verified_at: null
+  book_authenticity: authentic
+  confidence: 低
+tests:
+- RT-SH-CHONGSHAN-MARKER-001-HIT
+- RT-SH-CHONGSHAN-MARKER-001-MISS
+explanation: 冲山/冲命已由 Layer 3 共享前置 reject（PUB-CHONGSHAN-001/PUB-CHONGMING-001）。本条仅输出标记，不重复评分。
+supersedes: null
+notes: >-
+  spec 明确"与 Layer 3 共享，不重复实现"。severity=记录（不参与否决/tier），
+  仅向仲裁层传递"冲山已被前置 reject"的信息。

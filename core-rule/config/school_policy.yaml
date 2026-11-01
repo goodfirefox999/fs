@@ -28,7 +28,7 @@ schools:
       正五行规则包：补龙/扶山/相主/调候/通关。核心纲领=五行生克。
       规则前缀 ZWX。Phase 4 交付。
   sanhe:
-    enabled: false
+    enabled: true
     participates_in_veto: false
     weight: 0.8
     layer: scoring

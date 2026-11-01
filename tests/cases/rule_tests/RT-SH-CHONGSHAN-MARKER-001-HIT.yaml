@@ -1,0 +1,9 @@
+case_id: RT-SH-CHONGSHAN-MARKER-001-HIT
+kind: rule_test
+rule_id: SH-CHONGSHAN-MARKER-001
+expected: hit
+note: 冲山标记 HIT：suipo.hit_mountain=true。
+overrides:
+  facts:
+    suipo:
+      hit_mountain: true

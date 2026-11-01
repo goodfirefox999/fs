@@ -1,0 +1,9 @@
+case_id: RT-SH-CHONGSHAN-MARKER-001-MISS
+kind: rule_test
+rule_id: SH-CHONGSHAN-MARKER-001
+expected: miss
+note: 冲山标记 MISS：suipo.hit_mountain=false。
+overrides:
+  facts:
+    suipo:
+      hit_mountain: false

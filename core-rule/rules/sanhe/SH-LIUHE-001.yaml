@@ -1,0 +1,42 @@
+# Phase 5 三合规则包：六合（spec §2.2 SH_LIU_HE）
+api_version: 1
+rule_id: SH-LIUHE-001
+version: 1
+school: sanhe
+category: 六合（三合派）
+status: 待考证
+hard_veto: false
+severity: 可用
+target: day
+evaluable: true
+applies_to:
+  task_kinds:
+  - 安葬
+  - 修造
+  - 嫁娶
+  node_kinds: []
+  strictness_min: normal
+condition:
+  fact: facts.structure.liuhe_pairs
+  op: exists
+score_weight: null
+citation:
+  kind: classic
+  source: 《协纪辨方书》
+  edition: null
+  juan: null
+  pian: 卷二·本原
+  entry: 六合
+  quote_kind: null
+  quote: null
+  url_or_path: null
+  verified_by: null
+  verified_at: null
+  book_authenticity: authentic
+  confidence: 低
+tests:
+- RT-SH-LIUHE-001-HIT
+- RT-SH-LIUHE-001-MISS
+explanation: 日课地支与坐山/主命构成六合（子丑/寅亥/卯戌/辰酉/巳申/午未）。facts.structure.liuhe_pairs 由 core-symbol 产出。
+supersedes: null
+notes: 六合加分逻辑需要判断"哪一对六合"以及"是与坐山还是与主命"，当前 DSL 只判存在性。

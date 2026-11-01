@@ -1,9 +1,9 @@
 api_version: 1
 # 规则库清单：rules lint 会校验"磁盘实际加载数 == 本清单声明数"，防止文档与实现漂移。
 # 变更规则时必须同步更新本文件（否则 lint 失败）。
-expected_total: 54
+expected_total: 58
 expected_by_status:
-  待考证: 42
+  待考证: 46
   有争议: 2
   定义级: 10
 expected_by_school:

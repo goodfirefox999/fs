@@ -1,0 +1,46 @@
+# Phase 5 三合规则包：三合局判定（spec §2.2 SH_SAN_HE_JU）
+api_version: 1
+rule_id: SH-SANHEJU-001
+version: 1
+school: sanhe
+category: 三合局（三合派）
+status: 待考证
+hard_veto: false
+severity: 可用
+target: day
+evaluable: true
+applies_to:
+  task_kinds:
+  - 安葬
+  - 修造
+  - 破土
+  - 修坟
+  node_kinds: []
+  strictness_min: normal
+condition:
+  fact: facts.structure.sanhe_groups
+  op: exists
+score_weight: null
+citation:
+  kind: classic
+  source: 《协纪辨方书》
+  edition: null
+  juan: null
+  pian: 卷二·本原
+  entry: 三合
+  quote_kind: null
+  quote: null
+  url_or_path: null
+  verified_by: null
+  verified_at: null
+  book_authenticity: authentic
+  confidence: 低
+tests:
+- RT-SH-SANHEJU-001-HIT
+- RT-SH-SANHEJU-001-MISS
+explanation: 日课地支三合局与坐山/入首龙构成三合（申子辰水/亥卯未木/寅午戌火/巳酉丑金）。facts.structure.sanhe_groups 已由 core-symbol 产出。
+supersedes: null
+notes: >-
+  spec：同局=旺，缺一=待，不成局=平。三合局成员判定需要日课四柱+坐山+入首龙
+  的三合局归属分析。facts.structure.sanhe_groups 已产出三合组但"同局/缺一"的
+  分级判定需要更深的引擎逻辑。
