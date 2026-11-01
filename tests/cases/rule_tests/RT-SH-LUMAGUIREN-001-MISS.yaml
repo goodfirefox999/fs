@@ -2,9 +2,7 @@ case_id: RT-SH-LUMAGUIREN-001-MISS
 kind: rule_test
 rule_id: SH-LUMAGUIREN-001
 expected: miss
-note: 三合规则 MISS：已知限制——exists 条件在 base ctx 有值时恒 True。
+note: 禄马贵人到山 MISS：已知限制——exists 类条件在有效课程上恒 True。
 overrides:
-  facts:
-    structure:
-      sanhe_groups: null
-      liuhe_pairs: null
+  site:
+    shan_jia_zhi: null

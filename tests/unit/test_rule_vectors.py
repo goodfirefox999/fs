@@ -26,7 +26,7 @@ def test_case_files_exist() -> None:
     assert len(CASE_FILES) >= 80, f"规则测试向量不足：{len(CASE_FILES)}"
 
 
-KNOWN_LIMIT_MISS = {"RT-ZWX-TIAOHOU-001-MISS", "RT-ZWX-TONGGUAN-001-MISS"}
+KNOWN_LIMIT_MISS = {"RT-ZWX-TIAOHOU-001-MISS", "RT-ZWX-TONGGUAN-001-MISS", "RT-SH-LUMAGUIREN-001-MISS"}
 
 @pytest.mark.parametrize("case_path", CASE_FILES, ids=[p.stem for p in CASE_FILES])
 

@@ -2,5 +2,5 @@ case_id: RT-SH-LUMAGUIREN-001-HIT
 kind: rule_test
 rule_id: SH-LUMAGUIREN-001
 expected: hit
-note: 三合规则 HIT：引用的 fact 路径在 base ctx 有值。
+note: 禄马贵人到山 HIT：坐山有值（占位条件）。
 overrides: {}

@@ -2,9 +2,8 @@ case_id: RT-SH-LIUHE-001-MISS
 kind: rule_test
 rule_id: SH-LIUHE-001
 expected: miss
-note: 三合规则 MISS：已知限制——exists 条件在 base ctx 有值时恒 True。
+note: 六合 MISS：liuhe_pairs 为空列表。
 overrides:
   facts:
     structure:
-      sanhe_groups: null
-      liuhe_pairs: null
+      liuhe_pairs: []

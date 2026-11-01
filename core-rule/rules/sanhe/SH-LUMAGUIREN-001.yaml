@@ -17,8 +17,12 @@ applies_to:
   node_kinds: []
   strictness_min: normal
 condition:
-  fact: site.shan_jia_zhi
-  op: exists
+  all:
+  - fact: site.shan_jia_zhi
+    op: exists
+  - fact: facts.suipo.status
+    op: exists
+  note: 占位——完整禄马贵人到山需查表 fact（起例实现后替换）
 score_weight: null
 citation:
   kind: classic
