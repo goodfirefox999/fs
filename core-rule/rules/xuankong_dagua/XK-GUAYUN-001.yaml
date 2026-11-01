@@ -17,8 +17,9 @@ applies_to:
   node_kinds: []
   strictness_min: normal
 condition:
-  fact: facts.xuankong.guayun_current
-  op: exists
+  fact: facts.xuankong.guayun_current.matched
+  op: eq
+  value: true
 score_weight: null
 citation:
   kind: classic
@@ -37,8 +38,7 @@ citation:
 tests:
 - RT-XK-GUAYUN-001-HIT
 - RT-XK-GUAYUN-001-MISS
-explanation: 卦运当旺（玄空大卦）。facts.xuankong.* 由 core-symbol 玄空大卦模块产出（起例待实现，当前 unknown）。
+explanation: 卦运当旺（玄空大卦）。facts.xuankong.guayun_current 由 core_symbol/xuankong.py 按先天圆图 384 爻坐山卦运 vs 当前大卦运（上元甲子起一运、阳爻9年阴爻6年、180年周期、无五运）真实计算。
 supersedes: null
 notes: >-
-  卦运当旺。spec §2.4 硬性要求：卦运按阳爻 9 年阴爻 6 年（禁 20 年简化）；
-  抽爻换象 384 爻精度；日课映射流派分歧标 needs_human_review。
+  卦运当旺。spec §2.4 硬性要求已落实：卦运按阳爻 9 年阴爻 6 年累计（禁 20 年简化）；坐山定位 384 爻精度（山心定爻）；大卦运锚定年（上元甲子）与圆图卦界对齐方式均属流派分歧，见 facts.xuankong.needs_human_review。卦运数据源 verification_status=unverified，规则保持待考证/慎用。

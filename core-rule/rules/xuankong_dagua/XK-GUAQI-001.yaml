@@ -17,8 +17,9 @@ applies_to:
   node_kinds: []
   strictness_min: normal
 condition:
-  fact: facts.xuankong.guaqi_peihe
-  op: exists
+  fact: facts.xuankong.guaqi.relation
+  op: in
+  value: [合十, 合五, 合十五, 合生成]
 score_weight: null
 citation:
   kind: classic
@@ -37,8 +38,7 @@ citation:
 tests:
 - RT-XK-GUAQI-001-HIT
 - RT-XK-GUAQI-001-MISS
-explanation: 卦气配合（玄空大卦）。facts.xuankong.* 由 core-symbol 玄空大卦模块产出（起例待实现，当前 unknown）。
+explanation: 卦气配合（玄空大卦）。facts.xuankong.guaqi.relation = 坐山卦与向首卦卦运数的河图关系（合十/合五/合十五/合生成，查 xuankong_hetu.json）；日课配卦维度属流派分歧，course_gua_relation 恒 null。
 supersedes: null
 notes: >-
-  卦气配合。spec §2.4 硬性要求：卦运按阳爻 9 年阴爻 6 年（禁 20 年简化）；
-  抽爻换象 384 爻精度；日课映射流派分歧标 needs_human_review。
+  卦气配合。现口径：以坐/向两卦卦运论河图关系；日课四柱配卦（课卦）属流派分歧未实现，挂 needs_human_review。数据源 unverified，规则保持待考证/慎用。

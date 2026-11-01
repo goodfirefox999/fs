@@ -1,24 +1,530 @@
 {
   "_meta": {
     "source": "先天六十四卦圆图（伏羲先天卦序）",
-    "source_ref": "《易经》先天六十四卦方圆图；玄空大卦用法见《沈氏玄空学》",
+    "source_ref": "《易经》先天六十四卦方圆图；玄空大卦用法见《沈氏玄空学》、张心言《地理辨正疏》",
     "verification_status": "unverified",
-    "note": "每卦 5.625°，384 爻每爻 0.9375°。binary 从下爻到上爻（1=阳，0=阴）。卦运按三爻和计算。"
-  },
-  "hexagrams": {
-    "乾": {"binary": "111111", "lower": "乾", "upper": "乾", "guayun": 9, "years": 27},
-    "兑": {"binary": "110110", "lower": "兑", "upper": "兑", "guayun": 4, "years": 24},
-    "离": {"binary": "101101", "lower": "离", "upper": "离", "guayun": 3, "years": 21},
-    "震": {"binary": "100100", "lower": "震", "upper": "震", "guayun": 8, "years": 24},
-    "巽": {"binary": "011011", "lower": "巽", "upper": "巽", "guayun": 2, "years": 18},
-    "坎": {"binary": "010010", "lower": "坎", "upper": "坎", "guayun": 7, "years": 21},
-    "艮": {"binary": "001001", "lower": "艮", "upper": "艮", "guayun": 6, "years": 24},
-    "坤": {"binary": "000000", "lower": "坤", "upper": "坤", "guayun": 1, "years": 18}
+    "note": "每卦 5.625°，384 爻每爻 0.9375°。binary 从下爻到上爻（1=阳，0=阴），前三位=内卦、后三位=外卦。卦运取内卦（下三爻）经卦运数（张心言方图行运之说）；years=内卦经卦运年期（阳爻9年阴爻6年三爻和），即该卦当运之年数。上元（一二三四运）90 年＋下元（六七八九运）90 年＝180 年周期，无五运。circle_order 为伏羲先天次序（二进制降序），圆图排布口径见 core_symbol/xuankong.py 模块头。"
   },
   "guayun_rule": {
     "yang_years": 9,
     "yin_years": 6,
     "note": "阳爻 9 年，阴爻 6 年。三爻和=本经卦运年期。64 别卦的卦运取其内卦（下三爻）的经卦运。",
     "wuyun": "玄空大卦无五运"
+  },
+  "circle_order": [
+    "乾",
+    "夬",
+    "大有",
+    "大壮",
+    "小畜",
+    "需",
+    "大畜",
+    "泰",
+    "履",
+    "兑",
+    "睽",
+    "归妹",
+    "中孚",
+    "节",
+    "损",
+    "临",
+    "同人",
+    "革",
+    "离",
+    "丰",
+    "家人",
+    "既济",
+    "贲",
+    "明夷",
+    "无妄",
+    "随",
+    "噬嗑",
+    "震",
+    "益",
+    "屯",
+    "颐",
+    "复",
+    "姤",
+    "大过",
+    "鼎",
+    "恒",
+    "巽",
+    "井",
+    "蛊",
+    "升",
+    "讼",
+    "困",
+    "未济",
+    "解",
+    "涣",
+    "坎",
+    "蒙",
+    "师",
+    "遁",
+    "咸",
+    "旅",
+    "小过",
+    "渐",
+    "蹇",
+    "艮",
+    "谦",
+    "否",
+    "萃",
+    "晋",
+    "豫",
+    "观",
+    "比",
+    "剥",
+    "坤"
+  ],
+  "hexagrams": {
+    "乾": {
+      "binary": "111111",
+      "lower": "乾",
+      "upper": "乾",
+      "guayun": 9,
+      "years": 27
+    },
+    "夬": {
+      "binary": "111110",
+      "lower": "乾",
+      "upper": "兑",
+      "guayun": 9,
+      "years": 27
+    },
+    "大有": {
+      "binary": "111101",
+      "lower": "乾",
+      "upper": "离",
+      "guayun": 9,
+      "years": 27
+    },
+    "大壮": {
+      "binary": "111100",
+      "lower": "乾",
+      "upper": "震",
+      "guayun": 9,
+      "years": 27
+    },
+    "小畜": {
+      "binary": "111011",
+      "lower": "乾",
+      "upper": "巽",
+      "guayun": 9,
+      "years": 27
+    },
+    "需": {
+      "binary": "111010",
+      "lower": "乾",
+      "upper": "坎",
+      "guayun": 9,
+      "years": 27
+    },
+    "大畜": {
+      "binary": "111001",
+      "lower": "乾",
+      "upper": "艮",
+      "guayun": 9,
+      "years": 27
+    },
+    "泰": {
+      "binary": "111000",
+      "lower": "乾",
+      "upper": "坤",
+      "guayun": 9,
+      "years": 27
+    },
+    "履": {
+      "binary": "110111",
+      "lower": "兑",
+      "upper": "乾",
+      "guayun": 4,
+      "years": 24
+    },
+    "兑": {
+      "binary": "110110",
+      "lower": "兑",
+      "upper": "兑",
+      "guayun": 4,
+      "years": 24
+    },
+    "睽": {
+      "binary": "110101",
+      "lower": "兑",
+      "upper": "离",
+      "guayun": 4,
+      "years": 24
+    },
+    "归妹": {
+      "binary": "110100",
+      "lower": "兑",
+      "upper": "震",
+      "guayun": 4,
+      "years": 24
+    },
+    "中孚": {
+      "binary": "110011",
+      "lower": "兑",
+      "upper": "巽",
+      "guayun": 4,
+      "years": 24
+    },
+    "节": {
+      "binary": "110010",
+      "lower": "兑",
+      "upper": "坎",
+      "guayun": 4,
+      "years": 24
+    },
+    "损": {
+      "binary": "110001",
+      "lower": "兑",
+      "upper": "艮",
+      "guayun": 4,
+      "years": 24
+    },
+    "临": {
+      "binary": "110000",
+      "lower": "兑",
+      "upper": "坤",
+      "guayun": 4,
+      "years": 24
+    },
+    "同人": {
+      "binary": "101111",
+      "lower": "离",
+      "upper": "乾",
+      "guayun": 3,
+      "years": 24
+    },
+    "革": {
+      "binary": "101110",
+      "lower": "离",
+      "upper": "兑",
+      "guayun": 3,
+      "years": 24
+    },
+    "离": {
+      "binary": "101101",
+      "lower": "离",
+      "upper": "离",
+      "guayun": 3,
+      "years": 24
+    },
+    "丰": {
+      "binary": "101100",
+      "lower": "离",
+      "upper": "震",
+      "guayun": 3,
+      "years": 24
+    },
+    "家人": {
+      "binary": "101011",
+      "lower": "离",
+      "upper": "巽",
+      "guayun": 3,
+      "years": 24
+    },
+    "既济": {
+      "binary": "101010",
+      "lower": "离",
+      "upper": "坎",
+      "guayun": 3,
+      "years": 24
+    },
+    "贲": {
+      "binary": "101001",
+      "lower": "离",
+      "upper": "艮",
+      "guayun": 3,
+      "years": 24
+    },
+    "明夷": {
+      "binary": "101000",
+      "lower": "离",
+      "upper": "坤",
+      "guayun": 3,
+      "years": 24
+    },
+    "无妄": {
+      "binary": "100111",
+      "lower": "震",
+      "upper": "乾",
+      "guayun": 8,
+      "years": 21
+    },
+    "随": {
+      "binary": "100110",
+      "lower": "震",
+      "upper": "兑",
+      "guayun": 8,
+      "years": 21
+    },
+    "噬嗑": {
+      "binary": "100101",
+      "lower": "震",
+      "upper": "离",
+      "guayun": 8,
+      "years": 21
+    },
+    "震": {
+      "binary": "100100",
+      "lower": "震",
+      "upper": "震",
+      "guayun": 8,
+      "years": 21
+    },
+    "益": {
+      "binary": "100011",
+      "lower": "震",
+      "upper": "巽",
+      "guayun": 8,
+      "years": 21
+    },
+    "屯": {
+      "binary": "100010",
+      "lower": "震",
+      "upper": "坎",
+      "guayun": 8,
+      "years": 21
+    },
+    "颐": {
+      "binary": "100001",
+      "lower": "震",
+      "upper": "艮",
+      "guayun": 8,
+      "years": 21
+    },
+    "复": {
+      "binary": "100000",
+      "lower": "震",
+      "upper": "坤",
+      "guayun": 8,
+      "years": 21
+    },
+    "姤": {
+      "binary": "011111",
+      "lower": "巽",
+      "upper": "乾",
+      "guayun": 2,
+      "years": 24
+    },
+    "大过": {
+      "binary": "011110",
+      "lower": "巽",
+      "upper": "兑",
+      "guayun": 2,
+      "years": 24
+    },
+    "鼎": {
+      "binary": "011101",
+      "lower": "巽",
+      "upper": "离",
+      "guayun": 2,
+      "years": 24
+    },
+    "恒": {
+      "binary": "011100",
+      "lower": "巽",
+      "upper": "震",
+      "guayun": 2,
+      "years": 24
+    },
+    "巽": {
+      "binary": "011011",
+      "lower": "巽",
+      "upper": "巽",
+      "guayun": 2,
+      "years": 24
+    },
+    "井": {
+      "binary": "011010",
+      "lower": "巽",
+      "upper": "坎",
+      "guayun": 2,
+      "years": 24
+    },
+    "蛊": {
+      "binary": "011001",
+      "lower": "巽",
+      "upper": "艮",
+      "guayun": 2,
+      "years": 24
+    },
+    "升": {
+      "binary": "011000",
+      "lower": "巽",
+      "upper": "坤",
+      "guayun": 2,
+      "years": 24
+    },
+    "讼": {
+      "binary": "010111",
+      "lower": "坎",
+      "upper": "乾",
+      "guayun": 7,
+      "years": 21
+    },
+    "困": {
+      "binary": "010110",
+      "lower": "坎",
+      "upper": "兑",
+      "guayun": 7,
+      "years": 21
+    },
+    "未济": {
+      "binary": "010101",
+      "lower": "坎",
+      "upper": "离",
+      "guayun": 7,
+      "years": 21
+    },
+    "解": {
+      "binary": "010100",
+      "lower": "坎",
+      "upper": "震",
+      "guayun": 7,
+      "years": 21
+    },
+    "涣": {
+      "binary": "010011",
+      "lower": "坎",
+      "upper": "巽",
+      "guayun": 7,
+      "years": 21
+    },
+    "坎": {
+      "binary": "010010",
+      "lower": "坎",
+      "upper": "坎",
+      "guayun": 7,
+      "years": 21
+    },
+    "蒙": {
+      "binary": "010001",
+      "lower": "坎",
+      "upper": "艮",
+      "guayun": 7,
+      "years": 21
+    },
+    "师": {
+      "binary": "010000",
+      "lower": "坎",
+      "upper": "坤",
+      "guayun": 7,
+      "years": 21
+    },
+    "遁": {
+      "binary": "001111",
+      "lower": "艮",
+      "upper": "乾",
+      "guayun": 6,
+      "years": 21
+    },
+    "咸": {
+      "binary": "001110",
+      "lower": "艮",
+      "upper": "兑",
+      "guayun": 6,
+      "years": 21
+    },
+    "旅": {
+      "binary": "001101",
+      "lower": "艮",
+      "upper": "离",
+      "guayun": 6,
+      "years": 21
+    },
+    "小过": {
+      "binary": "001100",
+      "lower": "艮",
+      "upper": "震",
+      "guayun": 6,
+      "years": 21
+    },
+    "渐": {
+      "binary": "001011",
+      "lower": "艮",
+      "upper": "巽",
+      "guayun": 6,
+      "years": 21
+    },
+    "蹇": {
+      "binary": "001010",
+      "lower": "艮",
+      "upper": "坎",
+      "guayun": 6,
+      "years": 21
+    },
+    "艮": {
+      "binary": "001001",
+      "lower": "艮",
+      "upper": "艮",
+      "guayun": 6,
+      "years": 21
+    },
+    "谦": {
+      "binary": "001000",
+      "lower": "艮",
+      "upper": "坤",
+      "guayun": 6,
+      "years": 21
+    },
+    "否": {
+      "binary": "000111",
+      "lower": "坤",
+      "upper": "乾",
+      "guayun": 1,
+      "years": 18
+    },
+    "萃": {
+      "binary": "000110",
+      "lower": "坤",
+      "upper": "兑",
+      "guayun": 1,
+      "years": 18
+    },
+    "晋": {
+      "binary": "000101",
+      "lower": "坤",
+      "upper": "离",
+      "guayun": 1,
+      "years": 18
+    },
+    "豫": {
+      "binary": "000100",
+      "lower": "坤",
+      "upper": "震",
+      "guayun": 1,
+      "years": 18
+    },
+    "观": {
+      "binary": "000011",
+      "lower": "坤",
+      "upper": "巽",
+      "guayun": 1,
+      "years": 18
+    },
+    "比": {
+      "binary": "000010",
+      "lower": "坤",
+      "upper": "坎",
+      "guayun": 1,
+      "years": 18
+    },
+    "剥": {
+      "binary": "000001",
+      "lower": "坤",
+      "upper": "艮",
+      "guayun": 1,
+      "years": 18
+    },
+    "坤": {
+      "binary": "000000",
+      "lower": "坤",
+      "upper": "坤",
+      "guayun": 1,
+      "years": 18
+    }
   }
 }

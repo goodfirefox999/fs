@@ -17,8 +17,9 @@ applies_to:
   node_kinds: []
   strictness_min: normal
 condition:
-  fact: facts.xuankong.wangqi_daoshan
-  op: exists
+  fact: facts.xuankong.wangqi.daoshan
+  op: eq
+  value: true
 score_weight: null
 citation:
   kind: classic
@@ -37,8 +38,7 @@ citation:
 tests:
 - RT-XK-WANGQI-001-HIT
 - RT-XK-WANGQI-001-MISS
-explanation: 旺气到山到向（玄空大卦）。facts.xuankong.* 由 core-symbol 玄空大卦模块产出（起例待实现，当前 unknown）。
+explanation: 旺气到山到向（玄空大卦）。facts.xuankong.wangqi.daoshan = 坐山卦运 == 当前大卦运；daoxiang = 向首卦运 == 当前大卦运（向缺省时为 null）。
 supersedes: null
 notes: >-
-  旺气到山到向。spec §2.4 硬性要求：卦运按阳爻 9 年阴爻 6 年（禁 20 年简化）；
-  抽爻换象 384 爻精度；日课映射流派分歧标 needs_human_review。
+  旺气到山到向。spec §2.4 硬性要求已落实：卦运按阳爻 9 年阴爻 6 年（禁 20 年简化）；到山/到向分别输出，向首缺失时 daoxiang 为 null（unknown），不静默当作不旺。

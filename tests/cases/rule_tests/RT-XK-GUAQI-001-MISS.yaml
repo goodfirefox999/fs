@@ -1,6 +1,11 @@
+# RT-XK-GUAQI-001-MISS
 case_id: RT-XK-GUAQI-001-MISS
 kind: rule_test
 rule_id: XK-GUAQI-001
 expected: miss
-note: 玄空大卦规则 MISS：facts.xuankong.* 起例待实现 → unknown。
-overrides: {}
+note: 坐/向卦运无河图关系
+overrides:
+    facts:
+      xuankong:
+        guaqi:
+          relation: 无

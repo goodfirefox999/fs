@@ -2,17 +2,57 @@
   "_meta": {
     "source": "玄空大卦元运时间表（阳爻 9 年阴爻 6 年）",
     "verification_status": "unverified",
-    "note": "上元一二三四运，下元六七八九运，无五运。各运年数不等（由卦爻阴阳决定）。"
+    "note": "上元一二三四运，下元六七八九运，无五运。各运年数由经卦爻阴阳决定（阳爻9年阴爻6年三爻和），上元 90 年＋下元 90 年＝180 年周期。锚定年（上元甲子起一运）流派有异说，见 core_symbol/xuankong.py。"
   },
   "yuan_yun": {
-    "一运": {"period": "上元", "gua": "坤", "years": 18, "binary": "000"},
-    "二运": {"period": "上元", "gua": "巽", "years": 18, "binary": "011"},
-    "三运": {"period": "上元", "gua": "离", "years": 21, "binary": "101"},
-    "四运": {"period": "上元", "gua": "兑", "years": 24, "binary": "110"},
+    "一运": {
+      "period": "上元",
+      "gua": "坤",
+      "years": 18,
+      "binary": "000"
+    },
+    "二运": {
+      "period": "上元",
+      "gua": "巽",
+      "years": 24,
+      "binary": "011"
+    },
+    "三运": {
+      "period": "上元",
+      "gua": "离",
+      "years": 24,
+      "binary": "101"
+    },
+    "四运": {
+      "period": "上元",
+      "gua": "兑",
+      "years": 24,
+      "binary": "110"
+    },
     "五运": null,
-    "六运": {"period": "下元", "gua": "艮", "years": 24, "binary": "001"},
-    "七运": {"period": "下元", "gua": "坎", "years": 21, "binary": "010"},
-    "八运": {"period": "下元", "gua": "震", "years": 24, "binary": "100"},
-    "九运": {"period": "下元", "gua": "乾", "years": 27, "binary": "111"}
+    "六运": {
+      "period": "下元",
+      "gua": "艮",
+      "years": 21,
+      "binary": "001"
+    },
+    "七运": {
+      "period": "下元",
+      "gua": "坎",
+      "years": 21,
+      "binary": "010"
+    },
+    "八运": {
+      "period": "下元",
+      "gua": "震",
+      "years": 21,
+      "binary": "100"
+    },
+    "九运": {
+      "period": "下元",
+      "gua": "乾",
+      "years": 27,
+      "binary": "111"
+    }
   }
 }

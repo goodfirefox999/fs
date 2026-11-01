@@ -1,9 +1,11 @@
+# RT-XK-WANGQI-001-HIT
 case_id: RT-XK-WANGQI-001-HIT
 kind: rule_test
 rule_id: XK-WANGQI-001
 expected: hit
-note: 玄空大卦 HIT：facts.xuankong.wangqi_daoshan 有值。
+note: facts.xuankong.wangqi.daoshan = true
 overrides:
-  facts:
-    xuankong:
-      wangqi_daoshan: {"result": "test", "score": 1}
+    facts:
+      xuankong:
+        wangqi:
+          daoshan: true

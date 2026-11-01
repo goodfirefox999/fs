@@ -1,9 +1,11 @@
+# RT-XK-CHOUYAO-001-HIT
 case_id: RT-XK-CHOUYAO-001-HIT
 kind: rule_test
 rule_id: XK-CHOUYAO-001
 expected: hit
-note: 玄空大卦 HIT：facts.xuankong.chouyao 有值。
+note: 抽爻后变卦卦运当旺
 overrides:
-  facts:
-    xuankong:
-      chouyao: {"result": "test", "score": 1}
+    facts:
+      xuankong:
+        chouyao:
+          matched_dayun: true

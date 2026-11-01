@@ -30,6 +30,7 @@ from .ganzhi import (
     zhi_counts,
 )
 from .mountain import MOUNTAINS_24, Mountain, mountain_of_azimuth
+from .xuankong import derive_xuankong_facts
 from .nayin import nayin_element_of, xunkong_of
 from .shensha import (
     FactStatus,
@@ -284,8 +285,15 @@ def derive_facts(
         "zhi_set": list(dict.fromkeys(zhis)),
     }
 
+    # ---- 玄空大卦 facts（Phase 7 收尾：先天圆图 384 爻 + 两元八运 + 卦气/抽爻）----
+    facts["xuankong"] = derive_xuankong_facts(mountain=mountain, facing=facing, local_date=local_date)
+
     # ---- 口径回显（报告必须展示本次用了哪个口径）----
-    facts["_calibers"] = {"sansha": sansha_caliber, "nayin": nayin_caliber}
+    facts["_calibers"] = {
+        "sansha": sansha_caliber,
+        "nayin": nayin_caliber,
+        "xuankong": facts["xuankong"]["caliber"],
+    }
 
     # ---- 天星 facts（Phase 8，须 Swiss Ephemeris/skyfield——当前 unknown）----
     facts.setdefault("tianxing", {
@@ -293,14 +301,6 @@ def derive_facts(
         "sanhe_gongzhao": None, "jiafu": None,
         "status": "待考证",
         "note": "天星七政四余到山到向——须真实星历计算（Swiss Ephemeris/skyfield），当前未集成",
-    })
-
-    # ---- 玄空大卦 facts（Phase 7，起例待实现→unknown）----
-    facts.setdefault("xuankong", {
-        "guayun_current": None, "chouyao": None,
-        "guaqi_peihe": None, "wangqi_daoshan": None,
-        "status": "待考证",
-        "note": "玄空大卦 64 卦圆图/卦运/抽爻换象/卦气配合——起例待实现",
     })
 
     # ---- 董公择日 facts（Phase 6，评审扩展版 spec §2.3）----
