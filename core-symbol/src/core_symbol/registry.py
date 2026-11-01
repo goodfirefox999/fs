@@ -16,6 +16,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date
+from pathlib import Path
 from typing import Any, Callable
 
 from .ganzhi import (
@@ -286,6 +287,49 @@ def derive_facts(
     # ---- 口径回显（报告必须展示本次用了哪个口径）----
     facts["_calibers"] = {"sansha": sansha_caliber, "nayin": nayin_caliber}
 
+    # ---- 董公择日 facts（Phase 6，评审扩展版 spec §2.3）----
+    facts.setdefault("donggong", {})
+    _dg = facts["donggong"]
+    _dg_data = _load_donggong_data()
+    if _dg_data is not None:
+        day_gz = day_ganzhi  # 如 "甲子"
+        year_stem = gans[0] if gans else ""
+        month_branch = month_zhi
+        # 三星值日
+        sanxing = _dg_data.get("sanxing", {}).get("days", {}).get(day_gz, "无")
+        _dg["star"] = sanxing
+        # 金神七煞
+        jinshen_days = _dg_data.get("jinshen", {}).get("by_year_stem", {}).get(year_stem, [])
+        _dg["is_jinshen"] = day_gz in jinshen_days
+        # 大煞 reject（受死/四废/往亡/十恶大败）
+        _is_dasha = False
+        dasha_detail = _dg_data.get("dasha", {})
+        # 受死
+        shou_si = dasha_detail.get("shou_si", {}).get("by_month", {}).get(month_branch, [])
+        if day_gz[-1] in shou_si:
+            _is_dasha = True
+        # 十恶大败
+        shie = dasha_detail.get("shi_e_da_bai", {}).get("by_year_stem", {}).get(year_stem, [])
+        if day_gz in shie:
+            _is_dasha = True
+        # 四废（按季节）
+        if local_date:
+            _season = _get_season(local_date.month)
+            sifei = dasha_detail.get("si_fei", {}).get("by_season", {}).get(_season, [])
+            if day_gz in sifei:
+                _is_dasha = True
+        _dg["is_dasha"] = _is_dasha
+        # 勾陈黑道
+        heidao = _dg_data.get("heidao", {}).get("by_month_branch", {}).get(month_branch, [])
+        _dg["is_heidao"] = day_gz[-1] in heidao
+        _dg["status"] = "待考证"
+    else:
+        _dg["star"] = None
+        _dg["is_jinshen"] = None
+        _dg["is_dasha"] = None
+        _dg["is_heidao"] = None
+        _dg["status"] = "待考证"
+
     # ---- 不提供的事实：显式登记为 None，避免"静默通过" ----
     for spec in FACT_REGISTRY:
         if spec.provider != "本系统不提供":
@@ -294,6 +338,31 @@ def derive_facts(
         facts.setdefault(root, {"value": None, "status": spec.status, "note": spec.note})
 
     return facts
+
+
+def _load_donggong_data() -> dict[str, Any] | None:
+    """加载董公择日 JSON 数据（合并 4 个文件为一个 dict）。"""
+    import json
+    data_dir = Path(__file__).resolve().parent.parent.parent.parent / "core-rule" / "config" / "data"
+    try:
+        sanxing = json.loads((data_dir / "donggong_sanxing_60jiazi.json").read_text(encoding="utf-8"))
+        jinshen = json.loads((data_dir / "donggong_jinshen_qisha.json").read_text(encoding="utf-8"))
+        dasha = json.loads((data_dir / "donggong_dasha_reject.json").read_text(encoding="utf-8"))
+        heidao = json.loads((data_dir / "donggong_gouchen_heidao.json").read_text(encoding="utf-8"))
+        return {"sanxing": sanxing, "jinshen": jinshen, "dasha": dasha, "heidao": heidao}
+    except (FileNotFoundError, json.JSONDecodeError):
+        return None
+
+
+def _get_season(month: int) -> str:
+    """公历月 → 季节（四废日按季节查）。"""
+    if month in (3, 4, 5):
+        return "spring"
+    if month in (6, 7, 8):
+        return "summer"
+    if month in (9, 10, 11):
+        return "autumn"
+    return "winter"
 
 
 def _mountain_is_branch(mountain: Mountain) -> bool:
