@@ -1,53 +1,109 @@
-api_version: 1
-# 派别策略：启用哪些派、各派是否参与否决、权重、场景路由。
-# 铁律：路由必须是数据（task_kind → 派别列表），禁止在代码里写 if-else。
+api_version: 2
+# 五派规则包并列架构（评审扩展版 spec §1）。
+# 铁律：
+#   1. 五派规则包并列，互不覆盖。每派独立输出 verdict/score_delta/reasons/source_ref。
+#   2. Layer 3 大煞/冲命 reject 覆盖一切五派评分——吉星不可绕过。
+#   3. 仲裁层按事件类型设定权重，但保留每派原始倾向和 conflict_flag。
+#   4. 路由必须是数据（task_kind → 派别列表），禁止在代码里写 if-else。
+
 schools:
+  # ---- Layer 3: 共享前置 reject 层 ----
   public:
     enabled: true
     participates_in_veto: true
     weight: 1.0
-    description: 公共否决层（三煞/冲山/岁破/月破/四离四绝等通用项），规则前缀 PUB
+    layer: reject
+    description: >-
+      共享前置 reject 层（岁破/三煞/月破/冲山/冲命/四离四绝/金神七煞/受死/四废/往亡）。
+      触达任一 reject 的日期直接进入 rejected_dates，不进入五派评分环节。
+      规则前缀 PUB（公共大煞）+ DG_REJECT（董公大煞）。
+
+  # ---- Layer 4: 五派并列评分 ----
   zhengwuxing:
     enabled: false
     participates_in_veto: false
     weight: 0.8
-    description: 正五行（扶山补龙相主），规则前缀 ZWX。默认关闭，需显式 --school 启用
+    layer: scoring
+    description: >-
+      正五行规则包：补龙/扶山/相主/调候/通关。核心纲领=五行生克。
+      规则前缀 ZWX。Phase 4 交付。
+  sanhe:
+    enabled: false
+    participates_in_veto: false
+    weight: 0.8
+    layer: scoring
+    description: >-
+      三合规则包：三合局/六合/禄马贵人到山。核心纲领=地支三合形式。
+      规则前缀 SH。与正五行共享禄马贵人表但补龙逻辑独立。Phase 5 交付。
+  donggong:
+    enabled: false
+    participates_in_veto: false
+    weight: 0.6
+    layer: scoring
+    description: >-
+      董公规则包：十二建星/三星值日/勾陈黑道/金神七煞（reject 层对接）。
+      核心纲领=神煞宜忌。规则前缀 DG。煞贡/直星/人专不解金神七煞。Phase 6 交付。
+  xuankong_dagua:
+    enabled: false
+    participates_in_veto: false
+    weight: 0.5
+    layer: scoring
+    description: >-
+      玄空大卦规则包：64 卦/卦运（阳爻 9 年阴爻 6 年）/抽爻换象/卦气配合。
+      规则前缀 XKD。Phase 7 交付。
+  tianxing:
+    enabled: false
+    participates_in_veto: false
+    weight: 0.5
+    layer: scoring
+    description: >-
+      天星规则包：七政四余星历/二十八宿宿度/到山到向/升殿。
+      规则前缀 TX。须真实星历（Swiss Ephemeris/skyfield），四余不可用时标 PARTIAL。
+      Phase 8 交付。
+
+  # ---- 遗留（不在五派 spec 内，保留兼容） ----
   doushou:
     enabled: false
     participates_in_veto: false
     weight: 0.5
-    description: 斗首。争议大，默认只进参考层，不参与否决
-  xuankong:
-    enabled: false
-    participates_in_veto: false
-    weight: 0.5
-    description: 玄空大卦。争议大，默认只进参考层，不参与否决
+    layer: scoring
+    description: 斗首（旧体系保留，不在五派 spec 内）
+
+# 事件类型 → 默认主权重流派排序（评审扩展版 spec §4）
+# 权重排序=数据，仲裁层读取此表决定各派 score_delta 的展示排序
+event_weights:
+  安葬: [zhengwuxing, sanhe, tianxing, donggong, xuankong_dagua]
+  修造: [zhengwuxing, sanhe, donggong, xuankong_dagua, tianxing]
+  动土: [zhengwuxing, sanhe, donggong, xuankong_dagua, tianxing]
+  入宅: [xuankong_dagua, zhengwuxing, sanhe, donggong, tianxing]
+  开业: [zhengwuxing, donggong, sanhe, xuankong_dagua, tianxing]
+  嫁娶: [zhengwuxing, sanhe, donggong, tianxing, xuankong_dagua]
 
 # 场景路由：事项 → 参与派别。未列出者用 default_route。
 routing:
-  动土: [public]
-  修造: [public]
-  上梁: [public]
-  竖柱: [public]
-  安门: [public]
-  安灶: [public]
-  入宅: [public]
-  移徙: [public]
-  安葬: [public]
-  破土: [public]
-  立碑: [public]
-  修坟: [public]
-  修祠: [public]
-  安龛: [public]
-  升座: [public]
-  开光: [public]
-  嫁娶: [public]
-  纳采: [public]
-  出行: [public]
-  签约: [public]
-  开业: [public]
-  交易: [public]
-  求医: [public]
-  祭祀: [public]
+  动土: [public, zhengwuxing, sanhe, donggong, xuankong_dagua, tianxing]
+  修造: [public, zhengwuxing, sanhe, donggong, xuankong_dagua, tianxing]
+  上梁: [public, zhengwuxing, sanhe, donggong]
+  竖柱: [public, zhengwuxing, sanhe, donggong]
+  安门: [public, zhengwuxing, donggong]
+  安灶: [public, zhengwuxing, donggong]
+  入宅: [public, zhengwuxing, sanhe, donggong, xuankong_dagua]
+  移徙: [public, zhengwuxing, donggong]
+  安葬: [public, zhengwuxing, sanhe, donggong, tianxing]
+  破土: [public, zhengwuxing, sanhe, donggong, tianxing]
+  立碑: [public, zhengwuxing, sanhe, donggong]
+  修坟: [public, zhengwuxing, sanhe, donggong]
+  修祠: [public, zhengwuxing, sanhe, donggong]
+  安龛: [public, zhengwuxing, donggong]
+  升座: [public, zhengwuxing, donggong]
+  开光: [public, donggong]
+  嫁娶: [public, zhengwuxing, sanhe, donggong, tianxing]
+  纳采: [public, zhengwuxing, donggong]
+  出行: [public, donggong]
+  签约: [public, zhengwuxing, donggong]
+  开业: [public, zhengwuxing, donggong]
+  交易: [public, zhengwuxing, donggong]
+  求医: [public, donggong]
+  祭祀: [public, donggong]
 
 default_route: [public]

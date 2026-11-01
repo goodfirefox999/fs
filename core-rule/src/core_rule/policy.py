@@ -28,18 +28,25 @@ __all__ = [
 
 @dataclass(frozen=True)
 class SchoolSpec:
-    """一个派别的策略。"""
+    """一个派别的策略。
+
+    layer 字段（评审扩展版 spec §1）：
+    - reject：共享前置大煞层——触达即 rejected_dates，不进五派评分
+    - scoring：五派评分层——并列输出，互不覆盖
+    """
 
     name: str
     enabled: bool = True
     participates_in_veto: bool = True
     weight: float = 1.0
     description: str = ""
+    layer: str = "scoring"  # reject | scoring
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "name": self.name,
             "enabled": self.enabled,
+            "layer": self.layer,
             "participates_in_veto": self.participates_in_veto,
             "weight": self.weight,
             "description": self.description,
@@ -48,11 +55,16 @@ class SchoolSpec:
 
 @dataclass(frozen=True)
 class SchoolPolicy:
-    """派别总策略：启用集合 + 场景路由。"""
+    """派别总策略：启用集合 + 场景路由 + 事件权重排序。
+
+    event_weights（评审扩展版 spec §4）：事件类型 → 五派评分优先序。
+    仲裁层读取此表决定各派 score_delta 的展示排序；不合并分数。
+    """
 
     schools: dict[str, SchoolSpec]
     routing: dict[str, tuple[str, ...]] = field(default_factory=dict)
     default_route: tuple[str, ...] = ()
+    event_weights: dict[str, tuple[str, ...]] = field(default_factory=dict)
 
     def enabled_schools(self) -> tuple[str, ...]:
         return tuple(sorted(n for n, s in self.schools.items() if s.enabled))
@@ -98,7 +110,10 @@ def load_school_policy(path: Path | str) -> SchoolPolicy:
         for name in target:
             if name not in schools:
                 raise DSLValidationError(f"路由引用了未声明的派别: {name}", path=str(path))
-    return SchoolPolicy(schools=schools, routing=routing, default_route=default_route)
+    ew = {}
+    for ek, ev in (data.get("event_weights") or {}).items():
+        ew[ek] = tuple(ev)
+    return SchoolPolicy(schools=schools, routing=routing, default_route=default_route, event_weights=ew)
 
 
 @dataclass(frozen=True)

@@ -4,7 +4,7 @@
 api_version: 1
 rule_id: XK-GUAQI-001
 version: 1
-school: xuankong
+school: xuankong_dagua
 category: 玄空卦气
 status: 待考证
 hard_veto: false
