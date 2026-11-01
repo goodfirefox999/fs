@@ -216,6 +216,12 @@ unknown 递增构成支配链）——独立暴力 oracle 先于手写期望给�
   指纹不同且评估不串味。**统一 cache_key 收拢（所有缓存点过单一函数 + 手写 key lint）登记为 C19**，
   本轮先堵实测点；**C19 是日级事实缓存的硬前置**（评审第十一轮第四节：否则缓存 key 是
   第五种手写 key），两件必须同一依赖链：C19 → 日级缓存 → perf 相对门禁 → Q-012。
+  **C19 闭环（2026-11-02）**：`core_time/hashing.stable_cache_key`（键带 `v1` schema 版本，
+  结构一变全体失效）落成；`_SELECT_CACHE` 与 `schemas._FACTS_CACHE` 两处复合缓存点
+  全部改经该函数；`tools/cache_key_lint.py`（AST）强制：①`*_CACHE` dict 的键表达式
+  须为 `stable_cache_key(...)` 或同作用域内由其赋值的变量；②`@lru_cache` 须带
+  `C19-exempt` 注记（单一不可变参数豁免）；lint 入 CI。日级事实缓存与 perf 门随后
+  同批落地——依赖链 C19 → 日级缓存 → perf 相对门禁 已闭环。
   **遗留登记**：coverage_gaps 目前只进 lint 机器行，**报告未渲染**（用户看不到"必需集 8 条"
   与"原文硬禁"的差额）——随 C14 报告项补；`version` 使用点收拢进 C19 清单
   （manifest/报告回显=人类可读标识，安全；`_select_cached`=已改指纹；测试 helper=仅测试）。

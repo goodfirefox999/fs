@@ -8,7 +8,6 @@
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass, field
 from functools import lru_cache
 from datetime import date, datetime
@@ -20,6 +19,7 @@ from core_symbol.ganzhi import ZHI
 from core_symbol.mountain import Mountain, facing_of, fenjin_of_azimuth, jian_xiang, mountain_of_azimuth
 from core_symbol.registry import derive_facts
 from core_time import CalendarConfig, compute_four_pillars, terms_of_year
+from core_time.hashing import stable_cache_key  # C19：统一缓存键
 
 #: 日级事实缓存：derive_facts 无时辰参数，同日候选共享只读事实 dict。
 #: 超上限整表清空（候选按时间顺序生成，清空只损失一日的复用）。
@@ -122,7 +122,9 @@ class CourseSpec:
     node: str | None = None
 
 
+# C19-exempt: 单一不可变参数（进程常量数据/日历换算），键由解释器按参数构造，无复合串味面
 @lru_cache(maxsize=512)
+# C19-exempt: 单一不可变参数（进程常量数据/日历换算），键由解释器按参数构造，无复合串味面
 @lru_cache(maxsize=64)
 def _term_dates(year: int, tz_name: str) -> dict[str, date]:
     """全年节气日期（按年+时区缓存；返回值只读共享，调用方不得修改）。"""
@@ -187,15 +189,16 @@ def build_context(
     fenjin = fenjin_of_azimuth(site.azimuth_deg)
     term_dates = _term_dates(dt.year, cal.timezone)
 
-    # ---- 日级事实缓存（spec 遗留项「日级事实缓存」）----
+    # ---- 日级事实缓存（spec 遗留项「日级事实缓存」；C19 统一键）----
     # derive_facts 不含时辰参数：同日 12 时辰候选的事实完全一致，共享只读。
     # 键覆盖全部事实输入（四柱结果/山向/兼山/用事日/口径配置），不同口径必不同键。
-    _facts_key = (
+    _facts_key = stable_cache_key(
+        "day_facts",
         pillars.day.name, pillars.year.zhi, pillars.month.zhi,
         mountain.name, facing.name if facing is not None else None,
         shan_jia_zhi, dt.astimezone(tz).date(), include_term_day_itself,
         creg.chosen(CALIBER_SANSHA), creg.chosen(CALIBER_NAYIN),
-        json.dumps(creg.alternatives(CALIBER_NAYIN), ensure_ascii=False, sort_keys=True, default=str),
+        creg.alternatives(CALIBER_NAYIN),
     )
     facts = _FACTS_CACHE.get(_facts_key)
     if facts is None:

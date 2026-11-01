@@ -55,11 +55,13 @@ DEG_PER_YAO: float = 360.0 / 384  # 0.9375
 _DATA_DIR = Path(__file__).resolve().parent.parent.parent.parent / "core-rule" / "config" / "data"
 
 
+# C19-exempt: 单一不可变参数（进程常量数据/日历换算），键由解释器按参数构造，无复合串味面
 @lru_cache(maxsize=1)
 def _load_64gua() -> dict[str, Any]:
     return json.loads((_DATA_DIR / "xuankong_64gua.json").read_text(encoding="utf-8"))
 
 
+# C19-exempt: 单一不可变参数（进程常量数据/日历换算），键由解释器按参数构造，无复合串味面
 @lru_cache(maxsize=1)
 def _load_yunyun() -> dict[str, Any]:
     return json.loads((_DATA_DIR / "xuankong_yunyun.json").read_text(encoding="utf-8"))

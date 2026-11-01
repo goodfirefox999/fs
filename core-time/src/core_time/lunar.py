@@ -215,6 +215,7 @@ def _winter_solstice(year: int, tz_name: str) -> date:
     raise AssertionError("冬至缺失")  # pragma: no cover
 
 
+# C19-exempt: 单一不可变参数（进程常量数据/日历换算），键由解释器按参数构造，无复合串味面
 @lru_cache(maxsize=512)
 def _cycle_months(year: int, tz_name: str = "Asia/Shanghai") -> tuple[LunarMonth, ...]:
     """构造以"含 ``year`` 年冬至之朔望月"为十一月的连续月序列。
@@ -281,6 +282,7 @@ def _cycle_months(year: int, tz_name: str = "Asia/Shanghai") -> tuple[LunarMonth
     return tuple(months)
 
 
+# C19-exempt: 单一不可变参数（进程常量数据/日历换算），键由解释器按参数构造，无复合串味面
 @lru_cache(maxsize=256)
 def _months_for_lunar_year(year: int, tz_name: str = "Asia/Shanghai") -> tuple[LunarMonth, ...]:
     """农历 ``year`` 年（正月初一 → 除夕）的月表，按时间升序。"""

@@ -83,6 +83,7 @@ _PRECESSION_ARCSEC_PER_YEAR = 50.3
 _TRAD_PER_MODERN = 365.25 / 360.0  # 传统度（365.25 度/周天）较现代度大，1 现代度 = 1.0146 传统度
 
 
+# C19-exempt: 单一不可变参数（进程常量数据/日历换算），键由解释器按参数构造，无复合串味面
 @lru_cache(maxsize=1)
 def _load_28xiu() -> dict[str, Any]:
     return json.loads((_DATA_DIR / "tianxing_28xiu.json").read_text(encoding="utf-8"))
@@ -132,6 +133,7 @@ def _noon_ut_julday(year: int, month: int, day: int) -> float:
     return _swe.julday(year, month, day, 4.0)
 
 
+# C19-exempt: 单一不可变参数（进程常量数据/日历换算），键由解释器按参数构造，无复合串味面
 @lru_cache(maxsize=4096)
 def _positions(year: int, month: int, day: int) -> dict[str, Any]:
     """七政四余黄道经度（Moshier，无数据文件依赖）。

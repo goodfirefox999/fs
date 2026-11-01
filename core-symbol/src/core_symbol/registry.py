@@ -468,6 +468,7 @@ def derive_facts(
     return facts
 
 
+# C19-exempt: 单一不可变参数（进程常量数据/日历换算），键由解释器按参数构造，无复合串味面
 @lru_cache(maxsize=32)
 def _load_data_file(filename: str) -> dict[str, Any] | None:
     """读取 ``core-rule/config/data`` 下的 JSON 数据文件（进程级缓存）。

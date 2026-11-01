@@ -52,6 +52,9 @@ jobs:
       - name: No-network scan (runtime code must not import network modules)
         run: python tools/no_network_scan.py
 
+      - name: Cache-key lint (C19: all composite cache keys via stable_cache_key)
+        run: python tools/cache_key_lint.py
+
       - name: Engine version bump reminder (warn only)
         run: python tools/check_engine_version.py "HEAD~1"
 

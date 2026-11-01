@@ -46,6 +46,7 @@ from core_rule.models import SEVERITIES, Rule
 from core_rule.provenance import Provenance, stable_hash
 from core_rule.registry import RuleRegistry
 from core_rule.severity_cap import cap_severity, participates_in_tier  # ADR-0014 单一来源
+from core_time.hashing import stable_cache_key  # C19：统一缓存键
 
 __all__ = [
     "STATE_BLOCKED",
@@ -93,6 +94,15 @@ _STATE_RANK = {STATE_OK: 0, STATE_UNSURE: 1, STATE_BLOCKED: 2}
 _SELECT_CACHE: dict[tuple[Any, ...], tuple[Rule, ...]] = {}
 
 
+#: 规则选择缓存（key 含 ruleset.version，规则库一变即失效）。
+#: 4380 候选 × N 派 × 44 规则 = 数十万次 applies_to 匹配，缓存后可省掉大半。
+_SELECT_CACHE: dict[tuple[Any, ...], tuple[Rule, ...]] = {}
+#: C19：select 键的 per-ruleset 重前缀记忆化（fingerprint→prefix）。
+#: fingerprint 已是内容哈希，可作映射键；逐调用只哈希小尾部，
+#: 否则 4380 候选 × 7 派 × 全量 rule_ids 的 json 序列化 ≈ +1.5s（实测回归）。
+_SELECT_KEY_PREFIX: dict[str, str] = {}
+
+
 def _select_cached(
     ruleset: Any,
     *,
@@ -105,11 +115,23 @@ def _select_cached(
     # key 必须覆盖"规则集内容"，不能只用 version ——
     # 动态构造的 RuleSet（测试 fixture、未来热加载）可能复用同一 version，
     # 只用 version 会导致缓存串味：合成规则被带到后续评估里（已踩过）。
-    key = (
-        ruleset.fingerprint,  # ADR-0014：内容身份（同 id 同 version 改内容不再串味，第三次实证后引入）
-        ENGINE_VERSION,  # 评估/cap 语义版本——改动引擎语义必须 bump（持久化缓存防跨语义投毒）
-        ruleset.version,
-        ruleset.rule_ids or tuple(r.rule_id for r in ruleset.rules),
+    # C19：复合缓存键统一经 stable_cache_key 构造，禁止手写组合键；
+    # 重前缀按 fingerprint 记忆化（fingerprint 即内容身份，映射键安全）。
+    fingerprint = ruleset.fingerprint
+    prefix = _SELECT_KEY_PREFIX.get(fingerprint)
+    if prefix is None:
+        prefix = stable_cache_key(
+            "select_rules",
+            fingerprint,  # ADR-0014：内容身份（同 id 同 version 改内容不再串味，第三次实证后引入）
+            ENGINE_VERSION,  # 评估/cap 语义版本——改动引擎语义必须 bump（持久化缓存防跨语义投毒）
+            ruleset.version,
+            ruleset.rule_ids or tuple(r.rule_id for r in ruleset.rules),
+        )
+        if len(_SELECT_KEY_PREFIX) > 256:  # pragma: no cover - 防御性上限
+            _SELECT_KEY_PREFIX.clear()
+        _SELECT_KEY_PREFIX[fingerprint] = prefix
+    key = stable_cache_key(
+        prefix,
         schools,
         task_kind,
         node_kind,

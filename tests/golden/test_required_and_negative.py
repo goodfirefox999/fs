@@ -30,6 +30,7 @@ from core_eval import (
 from core_rule.dsl import collect_fact_paths
 from core_rule.models import AppliesTo, Rule
 from core_rule.provenance import Citation
+from core_rule.loader import RuleSet
 from core_rule.registry import RuleRegistry
 from core_time import CalendarConfig
 
@@ -71,6 +72,13 @@ def _synthetic_rule(*, status: str = "已考证", hit: bool = True, rule_id: str
     ``citation.source`` 明确标注"测试专用"，``kind=classic`` + ``verified_by=pytest``
     以满足 `已考证` 的加载约束（这里直接构造 Rule 对象，不走 loader）。
     """
+    condition = {"fact": "site.mountain", "op": "eq", "value": "乾" if hit else "子"}
+    citation = Citation(
+        source="测试专用（非古籍，仅用于验证确定命中路径）",
+        kind="classic",
+        quote="测试用原文占位",
+        verified_by="pytest",
+    )
     return Rule(
         rule_id=rule_id,
         version=1,
@@ -81,16 +89,53 @@ def _synthetic_rule(*, status: str = "已考证", hit: bool = True, rule_id: str
         severity="禁用",
         target="mountain",
         applies_to=AppliesTo(),
-        condition={"fact": "site.mountain", "op": "eq", "value": "乾" if hit else "子"},
-        citation=Citation(
-            source="测试专用（非古籍，仅用于验证确定命中路径）",
-            kind="classic",
-            quote="测试用原文占位",
-            verified_by="pytest",
-        ),
+        condition=condition,
+        citation=citation,
         explanation="合成规则：坐山为乾时判禁用（仅测试）",
         tests=("TEST-HIT", "TEST-MISS"),
+        # raw 与字段同步：RuleSet.fingerprint 基于 raw 全量哈希——
+        # dc_replace 不改 raw 是 ADR-0014 登记过的陷阱，测试构造同样要遵守
+        raw={
+            "rule_id": rule_id, "version": 1, "school": "public",
+            "category": "测试专用否决", "status": status, "hard_veto": True,
+            "severity": "禁用", "target": "mountain", "condition": condition,
+            "citation": {"source": citation.source, "kind": citation.kind},
+        },
     )
+
+
+def _rule_variant(r: Rule, **changes):
+    """dc_replace 且**同步 raw**——指纹以 raw 为根，只改字段会造成指纹碰撞串味。"""
+    nr = dc_replace(r, **changes)
+    raw = dict(r.raw)
+    for k in ("rule_id", "version", "status", "severity", "hard_veto", "condition"):
+        if k in changes:
+            raw[k] = getattr(nr, k)
+    return dc_replace(nr, raw=raw)
+
+
+def _rebuild_ruleset(registry, new_rules, by_id):
+    """走 RuleSet 构造函数重建（__post_init__ 重算 fingerprint/cap_applied_ids）。
+
+    dc_replace(ruleset, ...) 不触发 __post_init__——fingerprint 保持旧值，
+    在 C19 统一缓存键（fingerprint→prefix 记忆化）下会缓存串味（本文件
+    test_verified_caution_still_escalates_in_strict 曾因此抓到真问题）。
+    """
+    from core_rule.provenance import stable_hash
+
+    return RuleSet(
+        rules=new_rules,
+        by_id=by_id,
+        by_school=_by_school(new_rules),
+        version="rl-" + stable_hash([(r.rule_id, r.version) for r in new_rules]),
+    )
+
+
+def _by_school(rules):
+    out: dict = {}
+    for r in rules:
+        out.setdefault(r.school, []).append(r)
+    return {k: tuple(v) for k, v in out.items()}
 
 
 def _registry_with(registry: RuleRegistry, *rules: Rule) -> RuleRegistry:
@@ -99,12 +144,7 @@ def _registry_with(registry: RuleRegistry, *rules: Rule) -> RuleRegistry:
     # 动态构造时必须更新 version，否则缓存/清单会误判为同一规则库
     from core_rule.provenance import stable_hash
 
-    ruleset = dc_replace(
-        registry.ruleset,
-        rules=new_rules,
-        by_id=by_id,
-        version="rl-" + stable_hash([(r.rule_id, r.version) for r in new_rules]),
-    )
+    ruleset = _rebuild_ruleset(registry, new_rules, by_id)
     return RuleRegistry(
         ruleset=ruleset,
         policy=registry.policy,
@@ -308,7 +348,7 @@ class TestAdr0013SourceAudit:
         合成注入测试只证明引擎行为；YAML 字段拼错、hard_veto 写成字符串、
         citation 缺 pian，只有 loader 级测试能抓到。
         """
-        from core_rule.loader import load_rule
+        from core_rule.loader import RuleSet, load_rule
 
         root = Path(__file__).resolve().parents[2]
         for rid in self.BANNED:
@@ -355,10 +395,7 @@ class TestAdr0014EvidenceCap:
         by_id = {r.rule_id: r for r in kept}
         from core_rule.provenance import stable_hash
 
-        ruleset = dc_replace(
-            registry.ruleset, rules=kept, by_id=by_id,
-            version="rl-" + stable_hash([(r.rule_id, r.version) for r in kept]),
-        )
+        ruleset = _rebuild_ruleset(registry, kept, by_id)
         return RuleRegistry(
             ruleset=ruleset, policy=registry.policy, task_kinds=registry.task_kinds,
             calibers=registry.calibers, required_rules=registry.required_rules,
@@ -418,13 +455,13 @@ class TestAdr0014EvidenceCap:
 
     def test_verified_caution_still_escalates_in_strict(self, golden_ctx, registry) -> None:
         """T8：不变式回归——已考证慎用 strict 仍升级；同规则待考证则不升级且入 demo 桶。"""
-        cautious_verified = dc_replace(_synthetic_rule(), severity="慎用", hard_veto=False)
+        cautious_verified = _rule_variant(_synthetic_rule(), severity="慎用", hard_veto=False)
         reg = _registry_with(registry, cautious_verified)
         ev = evaluate(golden_ctx, reg, EvalConfig(task_kind="修造", strictness="strict"))
         assert self._hits(ev, "vetoes", "TEST-VERIFIED-001"), "已考证慎用 strict 仍升级"
         # version=2：_select_cached 缓存 key 仍为 (version, rule_ids)（指纹升级是延期项），
         # 同 id 同 version 不同内容会串味——本测试用 version 区分，指纹缺口另册登记
-        unverified = dc_replace(
+        unverified = _rule_variant(
             cautious_verified, status="待考证", version=2,
             citation=Citation(source="测试专用（非古籍）", kind="classic"),
         )

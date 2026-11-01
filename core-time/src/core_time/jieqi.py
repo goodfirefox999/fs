@@ -114,6 +114,7 @@ def _term_time(name: str, longitude: int, year: int, tz: ZoneInfo) -> SolarTerm:
     )
 
 
+# C19-exempt: 单一不可变参数（进程常量数据/日历换算），键由解释器按参数构造，无复合串味面
 @lru_cache(maxsize=512)
 def terms_of_year(year: int, tz_name: str = "Asia/Shanghai") -> tuple[SolarTerm, ...]:
     """返回 ``year`` 公历年内（本地时区）的全部 24 个节气，按时刻升序。
