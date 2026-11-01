@@ -116,6 +116,10 @@ class Rule:
     explanation: str
     tests: tuple[str, ...] = ()
     score_weight: float | None = None
+    #: 起例未实现/口径未定的规则标 false：保留在规则库（完整性）但**排除出评估集**——
+    # 避免 (provided=True, value=None) 事实经 exists 算子渲染成"确定无此禁忌"的假阴性
+    # （Q-014；评审第十三/十四轮）。裁定+起例实现后改回 true 走正常考证流程。
+    evaluable: bool = True
     supersedes: str | None = None
     api_version: int = 1
     notes: str | None = None

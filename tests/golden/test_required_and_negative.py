@@ -638,9 +638,9 @@ class TestAdr0014EvidenceCap:
         assert set(groups.get("unverified_progress", [])) == set(groups.get("cap_applied", [])), (
             "当前构造下两组恰好同集（10 条待考证+禁用）——结构重合非定义相同，见 _lint_groups 注释"
         )
-        assert set(groups.get("coverage_gaps", [])) == {"GAP-TAISUI-FACING", "GAP-TASKKIND-EMPTY"}, (
-            "覆盖缺口机器行（向太岁硬禁 + 零规则事项）"
-        )
+        assert set(groups.get("coverage_gaps", [])) == {
+            "GAP-TAISUI-FACING", "GAP-TASKKIND-EMPTY", "GAP-QILI-NOTIMPLEMENTED",
+        }, "覆盖缺口机器行（向太岁硬禁 + 零专属规则事项 + 起例未实现 9 条）"
         assert groups.get("book_authenticity_review", []) == [], (
             "已考证×非authentic 书目=0（当前无已考证规则）——出现条目即触发 GUIDE 三·三当轮重审"
         )
@@ -663,9 +663,13 @@ class TestAdr0014EvidenceCap:
     def test_fingerprint_distinguishes_content(self, golden_ctx, registry) -> None:
         """第三次串味实证的机制化验证：同 id 同 version 不同内容 → 指纹不同 → 缓存不串味。"""
         a = _synthetic_rule()  # condition: site.mountain == 乾, version=1
+        # raw 哈希下翻转必须落在 raw dict（dc_replace 只改 dataclass 字段不动 raw）
+        _cond_b = {"fact": "site.mountain", "op": "eq", "value": "子"}
+        # raw（指纹维度）与 condition（求值维度）必须同时翻转——raw 是源真值、condition 是求值用字段
         b = dc_replace(
             _synthetic_rule(), version=1,
-            condition={"fact": "site.mountain", "op": "eq", "value": "子"},
+            condition=_cond_b,
+            raw={**_synthetic_rule().raw, "condition": _cond_b},
         )  # 同 id 同 version，内容不同
         reg_a = _registry_with(registry, a)
         reg_b = _registry_with(registry, b)
@@ -802,15 +806,18 @@ class TestAdr0014EvidenceCap:
     def test_fingerprint_field_coverage(self, registry) -> None:
         """评审第十四轮产物四：指纹语义字段翻转全覆盖（含 book_authenticity——联动重审状态必须击穿缓存）。"""
         base = registry.ruleset.by_id["PUB-YUEPO-001"]
+        # raw 哈希下翻转必须落在 raw dict（源真值）——dc_replace 只改 dataclass 字段不动 raw
+        def with_raw(base_rule, **raw_updates):
+            new_raw = {**base_rule.raw, **raw_updates}
+            return dc_replace(base_rule, raw=new_raw)
+
         flips = {
-            "status": dc_replace(base, status="已考证"),
-            "severity": dc_replace(base, severity="慎用"),
-            "hard_veto": dc_replace(base, hard_veto=not base.hard_veto),
-            "condition": dc_replace(base, condition={"fact": "facts.yuepo.hit_facing", "op": "eq", "value": True}),
-            "citation.book_authenticity": dc_replace(base, citation=Citation(
-                source=base.citation.source, kind="classic", book_authenticity="disputed")),
-            "citation.verified_by": dc_replace(base, citation=Citation(
-                source=base.citation.source, kind="classic", verified_by="人类考证人甲")),
+            "status": with_raw(base, status="已考证"),
+            "severity": with_raw(base, severity="慎用"),
+            "hard_veto": with_raw(base, hard_veto=not base.hard_veto),
+            "condition": with_raw(base, condition={"fact": "facts.yuepo.hit_facing", "op": "eq", "value": True}),
+            "citation.book_authenticity": with_raw(base, citation={**base.raw["citation"], "book_authenticity": "disputed"}),
+            "citation.verified_by": with_raw(base, citation={**base.raw["citation"], "verified_by": "人类考证人甲"}),
         }
         from core_rule.loader import RuleSet
         for name, flipped in flips.items():
@@ -869,3 +876,43 @@ class TestAdr0014EvidenceCap:
         elapsed = time.perf_counter() - t0
         assert r.total_candidates == 372
         assert elapsed < 0.6, f"单月穷举 {elapsed:.2f}s 超 0.6s 冒烟阈（O(n²) 类回归嫌疑）"
+
+    def test_fingerprint_reflexive_field_enumeration(self, registry) -> None:
+        """评审第十四轮产物五：指纹字段覆盖从手挑 6 项改为**反射穷举**。
+
+        逐个翻转 Rule 全部语义字段断言指纹变化；非语义字段 notes 显式豁免
+        （纯文档，不影响选择/评估/渲染——若未来 notes 影响行为，必须移出豁免清单）。
+        新增字段时本测试自动出现"未覆盖"（反射枚举不依赖人工记得加）。
+        """
+        import dataclasses
+
+        base = registry.ruleset.by_id["PUB-YUEPO-001"]
+        # raw 哈希下的反射穷举：枚举 base.raw 的全部键，逐键翻转（raw = 源真值）
+        raw_flips = {
+            "rule_id": "PUB-YUEPO-TEST", "version": 99, "school": "zhengwuxing",
+            "category": "翻转测试", "status": "已考证", "hard_veto": not base.hard_veto,
+            "severity": "慎用", "target": "facing",
+            "condition": {"fact": "facts.yuepo.hit_facing", "op": "eq", "value": True},
+            "explanation": "翻转测试解释", "score_weight": 1.5,
+            "citation": {**base.raw["citation"], "book_authenticity": "disputed"},
+            "tests": ["RT-X", "RT-Y"], "supersedes": "PUB-OTHER-001",
+            "evaluable": False,
+            "applies_to": {**base.raw["applies_to"], "task_kinds": ["开业"]},
+            "strictness_min": "strict", "node_kinds": ["上梁"],
+        }
+        exempt = {"notes"}  # 纯文档字段（豁免理由：不参与选择/评估/渲染）
+        tested = set()
+        for name, flip in raw_flips.items():
+            if name in exempt:
+                continue
+            new_rule = dataclasses.replace(base, raw={**base.raw, name: flip})
+            new_rules = tuple(new_rule if r.rule_id == base.rule_id else r
+                              for r in registry.ruleset.rules)
+            by_id = {r.rule_id: r for r in new_rules}
+            rs2 = dc_replace(registry.ruleset, rules=new_rules, by_id=by_id,
+                             version=registry.ruleset.version)
+            assert rs2.fingerprint != registry.ruleset.fingerprint, (
+                f"指纹未覆盖字段翻转：{name}（新增语义字段必须入指纹）"
+            )
+            tested.add(name)
+        assert "notes" not in tested and "notes" in exempt, "豁免清单未生效"

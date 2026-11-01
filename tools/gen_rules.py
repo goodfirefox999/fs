@@ -72,11 +72,13 @@ def rule(
     node_kinds: list[str] | None = None,
     strictness_min: str = "normal",
     score_weight: float | None = None,
+    evaluable: bool = True,
 ) -> dict:
     return {
         "api_version": 1,
         "rule_id": rule_id,
         "version": 1,
+        "evaluable": evaluable,
         "school": school,
         "category": category,
         # 定义级 = 干支算术推论（有 spec_clause），其余为断言级待考证

@@ -19,3 +19,12 @@ gaps:
     blocked_by: 事项专属规则建模（待考证者裁定该事项是否确有独立否决项）
     owner_question: Q-011（必需集选取）关联
     note: 与 GAP-TAISUI-FACING 同类——"事项声明支持"与"规则实际覆盖"的差额机器化
+  - id: GAP-QILI-NOTIMPLEMENTED
+    gap_type: 实现面差额（声明但引擎不判定）——evaluable=false 排除出评估集
+    claim: 9 条起例未实现/未提供规则（DAXIAOYUE/DUTIAN/FUBING/GUANGFU/SANG×2/XIUJIU/JIAQU×2）
+      保留在规则库但不参与评估——修复前用户看到的规则数≠可判定数
+    quote_ref: FACT_REGISTRY provider="本系统不提供"（registry.py）+ Q-014 exists 语义
+    evidence_level: 事实（代码统计 2026-11-01）
+    blocked_by: Q-014（exists 语义）+ 起例实现（逐条）
+    owner_question: Q-014 / Q-005（YINFU 同源口径门控另列）
+    note: 实现后逐条改回 evaluable=true 走考证流程；本条目随之缩短

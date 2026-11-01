@@ -52,6 +52,17 @@ jobs:
       - name: No-network scan (runtime code must not import network modules)
         run: python tools/no_network_scan.py
 
+      - name: Engine version bump reminder (warn only)
+        run: python tools/check_engine_version.py "HEAD~1"
+
+      - name: Commit split hint (warn only, AGENTS.md 纪律 5)
+        run: |
+          CHANGED=$(git diff --name-only HEAD~1 HEAD | cut -d/ -f1 | sort -u | tr '\n' ' ')
+          echo "本次提交改动顶层目录：$CHANGED"
+          if echo "$CHANGED" | grep -q "tools" && echo "$CHANGED" | grep -qE "docs|core"; then
+            echo "⚠️ 混合提交提示：同时改动 tools/ 与 docs|core/——确认是否应拆分（AGENTS.md 纪律 5，惯例非阻断）"
+          fi
+
       - name: Golden regression must pass
         run: python -m pytest tests/golden -v
 

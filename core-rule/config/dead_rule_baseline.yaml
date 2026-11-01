@@ -36,44 +36,38 @@ statistic: 命中候选数/参与评估候选数，按（规则×年份）分组
 denominator: 25
 rationale: 可达性归因（docs/research/reachability-2026-11.md）：12 条未验证（unknown 门控：命主3/口径未定1/起例未实现8）、1
   条可疑（XIUJIU exists 语义待裁定 Q-014）；verified_exempt（已验证非死规则）=0，豁免基线为空——'豁免'仅限已验证（评审第十四轮）
-recorded_at: '2026-11-01T23:11:50'
+recorded_at: '2026-11-01T23:40:35'
 entries:
-- rule_id: PUB-CHONGMING-001
-  classification: unverified_unknown_gated
-  blocked_by: person_input
 - rule_id: PUB-CHONGMING-002
   classification: unverified_unknown_gated
-  blocked_by: person_input
+  blocked_by: person 输入（fixture 已解锁，见 hits_per_year）
 - rule_id: PUB-DAXIAOYUE-001
-  classification: unverified_unknown_gated
-  blocked_by: 起例未实现（unknown_reason 细分待归）
+  classification: unimplemented_not_evaluable
+  blocked_by: Q-014 + 起例实现
 - rule_id: PUB-DUTIAN-001
-  classification: unverified_unknown_gated
-  blocked_by: 起例未实现（unknown_reason 细分待归）
+  classification: unimplemented_not_evaluable
+  blocked_by: Q-014 + 起例实现
 - rule_id: PUB-FUBING-001
-  classification: unverified_unknown_gated
-  blocked_by: 起例未实现（unknown_reason 细分待归）
+  classification: unimplemented_not_evaluable
+  blocked_by: Q-014 + 起例实现
 - rule_id: PUB-GUANGFU-001
-  classification: unverified_unknown_gated
-  blocked_by: 起例未实现（unknown_reason 细分待归）
+  classification: unimplemented_not_evaluable
+  blocked_by: Q-014 + 起例实现
 - rule_id: PUB-JIAQU-001
-  classification: unverified_unknown_gated
-  blocked_by: 起例未实现（unknown_reason 细分待归）
+  classification: unimplemented_not_evaluable
+  blocked_by: Q-014 + 起例实现
 - rule_id: PUB-JIAQU-002
-  classification: unverified_unknown_gated
-  blocked_by: 起例未实现（unknown_reason 细分待归）
-- rule_id: PUB-MING-SANSHA-001
-  classification: unverified_unknown_gated
-  blocked_by: person_input
+  classification: unimplemented_not_evaluable
+  blocked_by: Q-014 + 起例实现
 - rule_id: PUB-SANG-001
-  classification: unverified_unknown_gated
-  blocked_by: 起例未实现（unknown_reason 细分待归）
+  classification: unimplemented_not_evaluable
+  blocked_by: Q-014 + 起例实现
 - rule_id: PUB-SANG-002
-  classification: unverified_unknown_gated
-  blocked_by: 起例未实现（unknown_reason 细分待归）
+  classification: unimplemented_not_evaluable
+  blocked_by: Q-014 + 起例实现
 - rule_id: PUB-XIUJIU-001
-  classification: suspected_false_exists_semantics
-  blocked_by: Q-014
+  classification: unimplemented_not_evaluable
+  blocked_by: Q-014 + 起例实现
 - rule_id: PUB-YINFU-001
   classification: unverified_unknown_gated
   blocked_by: Q-005

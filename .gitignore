@@ -10,3 +10,4 @@ dist/
 build/
 out/
 .hypothesis/
+bench_history.ci.jsonl

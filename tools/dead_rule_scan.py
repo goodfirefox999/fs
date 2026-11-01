@@ -53,22 +53,35 @@ HIT_BUCKETS = ("vetoes", "cautions", "controversial", "demo_hits", "positives", 
 BASELINE = ROOT / "core-rule/config/dead_rule_baseline.yaml"
 
 
+PERSON_FIXTURES = (
+    None,                # 无命主（现状）
+    PersonSpec(year_zhi="子"),  # 命主 fixture：解锁 CHONGMING/MING-SANSHA 类 person 门控规则
+    PersonSpec(year_zhi="午"),
+)
+
+
 def _contexts():
-    """按（task_kind, year, month, day, azimuth）产出窗口 ctx。"""
+    """按（task_kind, year, month, day, azimuth, person）产出窗口 ctx。
+
+    person fixtures（评审第十三/十四轮两次要求）：无命主时 person 门控规则恒 unknown、
+    永不可达——豁免会永久成立且永不被验证。加入 子/午 两个年命 fixture 后，
+    日冲命/年命三煞类规则进入可测状态。
+    """
     for kind in TASK_KINDS:
-        for year in YEARS:
-            for month in range(1, 13):
-                for day in DAYS:
-                    for az in AZIMUTHS:
-                        yield kind, year, (
-                            build_context(
-                                course=CourseSpec(dt=datetime(year, month, day, 10, 0, tzinfo=CST)),
-                                site=SiteSpec(azimuth_deg=az, lat=23.13, lon=113.26),
-                                task=TaskSpec(kind=kind, nodes=(kind,), strictness="normal"),
-                                person=PersonSpec(),
-                                cal=CalendarConfig(),
+        for person in PERSON_FIXTURES:
+            for year in YEARS:
+                for month in range(1, 13):
+                    for day in DAYS:
+                        for az in AZIMUTHS:
+                            yield kind, year, (
+                                build_context(
+                                    course=CourseSpec(dt=datetime(year, month, day, 10, 0, tzinfo=CST)),
+                                    site=SiteSpec(azimuth_deg=az, lat=23.13, lon=113.26),
+                                    task=TaskSpec(kind=kind, nodes=(kind,), strictness="normal"),
+                                    person=person or PersonSpec(),
+                                    cal=CalendarConfig(),
+                                )
                             )
-                        )
 
 
 def coverage_report(contexts_meta: list[tuple]) -> list[str]:
@@ -169,6 +182,7 @@ def run_scan():
             "task_kinds": kinds,
             "hits_per_year": per_year,
             "zero_hit": total_hits == 0,
+            "evaluable": rule.evaluable,
         }
 
     zero_hit = sorted(rid for rid, d in out.items() if d["zero_hit"])
@@ -215,9 +229,23 @@ def main() -> int:
     print(f"\nzero_hit: {zero_hit}")
     print(f"verified_exempt（已验证豁免）：{sorted(verified_exempt) or '空（当前无——13 条均为未验证/可疑）'}")
     classified = {rid: entries_map.get(rid, {}).get("classification", "未登记") for rid in zero_hit}
-    print("\n零命中分类（评审第十四轮：豁免≠未验证≠可疑）：")
+    # summary 三栏（评审第十四轮：已验证零命中/已验证命中/未验证+可疑——"豁免"只指第一栏）
+    n_verified_hit = sum(1 for rid, d in out.items() if not d["zero_hit"])
+    n_verified_exempt = sum(1 for rid in zero_hit if entries_map.get(rid, {}).get("classification") == "verified_exempt")
+    n_unverified = sum(1 for rid in zero_hit if classified.get(rid, "").startswith("unverified"))
+    n_suspected = sum(1 for rid in zero_hit if classified.get(rid, "").startswith("suspected"))
+    print("\n三栏 summary（C21 成功标准 = 三栏各归其位，而非\u201c13 条都不是死规则\u201d）：")
+    print(f"  已验证命中（正常规则）：{n_verified_hit}")
+    print(f"  已验证零命中（豁免）：{n_verified_exempt}")
+    print(f"  未验证（门控未开）：{n_unverified} ｜ 可疑（语义待裁定）：{n_suspected}")
+    print("\n零命中分类：")
     for rid in zero_hit:
         print(f"  - {rid}: {classified[rid]}")
+    # suspected 棘轮：可疑计数不得高于基线登记值（登记≠消音——挂账且可见）
+    ratchet = baseline.get("suspected_ratchet")
+    if ratchet is not None and n_suspected > ratchet:
+        print(f"\n❌ suspected 棘轮触发：{n_suspected} > 基线 {ratchet}——新增可疑必须显式登记理由")
+        rc = 1
     new_zero = [rid for rid in zero_hit if rid not in entries_all]
     if new_zero:
         print(f"\n⚠️ warn：**新冒出**的零命中规则（不在基线 entries 内）：{new_zero}")
@@ -241,6 +269,7 @@ def main() -> int:
             },
             "statistic": "命中候选数/参与评估候选数，按（规则×年份）分组；判据=适用域内零命中",
             "denominator": len(out),
+            "suspected_ratchet": n_suspected,
             "rationale": ("可达性归因（docs/research/reachability-2026-11.md）：12 条未验证"
                           "（unknown 门控：命主3/口径未定1/起例未实现8）、1 条可疑"
                           "（XIUJIU exists 语义待裁定 Q-014）；verified_exempt（已验证非死规则）=0，"
@@ -248,12 +277,12 @@ def main() -> int:
             "recorded_at": datetime.now().isoformat(timespec="seconds"),
             "entries": [
                 {"rule_id": rid,
-                 "classification": ("suspected_false_exists_semantics" if rid == "PUB-XIUJIU-001"
-                                    else "unverified_unknown_gated"),
-                 "blocked_by": ("Q-014" if rid == "PUB-XIUJIU-001"
-                                else ("Q-005" if rid == "PUB-YINFU-001" else
-                                      ("person_input" if ("CHONGMING" in rid or "MING-SANSHA" in rid)
-                                       else "起例未实现（unknown_reason 细分待归）")))}
+                 "classification": (
+                     "unimplemented_not_evaluable" if out[rid]["evaluable"] is False
+                     else "unverified_unknown_gated"),
+                 "blocked_by": (
+                     "Q-014 + 起例实现" if out[rid]["evaluable"] is False
+                     else ("Q-005" if rid == "PUB-YINFU-001" else "person 输入（fixture 已解锁，见 hits_per_year）"))}
                 for rid in zero_hit
             ],
         }

@@ -78,21 +78,12 @@ class RuleSet:
         object.__setattr__(
             self,
             "fingerprint",
+            # 结构性穷举（评审第十四轮：反射测试连续抓到 school/category 缺口后的本质修法）：
+            # 直接哈希每条规则的 **raw YAML 全量 dict**——天然覆盖现有与未来的一切字段
+            # （含 school/category/applies_to/citation.book_authenticity/evaluable…），
+            # 反射穷举测试从此作为守卫而非依赖清单
             stable_hash(
-                sorted(
-                    (
-                        r.rule_id,
-                        r.version,
-                        r.status,
-                        r.severity,
-                        r.hard_veto,
-                        stable_hash(r.condition),
-                        # 评审第十四轮：citation 内容（含 book_authenticity）入指纹——
-                        # 联动重审状态变更必须击穿缓存，防跨重审状态复用
-                        stable_hash(r.citation.to_dict()),
-                    )
-                    for r in self.rules
-                )
+                sorted((r.rule_id, stable_hash(r.raw)) for r in self.rules)
             ),
         )
 
@@ -120,8 +111,8 @@ class RuleSet:
         allowed_schools = set(schools) if schools is not None else None
         out: list[Rule] = []
         for rule in self.rules:
-            if rule.status == "弃用":
-                continue
+            if rule.status == "弃用" or not rule.evaluable:
+                continue  # 弃用 / 起例未实现排除出评估集（Q-014，ADR-0014 后续）
             if allowed_schools is not None and rule.school not in allowed_schools:
                 continue
             if not include_unverified and rule.status not in ("已考证", "有争议"):
@@ -314,6 +305,14 @@ def load_rule(path: Path) -> Rule:
                 f"veto 规则的 severity_overrides[{school_name}] 只能是 禁用/慎用", rule_id=rule_id
             )
 
+    # evaluable=false：起例未实现/口径未定的规则保留在库但排除出评估集（Q-014；
+    # 评审第十三/十四轮）——仅限待考证（已考证/定义级规则必须可评估）
+    evaluable = bool(raw.get("evaluable", True))
+    if not evaluable and status != "待考证":
+        raise DSLValidationError(
+            f"evaluable=false 仅限 status=待考证（当前 {status}）", rule_id=rule_id
+        )
+
     return Rule(
         rule_id=rule_id,
         version=version,
@@ -335,6 +334,7 @@ def load_rule(path: Path) -> Rule:
         severity_overrides={k: str(v) for k, v in severity_overrides_raw.items()},
         source_path=str(path),
         raw=raw,
+        evaluable=evaluable,
     )
 
 
