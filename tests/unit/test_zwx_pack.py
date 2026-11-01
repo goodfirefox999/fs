@@ -78,7 +78,7 @@ class TestTongGuanCondition:
 
     def test_tongguan_loads(self) -> None:
         rule = load_rule(RULES / "ZWX-TONGGUAN-001.yaml")
-        assert rule.condition["fact"] == "facts.structure.gan_count"
+        assert rule.condition["fact"] == "facts.tongguan.conflicts"
         assert rule.condition["op"] == "exists"
 
     def test_tongguan_book_authenticity_disputed(self) -> None:

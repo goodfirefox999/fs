@@ -2,8 +2,10 @@ case_id: RT-SH-SANHEJU-001-HIT
 kind: rule_test
 rule_id: SH-SANHEJU-001
 expected: hit
-note: 三合局 HIT：sanhe_groups 非空。
+note: 三合局 HIT：result != 平（成局或待）。
 overrides:
   facts:
-    structure:
-      sanhe_groups: [{"a": "子", "b": "申"}]
+    sanhe_ju:
+      result: "旺"
+      day_ju: ["水"]
+      shan_ju: "水"

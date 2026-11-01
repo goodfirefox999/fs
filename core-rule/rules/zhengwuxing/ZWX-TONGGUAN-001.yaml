@@ -1,6 +1,3 @@
-# Phase 4 正五行规则包：通关（评审扩展版 spec §2.1 ZWX_TONG_GUAN）
-# 通关=四柱五行相战时取中间五行调和。需要四柱五行全局分析，当前 facts 未产出，
-# 规则先以占位条件登记（起例实现后替换 condition）。
 api_version: 1
 rule_id: ZWX-TONGGUAN-001
 version: 1
@@ -18,7 +15,7 @@ applies_to:
   node_kinds: []
   strictness_min: normal
 condition:
-  fact: facts.structure.gan_count
+  fact: facts.tongguan.conflicts
   op: exists
 score_weight: null
 citation:
@@ -38,8 +35,8 @@ citation:
 tests:
 - RT-ZWX-TONGGUAN-001-HIT
 - RT-ZWX-TONGGUAN-001-MISS
-explanation: 四柱五行相战时取通关五行（金木战取水，水火战取木，木土战取火，土水战取金）。当前 facts.structure.gan_count 已产出但通关分析未实现，求值为 unknown。
+explanation: 四柱五行相战时取通关五行（金木战取水，水火战取木，木土战取火，土水战取金）。当前 facts.structure.gan_count 已产出但通关分析未实现，求值为
+  unknown。
 supersedes: null
-notes: >-
-  通关需要四柱五行全局相战检测与通关五行选取，超出当前 DSL 原子条件表达能力。
-  起例实现后替换 condition。citation.book_authenticity=disputed（滴天髓托名，见 伪托考辨）。
+notes: 通关需要四柱五行全局相战检测与通关五行选取，超出当前 DSL 原子条件表达能力。 起例实现后替换 condition。citation.book_authenticity=disputed（滴天髓托名，见
+  伪托考辨）。

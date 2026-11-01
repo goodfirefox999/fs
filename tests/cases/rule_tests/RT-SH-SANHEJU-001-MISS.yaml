@@ -2,8 +2,10 @@ case_id: RT-SH-SANHEJU-001-MISS
 kind: rule_test
 rule_id: SH-SANHEJU-001
 expected: miss
-note: 三合局 MISS：sanhe_groups 为空列表 → exists False。
+note: 三合局 MISS：result=平（不成局）。
 overrides:
   facts:
-    structure:
-      sanhe_groups: []
+    sanhe_ju:
+      result: "平"
+      day_ju: []
+      shan_ju: null

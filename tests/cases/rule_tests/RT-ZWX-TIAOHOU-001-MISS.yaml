@@ -2,10 +2,11 @@ case_id: RT-ZWX-TIAOHOU-001-MISS
 kind: rule_test
 rule_id: ZWX-TIAOHOU-001
 expected: miss
-note: >-
-  调候 MISS：已知限制——exists 条件在有效课程上恒 True（月支总有值），
-  无法通过 override 制造 False。此用例验证 override 路径不 crash。
-  完整调候分析（120 格）实现后替换 condition 为可 False 的形式。
+note: 调候 MISS：facts.tiaohou.applied=false（无调候条目）。
 overrides:
-  time:
-    month_zhi: "午"
+  facts:
+    tiaohou:
+      applied: false
+      day_gan: "甲"
+      month_zhi: "申"
+      adjust_gan: []

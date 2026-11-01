@@ -2,7 +2,9 @@ case_id: RT-SH-LUMAGUIREN-001-MISS
 kind: rule_test
 rule_id: SH-LUMAGUIREN-001
 expected: miss
-note: 禄马贵人到山 MISS：已知限制——exists 类条件在有效课程上恒 True。
+note: 禄马贵人到山 MISS：to_shan=false。
 overrides:
-  site:
-    shan_jia_zhi: null
+  facts:
+    lumaguiren:
+      to_shan: false
+      lu_to_shan: false

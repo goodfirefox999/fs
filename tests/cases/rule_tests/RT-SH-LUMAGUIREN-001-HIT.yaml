@@ -2,5 +2,9 @@ case_id: RT-SH-LUMAGUIREN-001-HIT
 kind: rule_test
 rule_id: SH-LUMAGUIREN-001
 expected: hit
-note: 禄马贵人到山 HIT：坐山有值（占位条件）。
-overrides: {}
+note: 禄马贵人到山 HIT：to_shan=true。
+overrides:
+  facts:
+    lumaguiren:
+      to_shan: true
+      lu_to_shan: true

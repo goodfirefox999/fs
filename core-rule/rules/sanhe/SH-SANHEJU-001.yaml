@@ -1,4 +1,3 @@
-# Phase 5 三合规则包：三合局判定（spec §2.2 SH_SAN_HE_JU）
 api_version: 1
 rule_id: SH-SANHEJU-001
 version: 1
@@ -18,8 +17,9 @@ applies_to:
   node_kinds: []
   strictness_min: normal
 condition:
-  fact: facts.structure.sanhe_groups
-  op: exists
+  fact: facts.sanhe_ju.result
+  op: ne
+  value: 平
 score_weight: null
 citation:
   kind: classic
@@ -38,9 +38,8 @@ citation:
 tests:
 - RT-SH-SANHEJU-001-HIT
 - RT-SH-SANHEJU-001-MISS
-explanation: 日课地支三合局与坐山/入首龙构成三合（申子辰水/亥卯未木/寅午戌火/巳酉丑金）。facts.structure.sanhe_groups 已由 core-symbol 产出。
+explanation: 日课地支三合局与坐山/入首龙构成三合（申子辰水/亥卯未木/寅午戌火/巳酉丑金）。facts.structure.sanhe_groups
+  已由 core-symbol 产出。
 supersedes: null
-notes: >-
-  spec：同局=旺，缺一=待，不成局=平。三合局成员判定需要日课四柱+坐山+入首龙
-  的三合局归属分析。facts.structure.sanhe_groups 已产出三合组但"同局/缺一"的
-  分级判定需要更深的引擎逻辑。
+notes: spec：同局=旺，缺一=待，不成局=平。三合局成员判定需要日课四柱+坐山+入首龙 的三合局归属分析。facts.structure.sanhe_groups
+  已产出三合组但"同局/缺一"的 分级判定需要更深的引擎逻辑。

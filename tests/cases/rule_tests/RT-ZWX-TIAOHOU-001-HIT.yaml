@@ -2,7 +2,11 @@ case_id: RT-ZWX-TIAOHOU-001-HIT
 kind: rule_test
 rule_id: ZWX-TIAOHOU-001
 expected: hit
-note: 规则级测试向量：冬月（亥月）调候适用。
+note: 调候 HIT：facts.tiaohou.applied=true（甲日亥月→丁庚丙调候存在）。
 overrides:
-  time:
-    month_zhi: "亥"
+  facts:
+    tiaohou:
+      applied: true
+      day_gan: "甲"
+      month_zhi: "亥"
+      adjust_gan: ["丁","庚","丙"]

@@ -346,6 +346,114 @@ def derive_facts(
         _dg["is_heidao"] = None
         _dg["status"] = "待考证"
 
+    # ---- 正五行调候 facts（Phase 4 收尾：引用 qiongtong_biaojian_120.json）----
+    facts.setdefault("tiaohou", {})
+    try:
+        import json as _json
+        _tiao_path = Path(__file__).resolve().parent.parent.parent.parent / "core-rule" / "config" / "data" / "qiongtong_biaojian_120.json"
+        _tiao_data = _json.loads(_tiao_path.read_text(encoding="utf-8"))
+        _day_gan = gans[0] if gans else "甲"
+        _month_key = {"子": "子", "丑": "丑", "寅": "寅", "卯": "卯", "辰": "辰",
+                      "巳": "巳", "午": "午", "未": "未", "申": "申", "酉": "酉",
+                      "戌": "戌", "亥": "亥"}.get(month_zhi, "寅")
+        _tiao_entry = _tiao_data.get("tiaohou_120", {}).get(_day_gan, {}).get(_month_key)
+        facts["tiaohou"] = {
+            "applied": _tiao_entry is not None,
+            "adjust_gan": _tiao_entry.split(",") if _tiao_entry else [],
+            "day_gan": _day_gan,
+            "month_zhi": month_zhi,
+            "detail": _tiao_entry,
+            "status": "待考证",
+        }
+    except Exception:
+        facts["tiaohou"] = {"applied": None, "status": "待考证"}
+
+    # ---- 正五行通关 facts（Phase 4 收尾：四柱五行计数 + 相战检测）----
+    WUXING_MAP = {"甲":"木","乙":"木","丙":"火","丁":"火","戊":"土","己":"土",
+                  "庚":"金","辛":"金","壬":"水","癸":"水"}
+    _wuxing_count = {"木":0,"火":0,"土":0,"金":0,"水":0}
+    for g in gans:
+        if g in WUXING_MAP:
+            _wuxing_count[WUXING_MAP[g]] += 1
+    for z in zhis:
+        _gz_wx = {"子":"水","丑":"土","寅":"木","卯":"木","辰":"土","巳":"火",
+                  "午":"火","未":"土","申":"金","酉":"金","戌":"土","亥":"水"}
+        if z in _gz_wx:
+            _wuxing_count[_gz_wx[z]] += 1
+    # 相战检测：两五行计数均 >= 2 且相克
+    _xk = {"木":"土","土":"水","水":"火","火":"金","金":"木"}
+    _conflicts = []
+    for wx1, wx2 in [("木","金"),("金","木"),("水","火"),("火","水"),("木","土"),("土","木")]:
+        if _wuxing_count.get(wx1,0) >= 2 and _wuxing_count.get(wx2,0) >= 2:
+            _conflicts.append(f"{wx1}{wx2}战")
+    # 通关五行：金木战取水，水火战取木，木土战取火，土水战取金，木金战取水(金克木→水通)
+    _tongguan_map = {"金木":"水","木金":"水","水火":"木","火水":"木",
+                     "木土":"火","土木":"火","土水":"金","水土":"金"}
+    _tongguan = None
+    for pair in _conflicts:
+        key = pair.replace("战","")
+        if key in _tongguan_map:
+            _tongguan = _tongguan_map[key]
+            break
+    facts.setdefault("tongguan", {
+        "conflicts": _conflicts, "tongguan_element": _tongguan,
+        "wuxing_count": _wuxing_count, "status": "待考证",
+    })
+
+    # ---- 三合局判定 facts（Phase 5）----
+    SANHE_JU = {"申子辰":"水","亥卯未":"木","寅午戌":"火","巳酉丑":"金"}
+    ZHI_IN_JU = {}
+    for ju_name, wx in SANHE_JU.items():
+        for z in ju_name:
+            ZHI_IN_JU[z] = ju_name
+    # 日课地支（四柱地支）在哪个三合局
+    _day_ju = set()
+    for z in zhis:
+        if z in ZHI_IN_JU:
+            _day_ju.add(ZHI_IN_JU[z])
+    # 坐山支在哪个三合局
+    _shan_ju = ZHI_IN_JU.get(shan_jia_zhi) if shan_jia_zhi else None
+    # 三合局判定：日课地支有 ≥2 个同局 + 坐山支同局 → 成局
+    _sanhe_ju_result = "平"
+    if _shan_ju and _shan_ju in _day_ju:
+        _ju_zhi_count = sum(1 for z in zhis if ZHI_IN_JU.get(z) == _shan_ju)
+        if _ju_zhi_count >= 3:
+            _sanhe_ju_result = "旺"
+        elif _ju_zhi_count >= 1 and shan_jia_zhi in ZHI_IN_JU:
+            _sanhe_ju_result = "待"
+    facts.setdefault("sanhe_ju", {
+        "result": _sanhe_ju_result, "day_ju": sorted(_day_ju),
+        "shan_ju": _shan_ju, "status": "待考证",
+    })
+
+    # ---- 禄马贵人到山 facts（Phase 5）----
+    _lu_ma_gui_data = None
+    try:
+        import json as _json
+        _lmg_path = Path(__file__).resolve().parent.parent.parent.parent / "core-rule" / "config" / "data" / "lu_ma_gui_ren.json"
+        _lu_ma_gui_data = _json.loads(_lmg_path.read_text(encoding="utf-8"))
+    except Exception:
+        pass
+    facts.setdefault("lumaguiren", {"to_shan": None, "to_ming": None, "status": "待考证"})
+    if _lu_ma_gui_data and shan_jia_zhi:
+        # 查日课天干的禄神是否=坐山
+        _day_gan_0 = gans[0] if gans else ""
+        _lu = _lu_ma_gui_data.get("lu_shen", {}).get(_day_gan_0)
+        _lu_to_shan = _lu == shan_jia_zhi if _lu else False
+        # 查贵人
+        _gr = _lu_ma_gui_data.get("tian_yi_gui_ren", {}).get(_day_gan_0, [])
+        _gr_to_shan = shan_jia_zhi in _gr if _gr else False
+        # 查驿马（按年支三合局）
+        _year_zhi_ma = _lu_ma_gui_data.get("yi_ma", {}).get(year_zhi, None) if year_zhi else None
+        _ma_to_shan = _year_zhi_ma == shan_jia_zhi if _year_zhi_ma else False
+        facts["lumaguiren"] = {
+            "to_shan": _lu_to_shan or _gr_to_shan or _ma_to_shan,
+            "lu_to_shan": _lu_to_shan, "gr_to_shan": _gr_to_shan,
+            "ma_to_shan": _ma_to_shan,
+            "lu": _lu, "gui_ren": _gr, "yi_ma": _year_zhi_ma,
+            "status": "待考证",
+        }
+
     # ---- 不提供的事实：显式登记为 None，避免"静默通过" ----
     for spec in FACT_REGISTRY:
         if spec.provider != "本系统不提供":

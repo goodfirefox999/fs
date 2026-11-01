@@ -2,9 +2,9 @@ case_id: RT-ZWX-TONGGUAN-001-HIT
 kind: rule_test
 rule_id: ZWX-TONGGUAN-001
 expected: hit
-note: 规则级测试向量：gan_count 有值即命中（exists 语义）。
+note: 通关 HIT：facts.tongguan.conflicts 非空（有五行相战）。
 overrides:
   facts:
-    structure:
-      gan_count:
-        "甲": 1
+    tongguan:
+      conflicts: ["金木战"]
+      tongguan_element: "水"

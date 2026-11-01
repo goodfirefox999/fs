@@ -1,4 +1,3 @@
-# Phase 5 三合规则包：禄马贵人到山（spec §2.2 SH_LU_MA_GUI_REN_DAO_SHAN）
 api_version: 1
 rule_id: SH-LUMAGUIREN-001
 version: 1
@@ -17,12 +16,9 @@ applies_to:
   node_kinds: []
   strictness_min: normal
 condition:
-  all:
-  - fact: site.shan_jia_zhi
-    op: exists
-  - fact: facts.suipo.status
-    op: exists
-  note: 占位——完整禄马贵人到山需查表 fact（起例实现后替换）
+  fact: facts.lumaguiren.to_shan
+  op: eq
+  value: true
 score_weight: null
 citation:
   kind: classic
@@ -43,7 +39,5 @@ tests:
 - RT-SH-LUMAGUIREN-001-MISS
 explanation: 查禄马贵人到方速查表（sanhe_lu_ma_gui_ren_24shan.json），判断日课四柱的禄/马/贵人是否到山。数据查表逻辑待起例实现。
 supersedes: null
-notes: >-
-  禄马贵人到山需要：(1) 日课天干→查禄神表 (2) 三合局→查驿马表 (3) 天干→查贵人表
-  (4) 比对到山/到向/到命。当前 DSL 的 exists 条件是占位（坐山有值即命中）。
-  完整查表逻辑需 C20 或专用 fact。
+notes: 禄马贵人到山需要：(1) 日课天干→查禄神表 (2) 三合局→查驿马表 (3) 天干→查贵人表 (4) 比对到山/到向/到命。当前 DSL 的 exists
+  条件是占位（坐山有值即命中）。 完整查表逻辑需 C20 或专用 fact。
