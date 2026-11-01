@@ -1,0 +1,45 @@
+# Phase 8 天星规则包：日月三合拱照（spec §2.5）
+api_version: 1
+rule_id: TX-SANHEGONG-001
+version: 1
+school: tianxing
+category: 日月三合拱照（天星派）
+status: 待考证
+hard_veto: false
+severity: 可用
+target: mountain
+evaluable: true
+applies_to:
+  task_kinds:
+  - 安葬
+  - 修造
+  - 入宅
+  node_kinds: []
+  strictness_min: normal
+condition:
+  fact: facts.tianxing.sanhe_gongzhao
+  op: eq
+  value: true
+score_weight: null
+citation:
+  kind: classic
+  source: 《星平会海》
+  edition: null
+  juan: null
+  pian: null
+  entry: 日月三合拱照
+  quote_kind: null
+  quote: null
+  url_or_path: null
+  verified_by: null
+  verified_at: null
+  book_authenticity: 待核
+  confidence: 低
+tests:
+- RT-TX-SANHEGONG-001-HIT
+- RT-TX-SANHEGONG-001-MISS
+explanation: 日月三合拱照（天星派）。须 Swiss Ephemeris/skyfield 真实星历计算，禁止查表近似。宿度按用事年份校正岁差。
+supersedes: null
+notes: >-
+  日月三合拱照。spec §2.5：须真实星历（Swiss Ephemeris/skyfield），四余不可用时标 PARTIAL。
+  二十八宿用不等宽宿度并按年校正岁差（禁 360/28 均分）。

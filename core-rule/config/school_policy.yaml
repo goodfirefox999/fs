@@ -52,7 +52,7 @@ schools:
       玄空大卦规则包：64 卦/卦运（阳爻 9 年阴爻 6 年）/抽爻换象/卦气配合。
       规则前缀 XKD。Phase 7 交付。
   tianxing:
-    enabled: false
+    enabled: true
     participates_in_veto: false
     weight: 0.5
     layer: scoring

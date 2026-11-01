@@ -1,0 +1,6 @@
+case_id: RT-TX-SUNDAO-001-MISS
+kind: rule_test
+rule_id: TX-SUNDAO-001
+expected: miss
+note: 天星规则 MISS：facts.tianxing.* 起例待实现 → unknown。
+overrides: {}

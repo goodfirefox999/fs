@@ -1,0 +1,14 @@
+{
+  "_meta": {
+    "source": "七政四余到二十四山映射表",
+    "source_ref": "《星平会海》《张果星宗》七政四余到山到向篇",
+    "verification_status": "unverified",
+    "note": "七政=日月+金木水火土五星。四余=罗睺/计都/紫气/月孛。映射到二十四山需星历黄经→宿度→二十四山。"
+  },
+  "qi_zheng": ["日", "月", "金", "木", "水", "火", "土"],
+  "si_yu": ["罗睺", "计都", "紫气", "月孛"],
+  "luo_hou": {"note": "罗睺=月球升交点（黄白交点北交点）", "swisseph_id": "MEAN_NODE"},
+  "ji_du": {"note": "计都=月球降交点（南交点）= 罗睺+180°", "swisseph_id": "MEAN_NODE+180"},
+  "zi_qi": {"note": "紫气为隐曜，无现代天文对应，需传统算法推算", "swisseph_id": null},
+  "yue_bei": {"note": "月孛=月球远地点，可用 lunar apogee 计算", "swisseph_id": "LILITH"}
+}

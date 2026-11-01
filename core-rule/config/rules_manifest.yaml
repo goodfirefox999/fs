@@ -1,9 +1,9 @@
 api_version: 1
 # 规则库清单：rules lint 会校验"磁盘实际加载数 == 本清单声明数"，防止文档与实现漂移。
 # 变更规则时必须同步更新本文件（否则 lint 失败）。
-expected_total: 66
+expected_total: 70
 expected_by_status:
-  待考证: 54
+  待考证: 58
   有争议: 2
   定义级: 10
 expected_by_school:
@@ -12,6 +12,7 @@ expected_by_school:
   donggong: 5
   doushou: 1
   xuankong_dagua: 4
+tianxing: 4
 note: |
   10 条定义级（DEF-*）为干支算术推论，citation.kind=spec，severity=记录，不影响 tier。
   51 条断言级等待人类考证者补原文。8 条 ASSERT-* 从 DEF-* 拆出（ADR-0009）。

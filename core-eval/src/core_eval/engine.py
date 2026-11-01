@@ -998,15 +998,64 @@ def evaluate(
             )
             seen_blocked.add(u["rule_id"])
 
+    # ---- 五派并列输出 schema（spec §4 仲裁层）----
+    five_school_output = {}
+    for school_name, school_spec in registry.policy.schools.items():
+        if school_name in per_school:
+            res = per_school[school_name]
+            tendency = "neutral"
+            if res.vetoes:
+                tendency = "unfavorable"
+            elif res.cautions:
+                tendency = "neutral"
+            elif res.positives:
+                tendency = "favorable"
+            five_school_output[school_name] = {
+                "tendency": tendency,
+                "score_delta": len(res.positives) - len(res.vetoes) - len(res.cautions),
+                "layer": registry.policy.schools[school_name].layer,
+                "sub_rules": {
+                    "vetoes": [j.rule_id for j in res.vetoes],
+                    "cautions": [j.rule_id for j in res.cautions],
+                    "unknowns": [j.rule_id for j in res.unknowns],
+                    "positives": [j.rule_id for j in res.positives],
+                    "notes": [j.rule_id for j in res.notes],
+                },
+                "source_ref": "per_school evaluation",
+            }
+    conflicts_fso = []
+    tendency_list = [
+        (name, d["tendency"]) for name, d in five_school_output.items()
+        if d["tendency"] in ("favorable", "unfavorable")
+    ]
+    for i, (s1, t1) in enumerate(tendency_list):
+        for s2, t2 in tendency_list[i+1:]:
+            if (t1 == "favorable" and t2 == "unfavorable") or (t1 == "unfavorable" and t2 == "favorable"):
+                conflicts_fso.append({"schools": [s1, s2], "issue": f"{s1}={t1} vs {s2}={t2}"})
+    favorable_count = sum(1 for _, t in tendency_list if t == "favorable")
+    unfavorable_count = sum(1 for _, t in tendency_list if t == "unfavorable")
+    if unfavorable_count > 0:
+        consensus = "unfavorable"
+    elif favorable_count >= 3:
+        consensus = "favorable"
+    elif favorable_count > 0:
+        consensus = "mixed"
+    else:
+        consensus = "neutral"
+    five_school_output["_consensus"] = consensus
+    five_school_output["_conflicts"] = conflicts_fso
+
     manifest = {
         "input_hash": input_hash,
         "facts_hash": fact_hash,
         "rule_lib_version": rule_lib_version,
         "engine_version": ENGINE_VERSION,
         "config": cfg.to_dict(),
+        "five_school_output": five_school_output,
         "schools": list(per_school),
         "rule_counts": {name: res.rules_evaluated for name, res in per_school.items()},
     }
+
 
     return Evaluation(
         candidate=str(

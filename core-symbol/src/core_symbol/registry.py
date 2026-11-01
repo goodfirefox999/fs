@@ -287,6 +287,14 @@ def derive_facts(
     # ---- 口径回显（报告必须展示本次用了哪个口径）----
     facts["_calibers"] = {"sansha": sansha_caliber, "nayin": nayin_caliber}
 
+    # ---- 天星 facts（Phase 8，须 Swiss Ephemeris/skyfield——当前 unknown）----
+    facts.setdefault("tianxing", {
+        "sun_daoshan": None, "moon_daoshan": None,
+        "sanhe_gongzhao": None, "jiafu": None,
+        "status": "待考证",
+        "note": "天星七政四余到山到向——须真实星历计算（Swiss Ephemeris/skyfield），当前未集成",
+    })
+
     # ---- 玄空大卦 facts（Phase 7，起例待实现→unknown）----
     facts.setdefault("xuankong", {
         "guayun_current": None, "chouyao": None,

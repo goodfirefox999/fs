@@ -1,0 +1,180 @@
+{
+  "_meta": {
+    "source": "二十八宿不等宽宿度表（传统中国天文度，1 度 ≈ 360/365.25 现代度）",
+    "source_ref": "《汉书·天文志》《晋书·天文志》；宿度因岁差每年西移约 50.3 角秒",
+    "verification_status": "unverified",
+    "note": "宿度需按用事年份校正岁差。开禧宿度距今年代久远，误差累积显著。"
+  },
+  "xiu": [
+    {
+      "name": "角",
+      "xiu_width": 12,
+      "animal": "蛟",
+      "element": "木"
+    },
+    {
+      "name": "亢",
+      "xiu_width": 9,
+      "animal": "龙",
+      "element": "金"
+    },
+    {
+      "name": "氐",
+      "xiu_width": 15,
+      "animal": "貉",
+      "element": "土"
+    },
+    {
+      "name": "房",
+      "xiu_width": 5,
+      "animal": "兔",
+      "element": "日"
+    },
+    {
+      "name": "心",
+      "xiu_width": 5,
+      "animal": "狐",
+      "element": "月"
+    },
+    {
+      "name": "尾",
+      "xiu_width": 18,
+      "animal": "虎",
+      "element": "火"
+    },
+    {
+      "name": "箕",
+      "xiu_width": 11,
+      "animal": "豹",
+      "element": "水"
+    },
+    {
+      "name": "斗",
+      "xiu_width": 26,
+      "animal": "獬",
+      "element": "木"
+    },
+    {
+      "name": "牛",
+      "xiu_width": 8,
+      "animal": "牛",
+      "element": "金"
+    },
+    {
+      "name": "女",
+      "xiu_width": 12,
+      "animal": "蝠",
+      "element": "土"
+    },
+    {
+      "name": "虚",
+      "xiu_width": 10,
+      "animal": "鼠",
+      "element": "日"
+    },
+    {
+      "name": "危",
+      "xiu_width": 16,
+      "animal": "燕",
+      "element": "月"
+    },
+    {
+      "name": "室",
+      "xiu_width": 16,
+      "animal": "猪",
+      "element": "火"
+    },
+    {
+      "name": "壁",
+      "xiu_width": 9,
+      "animal": "貐",
+      "element": "水"
+    },
+    {
+      "name": "奎",
+      "xiu_width": 16,
+      "animal": "狼",
+      "element": "木"
+    },
+    {
+      "name": "娄",
+      "xiu_width": 12,
+      "animal": "狗",
+      "element": "金"
+    },
+    {
+      "name": "胃",
+      "xiu_width": 14,
+      "animal": "雉",
+      "element": "土"
+    },
+    {
+      "name": "昴",
+      "xiu_width": 11,
+      "animal": "鸡",
+      "element": "日"
+    },
+    {
+      "name": "毕",
+      "xiu_width": 16,
+      "animal": "乌",
+      "element": "月"
+    },
+    {
+      "name": "觜",
+      "xiu_width": 1,
+      "animal": "猴",
+      "element": "火"
+    },
+    {
+      "name": "参",
+      "xiu_width": 10,
+      "animal": "猿",
+      "element": "水"
+    },
+    {
+      "name": "井",
+      "xiu_width": 33,
+      "animal": "犴",
+      "element": "木"
+    },
+    {
+      "name": "鬼",
+      "xiu_width": 4,
+      "animal": "羊",
+      "element": "金"
+    },
+    {
+      "name": "柳",
+      "xiu_width": 15,
+      "animal": "獐",
+      "element": "土"
+    },
+    {
+      "name": "星",
+      "xiu_width": 7,
+      "animal": "马",
+      "element": "日"
+    },
+    {
+      "name": "张",
+      "xiu_width": 18,
+      "animal": "鹿",
+      "element": "月"
+    },
+    {
+      "name": "翼",
+      "xiu_width": 18,
+      "animal": "蛇",
+      "element": "火"
+    },
+    {
+      "name": "轸",
+      "xiu_width": 17,
+      "animal": "蚓",
+      "element": "水"
+    }
+  ],
+  "precession_per_year_arcsec": 50.3,
+  "total_traditional_degrees": 364
+}
