@@ -237,6 +237,16 @@ def main() -> int:
     print(f"\nzero_hit: {zero_hit}")
     print(f"verified_exempt（已验证豁免）：{sorted(verified_exempt) or '空（当前无——13 条均为未验证/可疑）'}")
     classified = {rid: entries_map.get(rid, {}).get("classification", "未登记") for rid in zero_hit}
+    # blocked_by 指向已关闭 Q → warn（评审第十五轮：生命周期绑死不能只绑 evaluable 侧）
+    import re as _re
+    for rid in zero_hit:
+        bb = str(entries_map.get(rid, {}).get("blocked_by") or "")
+        for token in _re.findall(r"Q-\d+", bb):
+            q_section_start = Path(ROOT / "docs/QUESTIONS.md")
+            if q_section_start.exists():
+                qtext = q_section_start.read_text(encoding="utf-8")
+                if f"## {token} " in qtext and "已裁定" in qtext.split(f"## {token} ")[1].split("\n## ")[0]:
+                    print(f"  ⚠️ {rid}: blocked_by 指向已关闭的 {token}——请迁移到真实阻塞源")
     # summary 三栏（评审第十四轮：已验证零命中/已验证命中/未验证+可疑——"豁免"只指第一栏）
     n_verified_hit = sum(1 for rid, d in out.items() if not d["zero_hit"])
     n_verified_exempt = sum(1 for rid in zero_hit if entries_map.get(rid, {}).get("classification") == "verified_exempt")
@@ -285,12 +295,11 @@ def main() -> int:
             "recorded_at": datetime.now().isoformat(timespec="seconds"),
             "entries": [
                 {"rule_id": rid,
-                 "classification": (
-                     "unimplemented_not_evaluable" if out[rid]["evaluable"] is False
-                     else "unverified_unknown_gated"),
+                 "classification": "unverified_unknown_gated",
                  "blocked_by": (
-                     "Q-014 + 起例实现" if out[rid]["evaluable"] is False
-                     else ("Q-005" if rid == "PUB-YINFU-001" else "person 输入（fixture 已解锁，见 hits_per_year）"))}
+                     "Q-005（纳音口径未定）" if rid == "PUB-YINFU-001"
+                     else "起例未实现（FACT_REGISTRY 本系统不提供）"
+                 )}
                 for rid in zero_hit
             ],
         }
