@@ -773,3 +773,25 @@ class TestAdr0014EvidenceCap:
         assert any("疑似非人类署名" in p for p in problems), problems
         # 层级：_check_signatures 的产出进 cmd_rules_lint 的 problems → exit 1（error 级）
         # loader 层仅校验非空（ADR-0014 引用节）；黑名单为 lint 纵深
+
+    def test_taskkind_empty_renders_warning(self, registry) -> None:
+        """产物四：零规则事项渲染显式提示（GAP-TASKKIND-EMPTY 用户可见化）。"""
+        from app_zeri.schemas import CourseSpec
+        from app_zeri.verifier import VerifyResult
+        from core_eval import detect_structure
+
+        ctx = build_context(
+            course=CourseSpec(dt=datetime(2026, 6, 15, 10, 0, tzinfo=CST)),
+            site=SiteSpec(azimuth_deg=150.0, lat=23.13, lon=113.26),
+            task=TaskSpec(kind="开业", nodes=("开业",), strictness="normal"),
+            person=PersonSpec(),
+            cal=CalendarConfig(),
+        )
+        ev = evaluate(ctx, registry, EvalConfig(task_kind="开业"))
+        assert sum(res.rules_evaluated for res in ev.per_school.values()) == 0
+        md = render_markdown(
+            VerifyResult(evaluation=ev, context=ctx,
+                         structure=detect_structure(zhis=["未", "未", "卯", "未"], gans=["丁", "丁", "辛", "乙"])),
+            registry=registry,
+        )
+        assert "该事项暂无规则覆盖" in md and "不得解读为" in md

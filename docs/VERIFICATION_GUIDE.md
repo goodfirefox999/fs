@@ -83,8 +83,12 @@ C 级规则与 ADR-0014"有争议规则不参与否决"同逻辑：**未核实�
 
 静态扫描覆盖 `facts./time./course.` 三命名空间；**跨模块依赖**（如 course.day.zhi 由
 四柱派生链产出）为运行时隐式产出，静态扫描不追踪派生链——跨模块正确性需人工审查。
-`op: exists` + 输入 fact = **就绪探测占位**（设计意图即恒真，如 ZWX-XIANGSHOU-001
-"命主年命已录入，相主口径待裁定后启用"），不是吉凶死规则，静态层豁免。
+`op: exists` + 输入 fact 的**就绪探测占位**（如 ZWX-XIANGSHOU-001"相主口径待裁定"）不是
+吉凶死规则，静态层豁免——豁免为**三重条件**（exists + 待裁定标记 + 裁定队列登记 Q-013），
+缺一照报；Q-013 裁定完成（QUESTIONS 标"已裁定"）后豁免失效，占位规则必须处置。
+**测试锚点**：`test_c21_static_candidate_specificity`（含"删 Q-013 登记必须重新报警"反证）、
+`test_zwx_placeholder_not_evaluated`（占位不参与评估实证）、`test_lint_check_id_groups_exact_sets`。
+**零命中可达性归因**：docs/research/reachability-2026-11.md（13 条均为门控未开/起例待核）。
 
 ## 三·六、C20 分歧不仲裁声明
 
@@ -110,6 +114,10 @@ oracle 算法差异的登记，供考证人复核；**禁止多数票仲裁**（
 `待考证 → 已考证` 须 `verified_by` 非空（loader 硬校验 + lint 纵深 +
 `Verified-B y:` commit trailer）——条文见 ADR-0014「状态跃迁提权」节与 loader，
 本文不复述。Agent 不得代签（AGENTS.md 硬禁止第 1 条）。
+**签名黑名单为启发式辅助而非完备保证**（评审第十三轮）：lint 对已知非人类署名
+（pytest/agent/AI/llm/bot 等，**全等匹配**大小写折叠——"Aijing" 类人名不受影响）
+报 error；完备防线 = status 变更权限约束（CODEOWNERS/分支保护，工程侧待接）。
+**测试锚点**：`test_agent_signature_blacklist`。
 
 ## 五、权威源清单
 

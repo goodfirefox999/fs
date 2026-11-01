@@ -225,7 +225,9 @@ def main() -> int:
             },
             "statistic": "命中候选数/参与评估候选数，按（规则×年份）分组；判据=适用域内零命中",
             "denominator": len(out),
-            "rationale": "豁免理由=日支/坐向/事项/节气邻近/农历日 五维覆盖后仍零命中（非'排除采样盲区'的强表述）",
+            "rationale": ("豁免理由=可达性归因（docs/research/reachability-2026-11.md）：13 条均为"
+                          "门控未开（命主/口径/起例未实现）或求值恒 False 待核，无可达零命中死规则；"
+                          "五维覆盖（日支/坐向/事项/节气邻近/农历日）为前提条件而非充分证据"),
             "recorded_at": datetime.now().isoformat(timespec="seconds"),
             "baseline_zero_hit": zero_hit,
         }

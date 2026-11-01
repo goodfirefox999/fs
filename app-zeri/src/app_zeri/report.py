@@ -236,6 +236,14 @@ def render_markdown(result: VerifyResult, *, registry: RuleRegistry | None = Non
         f"可发布：**{'是' if ev.publishable else '否'}**"
     )
     lines.append("")
+    # GAP-TASKKIND-EMPTY 渲染（评审第十四轮产物四）：零规则事项的用户可见提示——
+    # "事项声明支持"与"规则实际覆盖"的差额不能只躺在 coverage_gaps.yaml 里
+    if registry is not None and sum(res.rules_evaluated for res in ev.per_school.values()) == 0:
+        lines.append(
+            "> ⚠️ **该事项暂无规则覆盖**（GAP-TASKKIND-EMPTY）：引擎对本次事项未评估任何规则，"
+            "下述结论为空集结论，**不得解读为「无禁忌」**。"
+        )
+        lines.append("")
     # ADR-0014 决策 0：甲案的用户可见后果——tier 与 publishable 必须联合显示，不得分置
     if ev.vectors.get("controversial_count"):
         lines.append(
