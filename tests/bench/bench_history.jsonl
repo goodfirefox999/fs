@@ -29,3 +29,5 @@
 {"ts": "2026-11-01T20:07:13", "candidates": 4380, "elapsed": 2.0783}
 {"ts": "2026-11-01T21:53:25", "candidates": 4380, "elapsed": 1.8887}
 {"ts": "2026-11-01T21:53:27", "candidates": 4380, "elapsed": 1.8491}
+{"ts": "2026-11-01T22:06:44", "candidates": 4380, "elapsed": 1.8133, "passed": true, "pareto_size": 2625}
+{"ts": "2026-11-01T22:06:46", "candidates": 4380, "elapsed": 1.8084, "passed": true, "pareto_size": 2625}

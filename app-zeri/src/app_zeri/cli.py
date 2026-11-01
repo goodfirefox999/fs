@@ -298,19 +298,14 @@ def cmd_rules_lint(args: argparse.Namespace) -> int:
     print(json.dumps(stats, ensure_ascii=False, indent=2))
     print(f"事项模板：{len(reg.task_kinds)} 个")
     print(f"派别：{', '.join(reg.policy.enabled_schools())}（启用） / {', '.join(reg.policy.schools)}（全部）")
-    # 机器可读分组行（ADR-0014，评审第十轮：按 check id 分组，测试按组断言精确集合；
-    # cap_applied 与 unverified_progress 当前恰好同集，但语义不同——前者随签名消失，后者随考证进度消失）
-    unverified_progress = sorted(
-        rid for rid in reg.required_rules.all_rule_ids()
-        if rs.by_id.get(rid) is not None and rs.by_id[rid].status == "待考证"
-    )
-    quote_unsigned = sorted(
-        rule.rule_id for rule in rs.rules
-        if rule.status != "定义级" and rule.citation.has_quote and not rule.citation.verified_by
-    )
-    print(f"cap_applied: {json.dumps(sorted(rs.cap_applied_ids), ensure_ascii=False)}")
-    print(f"unverified_progress: {json.dumps(unverified_progress, ensure_ascii=False)}")
-    print(f"quote_unsigned: {json.dumps(quote_unsigned, ensure_ascii=False)}")
+    # 机器可读分组行（ADR-0014，评审第十/十一轮：按 check id 分组，测试按组断言精确集合。
+    # 注意：cap_applied 与 unverified_progress 当前同集是**语料现状的结构重合**（所有待考证
+    # 必需规则恰为禁用级），非定义相同——新增"待考证+慎用"必需规则即分叉。
+    # cap_applied 作用域 = 全库（scope=all_rules），与必需集 8 条无关，勿拿 8 对 10。）
+    groups = _lint_groups(reg)
+    print(f"cap_applied: {json.dumps(groups['cap_applied'], ensure_ascii=False)}")
+    print(f"unverified_progress: {json.dumps(groups['unverified_progress'], ensure_ascii=False)}")
+    print(f"quote_unsigned: {json.dumps(groups['quote_unsigned'], ensure_ascii=False)}")
     # 已知未覆盖的原文硬禁（coverage_gaps.yaml，Q-012/C18；机器可读闭环）
     gaps_path = Path("core-rule/config/coverage_gaps.yaml")
     if gaps_path.exists():
@@ -340,6 +335,27 @@ def _fact_roots(rule) -> set[str]:
     from core_rule.dsl import collect_fact_paths
 
     return {p.split(".")[0] for p in collect_fact_paths(rule.condition)}
+
+
+def _lint_groups(reg) -> dict[str, list[str]]:
+    """lint 检查的机器可读分组（按 check id；供 cmd_rules_lint 打印与测试精确集合断言）。
+
+    - cap_applied：全库 scope，声明 severity 高于 status 上限（ADR-0014 决策 1）
+    - unverified_progress：必需集内待考证规则（考证进度面板，语义与 cap 无关）
+    - quote_unsigned：已录引文未经人类签名（status=有争议/待考证）
+    """
+    rs = reg.ruleset
+    return {
+        "cap_applied": sorted(rs.cap_applied_ids),
+        "unverified_progress": sorted(
+            rid for rid in reg.required_rules.all_rule_ids()
+            if rs.by_id.get(rid) is not None and rs.by_id[rid].status == "待考证"
+        ),
+        "quote_unsigned": sorted(
+            rule.rule_id for rule in rs.rules
+            if rule.status != "定义级" and rule.citation.has_quote and not rule.citation.verified_by
+        ),
+    }
 
 
 def _check_signatures(reg) -> list[str]:

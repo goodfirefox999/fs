@@ -15,6 +15,7 @@ Pareto 前沿：在 (hard_fail, strong_avoid, conflict, unknown) 四维上做非
 
 from __future__ import annotations
 
+import warnings
 from typing import Iterable
 
 from .engine import (
@@ -111,6 +112,14 @@ def pareto_front(evals: Iterable[Evaluation]) -> list[Evaluation]:
     groups: dict[tuple, list[Evaluation]] = {}
     for ev in items:
         groups.setdefault(_vector_key(ev), []).append(ev)
+    u = len(groups)
+    if u > 1000:
+        # 最坏情况守卫（评审第十一轮）：u≈n 时分组退化为 O(n²)——
+        # 评分维度变多或 tier 分布变散会推高 u；提前警告而非等 perf 超预算
+        warnings.warn(
+            f"pareto_front: 唯一向量数 u={u} 接近 n={len(items)}，分组收益退化（O(u²)）",
+            stacklevel=2,
+        )
     reps = [(key, grp[0]) for key, grp in groups.items()]
     front: list[Evaluation] = []
     for key, rep in reps:

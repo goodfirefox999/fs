@@ -74,7 +74,7 @@ dc_replace 自动重算）；cap 警告按 run 聚合，不进 per-candidate 循
 
 | check id | 基线精确集合 | 语义 |
 |---|---|---|
-| `cap_applied` | PUB-CHONGMING-001, PUB-CHONGSHAN-001, PUB-MING-SANSHA-001, PUB-SANSHA-001, PUB-SANSHA-002, PUB-SIJUE-001, PUB-SILI-001, PUB-SUIPO-001, PUB-WUHUANG-001, PUB-YUEPO-001（10 条，待考证+声明禁用） | 声明>上限，生效被 cap（随签名消失） |
+| `cap_applied` | PUB-CHONGMING-001, PUB-CHONGSHAN-001, PUB-MING-SANSHA-001, PUB-SANSHA-001, PUB-SANSHA-002, PUB-SIJUE-001, PUB-SILI-001, PUB-SUIPO-001, PUB-WUHUANG-001, PUB-YUEPO-001（10 条，待考证+声明禁用） | **scope=all_rules**（勿拿必需集 8 对 10——评审第十一轮）；声明>上限，生效被 cap（随签名消失） |
 | `unverified_progress` | 当前与 cap_applied **恰好同集**（10 条）——语义不同：必需集待考证进度提示，组内规则可带任何 severity | 必需集考证进度面板 |
 | `quote_unsigned` | PUB-SANSHA-003, PUB-TAISUI-001（2 条） | 已录引文未经人类签名 |
 | `coverage_gaps` | GAP-TAISUI-FACING（1 条） | 已知未覆盖原文硬禁（coverage_gaps.yaml，C18 完成自动消除） |
@@ -125,6 +125,29 @@ dc_replace 自动重算）；cap 警告按 run 聚合，不进 per-candidate 循
 - 与 `publishable=false` 合并为统一"当前状态（未激活项合并说明）"块：
   可发布=否（必需集 x/y 已考证）+ strict 未激活 + 共同原因行（report.py，仅 `not publishable` 分支）。
 
+## 决策 6：非支配筛选的分组实现（perf 回归修复，评审第十一轮）
+
+**触发**：`demo_veto=False` 改变了候选分布——基线时全候选 state=不可用 →
+generator no_solution 短路，`pareto_front` 从未被调用；本 PR 后全候选 state=可用，
+4380 个候选首次走进 O(n²) 逐对支配比较（1900 万次 ≈ 9s，A/B 实测 2.223s → 9.072s）。
+
+**实现**：按 5 维向量分组，仅组代表间做支配筛选（O(u²)），`front.extend(全组)` 还原成员。
+**等价条件（三条，缺一不成立）**：① `_dominates` 只读 5 维向量（`_vector_key` 即其完整输入）；
+② 同向量候选互不支配（严格支配要求至少一维严格更优）→ 组内成员同命运；
+③ 组间支配与代表间支配一致（支配是向量间的函数）。
+**折叠处置**：成员**展开返回，不折叠**——下游 `rank(evals)` 独立排序全部候选，
+`pareto_front` 的消费点仅 `pareto_size`（generator 统计 + report 显示规模）；
+`test_pareto_grouped_equals_bruteforce` 用独立暴力 oracle 断言**成员 id 集合**相等
+（非长度、非直方图），锁死展开实现。
+
+**u 量化（2027 全年真实窗口实测）**：n=4380，**u=2**
+（向量仅 (0,0,0,10,0)×2625 与 (0,0,0,11,0)×1755 两种，前者支配后者，pareto_size=2625）——
+分组收益为数量级而非常数。**退化守卫**：`u > 1000` 时 `warnings.warn`（评分维度变多或
+tier 分布变散会推高 u；提前警告而非等 perf 超预算才发现）；
+bench_history 逐条记录 `pareto_size`（u 的下游代理）。
+**夹具教训**：等价性测试的构造数据三次写错支配方向（strong_avoid 越小越好、
+unknown 递增构成支配链）——独立暴力 oracle 先于手写期望给出正确答案，这正是"oracle 先行"的价值。
+
 ## 落地清单（✅ 全部完成，2026-11-01）
 
 | # | 项 | 落点 |
@@ -142,7 +165,13 @@ dc_replace 自动重算）；cap 警告按 run 聚合，不进 per-candidate 循
 
 ## 施工验收（2026-11-01 实测）
 
-- **pytest**：not-slow 全绿 exit=0（627→640 收集，含 13 个新测试）；既有 1 失败已在此前轮次修复。
+- **pytest**：not-slow 全绿 exit=0。**测试账目（评审第十一轮第二节更正，实测 collect 口径）**：
+  eac493d=630 总（627 not-slow + 3 slow）→ 639661a +10（T 编号落 9 方法：T7/T12/T17 合流、
+  T10 为改写不新增 + 序列化 1）→ db11804 +0（纯文档）→ ab689cd +3（lint_groups/anchors/
+  fingerprint；**混合提交**，实含第十一轮部分产物——量化确认评审第十一轮第七节的指认）
+  → 本轮 +1~3（pareto 等价性测试等）。当前 **641 not-slow / 644 总**，删除 0 条；
+  T10 改写后的旧语义（待考证被 select 排除）仍被断言覆盖（`all(status in 已考证/有争议)` +
+  `len(all) > len(default)`），无覆盖率收窄。
 - **lint**：✅ 通过；`cap_applied_ids` 与 10 条基线**逐字一致**；另 2 条签名提示（003/TAISUI 引文待签名）。
 - **S2 gen 冒烟归因**（2026-03 修造，基线 `out/baseline-gen-2026-03.json`）：
   候选 372→372；**结构层 diff**（tier 直方图 + 逐候选 vetoes 集合）合法来源仅 (a)：
@@ -152,11 +181,20 @@ dc_replace 自动重算）；cap 警告按 run 聚合，不进 per-candidate 循
   **(c) schema 字段新增**（评审第十轮补枚举）：`Judgment.to_dict` 新增
   source_status/doubt/declared_severity、SchoolResult 新增 controversial/demo_hits、
   Evaluation 新增 `schema_version: 2`（契约 schema 同步声明，test_contract 抓漏验证有效）——
-  结构层 diff 只比较 veto 规则 id 集合，对新增键天然免疫；
-  历史报告兼容承诺 = 旧键全保留 + 新键可选（序列化测试断言；系统不读回 JSON，无旧→新解析方向问题）。
+  结构层 diff 只比较 veto 规则 id 集合（比较域白名单：仅 veto rule_id 集合 + tier 直方图），
+  对新增键天然免疫。
+  **版本与兼容的诚实措辞（评审第十一轮第五节）**：无 schema_version 的历史报告视为 v1，
+  本次为 v2；bump 规则 = 新增可选字段升 minor（v2.x）、删改/语义变化升 major；
+  **系统不读回 JSON，不提供"旧 JSON → 解析器"的向后解析保证**——序列化测试测的是
+  "新对象 → dict 键形状"（旧键全保留 + 新键可选），schema_version 是未来引入解析器时的挂钩，
+  不是已兑现的兼容承诺。
 - **C16 矩阵**：2026 全年 12 月 × 4 坐向，**48 格全对角**；有争议命中 22 次，
-  **分规则：PUB-TAISUI-001 × 11、PUB-SANSHA-003 × 11**（评审第十轮要求拆分防样本偏斜；
-  守卫升级为"两条关键规则各 ≥1 次命中，缺一即 FAIL"）——甲案不变式集成级确认。
+  **分规则：PUB-TAISUI-001 × 11、PUB-SANSHA-003 × 11，按坐向分布 = 全部在 180°**
+  ——这不是脚本缺陷而是**规则结构**：坐太岁山 ⟺ 向首=岁破 ⟺ 岁破∈三煞方位组（direction_group
+  口径），两规则命中坐向天然重合，多坐向无法分开覆盖。零迁移的完备性证明由**单元级等价测试**
+  （机制对任意向量分布成立）承担，C16 是集成确认——两级证明各司其职（评审第十一轮第六节）。
+  bench_history 已改**先记后断**（`passed` 标记随行入史）——消除"历史只含存活者"的偏差，
+  相对门禁（下一批）不得建立在幸存者中位数上（评审第十一轮第六节）。
 - **perf：评审的怀疑是对的——4.1× 是真实回归，已定位并修复（"环境噪声"归因撤回）**。
   同解释器同机 A/B（5 次中位）：基线 `eac493d` **2.223s** vs 施工后 **9.072s**；
   单月对照仅 1.22× → 超线性，与单次评估无关。根因：`ranker.pareto_front` 为 **O(n²)**
@@ -167,13 +205,22 @@ dc_replace 自动重算）；cap 警告按 run 聚合，不进 per-candidate 循
   bench 全绿（含两预算测试）。教训登记：**"环境噪声"归因在被二分排除前是未证实结论**
   （与"9/10 是假的"同类错误，第二次犯——评审第十轮第三节）。
 - **ruleset_fingerprint：第三次串味实证 → 本轮机制化（不再排下一批）**。
+  `_select_cached` key 同时并入 `ENGINE_VERSION`（评估/cap 语义版本，现为 0.2.0）——
+  **改动 cap/评估语义必须 bump**，否则持久化缓存（日级事实缓存）跨语义版本投毒
+  （评审第十一轮第四节）。
   生产影响判定：CLI 单次进程每次重建 ruleset 不受影响；**但 `loader.py` 的 version
   只是 (rule_id, version) 哈希**——热加载/服务化场景同 id 同 version 改内容（ADR-0013
   即改 YAML 未 bump version）必然串味。修复：`RuleSet.fingerprint`（`__post_init__` 派生，
   覆盖 id/version/status/severity/hard_veto/condition 内容哈希），`_select_cached` key 首位
   加入；`test_fingerprint_distinguishes_content` 断言同 id 同 version 不同 condition
   指纹不同且评估不串味。**统一 cache_key 收拢（所有缓存点过单一函数 + 手写 key lint）登记为 C19**，
-  本轮先堵实测点。
+  本轮先堵实测点；**C19 是日级事实缓存的硬前置**（评审第十一轮第四节：否则缓存 key 是
+  第五种手写 key），两件必须同一依赖链：C19 → 日级缓存 → perf 相对门禁 → Q-012。
+  **遗留登记**：coverage_gaps 目前只进 lint 机器行，**报告未渲染**（用户看不到"必需集 8 条"
+  与"原文硬禁"的差额）——随 C14 报告项补；`version` 使用点收拢进 C19 清单
+  （manifest/报告回显=人类可读标识，安全；`_select_cached`=已改指纹；测试 helper=仅测试）。
+  **提交拆分约定**（评审第十一轮第七节）：影响行为分布的变更（如本轮 pareto）与机制化补强
+  后续拆分提交，便于回归二分。
 
 ## 与 ADR-0012 / 0013 的关系
 

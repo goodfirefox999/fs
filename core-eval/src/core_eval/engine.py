@@ -107,6 +107,7 @@ def _select_cached(
     # 只用 version 会导致缓存串味：合成规则被带到后续评估里（已踩过）。
     key = (
         ruleset.fingerprint,  # ADR-0014：内容身份（同 id 同 version 改内容不再串味，第三次实证后引入）
+        ENGINE_VERSION,  # 评估/cap 语义版本——改动引擎语义必须 bump（持久化缓存防跨语义投毒）
         ruleset.version,
         ruleset.rule_ids or tuple(r.rule_id for r in ruleset.rules),
         schools,

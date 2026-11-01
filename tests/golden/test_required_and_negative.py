@@ -470,6 +470,56 @@ class TestAdr0014EvidenceCap:
         assert "存疑命中" in proc_md.stdout
         assert "不可用（确定）" not in proc_md.stdout
 
+    def test_pareto_grouped_equals_bruteforce(self) -> None:
+        """评审第十一轮第一优先：分组法与暴力法的 **front 成员 id 集合**逐一相等（防成员折叠）。
+
+        形态：重复向量组（展开保留）/ 被支配整组 / 劣势链 / u=n 退化形态（权衡型 500 个）/ positive 支配对。
+        内联暴力实现为独立 oracle；断言成员 id 集合相等（非长度、非直方图）。
+        """
+        from core_eval.engine import Evaluation
+        from core_eval.ranker import pareto_front
+
+        def mk(i, hf, sa, conflict=0, unknown=0, positive=0):
+            return Evaluation(
+                candidate=f"c{i}", per_school={}, state="可用", tier="NEEDS_REVIEW",
+                vectors={"hard_fail_count": hf, "strong_avoid_count": sa,
+                         "conflict_count": conflict, "unknown_count": unknown,
+                         "positive_count": positive},
+                conflicts=[], unknowns=[], manifest={}, config=None,
+                structural=[], required_rule_ids=(), blocked_required=[],
+            )
+
+        items: list = []
+        # A. 重复向量组：3×(0,2,0,0,1) 互为副本（占 positive 优势维，不被 C 支配）
+        items += [mk(i, 0, 2, conflict=0, unknown=0, positive=1) for i in range(3)]
+        # A2. 被支配的副本组：(1,2,0,0,0) 被 A 整组支配（hf 更差）
+        items += [mk(i, 1, 2) for i in range(3, 5)]
+        # B. 劣势链：(0,3..5,0,0,0) 全被 A 支配（sa 更差且 pos 更差）
+        items += [mk(5, 0, 5), mk(6, 0, 4), mk(7, 0, 3)]
+        # C. u=n 退化形态：500 个互不支配——sa=1（优于 A 的 sa=2），
+        #    conflict/unknown/positive 同增（一差两好→与 A 互不支配；组内两差一好→互不支配）
+        items += [mk(100 + i, 0, 1, conflict=i, unknown=i, positive=i) for i in range(1, 501)]
+        # D. positive 维支配对：bad 维相同、pos 差一档 → c611 被 c610 支配
+        items += [mk(610, 0, 0, unknown=7, positive=1), mk(611, 0, 0, unknown=7, positive=0)]
+
+        def brute_force(evals):
+            return [e for e in evals
+                    if not any(o is not e and (
+                        (va := {k: o.vectors.get(k, 0) for k in ("hard_fail_count", "strong_avoid_count", "conflict_count", "unknown_count")}) and
+                        (vb := {k: e.vectors.get(k, 0) for k in ("hard_fail_count", "strong_avoid_count", "conflict_count", "unknown_count")}) and
+                        not any(va[k] > vb[k] for k in va) and
+                        o.vectors.get("positive_count", 0) >= e.vectors.get("positive_count", 0) and
+                        (va != vb or o.vectors.get("positive_count", 0) > e.vectors.get("positive_count", 0))
+                    ) for o in evals)]
+
+        expected = {e.candidate for e in brute_force(items)}
+        got = {e.candidate for e in pareto_front(items)}
+        assert got == expected, f"分组法与暴力法成员集合不等：仅分组有 {got - expected}，仅暴力有 {expected - got}"
+        assert {"c0", "c1", "c2"} <= got, "同向量副本必须全部保留（展开实现，非只留代表）"
+        assert not ({"c3", "c4", "c5", "c6", "c7"} & got), "劣势向量整组淘汰"
+        assert len([c for c in got if 101 <= int(c[1:]) <= 600]) == 500, "u=n 退化形态：500 个全在前沿"
+        assert "c610" in got and "c611" not in got, "positive 维支配生效"
+
     def test_cli_demo_veto_requires_allow_unverified(self) -> None:
         """T11：单独 --demo-veto → exit≠0（不静默忽略）；双开 → 首行显著标注。"""
         import os
@@ -503,7 +553,8 @@ class TestAdr0014EvidenceCap:
 
         rs = registry.ruleset
         assert rs.cap_applied_ids == {r.rule_id for r in rs.rules if effective_severity(r) != r.severity}
-        ev = evaluate(self._controversial_ctx(golden_ctx), registry, EvalConfig(task_kind="修造"))
+        ctx = self._controversial_ctx(golden_ctx)
+        ev = evaluate(ctx, registry, EvalConfig(task_kind="修造"))
         for res in ev.per_school.values():
             for j in res.vetoes + res.cautions + res.controversial + res.demo_hits + res.positives + res.notes:
                 assert j.severity == cap_severity(j.declared_severity or j.severity, j.status), j.rule_id
@@ -556,7 +607,7 @@ class TestAdr0014EvidenceCap:
                 )
 
     def test_lint_check_id_groups_exact_sets(self) -> None:
-        """评审第十轮：lint 机器行按 check id 分组，各组断言精确集合（非计数）。"""
+        """评审第十/十一轮：lint 机器行按 check id 分组，各组断言精确集合（非计数）。"""
         import json as _json
         import os
         import subprocess
@@ -585,7 +636,7 @@ class TestAdr0014EvidenceCap:
         }, groups.get("cap_applied")
         assert set(groups.get("quote_unsigned", [])) == {"PUB-SANSHA-003", "PUB-TAISUI-001"}
         assert set(groups.get("unverified_progress", [])) == set(groups.get("cap_applied", [])), (
-            "当前构造下两组恰好同集（10 条待考证+禁用）；语义不同，见 lint 输出注释"
+            "当前构造下两组恰好同集（10 条待考证+禁用）——结构重合非定义相同，见 _lint_groups 注释"
         )
         assert groups.get("coverage_gaps") == ["GAP-TAISUI-FACING"], "覆盖缺口机器行"
 
@@ -608,7 +659,7 @@ class TestAdr0014EvidenceCap:
         """第三次串味实证的机制化验证：同 id 同 version 不同内容 → 指纹不同 → 缓存不串味。"""
         a = _synthetic_rule()  # condition: site.mountain == 乾, version=1
         b = dc_replace(
-            _synthetic_rule(), rule_id="TEST-VERIFIED-001", version=1,
+            _synthetic_rule(), version=1,
             condition={"fact": "site.mountain", "op": "eq", "value": "子"},
         )  # 同 id 同 version，内容不同
         reg_a = _registry_with(registry, a)

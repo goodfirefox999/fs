@@ -54,6 +54,7 @@ def main() -> int:
     reg2 = registry_without_controversial(reg)
     controversial_hits = 0
     per_rule: dict[str, int] = {}
+    per_rule_az: dict[tuple, int] = {}
     rows: list[str] = []
     failures: list[str] = []
 
@@ -72,6 +73,7 @@ def main() -> int:
             for res in ev_full.per_school.values():
                 for j in res.controversial:
                     per_rule[j.rule_id] = per_rule.get(j.rule_id, 0) + 1
+                    per_rule_az[(j.rule_id, az)] = per_rule_az.get((j.rule_id, az), 0) + 1
             if ev_full.tier == ev_no.tier:
                 rows.append(f"| {YEAR}-{month:02d} | {az:.0f} | {ev_full.tier} | ✅ 一致 |")
             else:
@@ -86,6 +88,9 @@ def main() -> int:
     print("分规则命中数（防样本偏斜，评审第十轮）：")
     for rid in sorted(per_rule):
         print(f"  - {rid}: {per_rule[rid]}")
+    print("分规则 × 坐向分布（评审第十一轮：防'全落在单一坐向'的覆盖假象）：")
+    for (rid, az), n in sorted(per_rule_az.items()):
+        print(f"  - {rid} @ {az:.0f}°: {n}")
 
     key_rules = ("PUB-TAISUI-001", "PUB-SANSHA-003")
     missing = [r for r in key_rules if per_rule.get(r, 0) == 0]

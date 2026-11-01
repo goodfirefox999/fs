@@ -24,8 +24,12 @@ HISTORY = Path(__file__).resolve().parent / "bench_history.jsonl"
 REGRESSION_FACTOR = 1.5
 
 
-def _record_and_check(elapsed: float) -> None:
-    """记录本次耗时，并与历史中位数比较（防止"每次改一点"的渐进劣化）。"""
+def _record_and_check(elapsed: float, pareto_size: int | None = None) -> None:
+    """记录本次耗时，并与历史中位数比较（防止"每次改一点"的渐进劣化）。
+
+    评审第十一轮：**先记后断**——失败运行也入历史（带 passed 标记），
+    消除"历史只含存活者"的系统性偏差；相对门禁（下一批）不得建立在幸存者中位数上。
+    """
     samples: list[float] = []
     if HISTORY.exists():
         for line in HISTORY.read_text(encoding="utf-8").splitlines():
@@ -35,15 +39,19 @@ def _record_and_check(elapsed: float) -> None:
                 samples.append(float(json.loads(line)["elapsed"]))
             except (json.JSONDecodeError, KeyError, ValueError):
                 continue
-    if len(samples) >= 3:
-        median = statistics.median(samples)
-        assert elapsed <= median * REGRESSION_FACTOR, (
+    median = statistics.median(samples) if len(samples) >= 3 else None
+    passed = median is None or elapsed <= median * REGRESSION_FACTOR
+    record = {"ts": datetime.now().isoformat(timespec="seconds"),
+              "candidates": 4380, "elapsed": round(elapsed, 4), "passed": passed}
+    if pareto_size is not None:
+        record["pareto_size"] = pareto_size  # u 的下游代理（front 规模），监控分组收益退化
+    with HISTORY.open("a", encoding="utf-8") as fh:
+        fh.write(json.dumps(record) + "\n")
+    if median is not None:
+        assert passed, (
             f"性能回归：本次 {elapsed:.2f}s，历史中位数 {median:.2f}s，"
             f"超过 {REGRESSION_FACTOR}× 阈值"
         )
-    with HISTORY.open("a", encoding="utf-8") as fh:
-        fh.write(json.dumps({"ts": datetime.now().isoformat(timespec="seconds"),
-                             "candidates": 4380, "elapsed": round(elapsed, 4)}) + "\n")
 
 
 def test_candidate_count_is_4380() -> None:
@@ -65,7 +73,7 @@ def test_full_year_within_budget() -> None:
     )
     elapsed = time.perf_counter() - started
     assert result.total_candidates == 4380
-    _record_and_check(elapsed)
+    _record_and_check(elapsed, pareto_size=result.pareto_size)
     assert elapsed < BUDGET_SEC, f"全量穷举耗时 {elapsed:.2f}s，超出预算 {BUDGET_SEC}s"
 
 
@@ -89,7 +97,7 @@ def test_verified_rules_performance() -> None:
     elapsed = time.perf_counter() - started
     assert result.total_candidates == 4380
     # 容量目标只有一个：52 条规则 × 4380 候选 < 2s（不再另设 3s 阈值，避免两个数互相矛盾）
-    _record_and_check(elapsed)
+    _record_and_check(elapsed, pareto_size=result.pareto_size)
     assert elapsed < BUDGET_SEC, f"已考证模拟耗时 {elapsed:.2f}s，超出容量目标 {BUDGET_SEC}s"
 
 
