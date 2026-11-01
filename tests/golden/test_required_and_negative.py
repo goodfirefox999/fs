@@ -977,30 +977,43 @@ class TestAdr0014EvidenceCap:
     def test_evaluable_expiry_on_q_resolution(self, registry, tmp_path) -> None:
         """评审第十五轮（第三次要求，本轮 fixture 打通）：Q 裁定后豁免失效——两条链路。
 
-        链 1（占位探测）：Q-013 已裁定 → ZWX 静态豁免失效（_c21_static_warnings 报警）；
-        链 2（evaluable=false）：Q-014 已裁定 → XIUJIU 豁免失效（_evaluable_expiry_warnings）。
-        各配反证（未裁定 → 沉默）。临时 QUESTIONS 副本，不触碰真文件。
+        Q-014 已被代码证据关闭（exists 返回 unknown，evaluable=false 不需要），
+        但机制保留：若未来某条规则标 evaluable=false，链 2 仍然生效。
+        链 1（Q-013 占位探测）保持活跃。
         """
         import app_zeri.cli as cli_mod
 
+        # 链 1：Q-013 占位探测（活跃——Q-013 仍未裁定）
         qfile = tmp_path / "QUESTIONS.md"
         qfile.write_text(
-            "## Q-013 正五行相主的取用口径\n\n**已裁定：取年命纳音**\n"
-            "## Q-014 exists 语义\n\n**已裁定：吉凶条件返回 unknown**\n", encoding="utf-8"
+            "## Q-013 正五行相主的取用口径\n\n**已裁定：取年命纳音**\n", encoding="utf-8"
         )
-        # 链 1：占位豁免失效
         w1 = cli_mod._c21_static_warnings(registry, questions_path=qfile)
         assert any("ZWX-XIANGSHOU-001" in w and "豁免失效" in w for w in w1), w1
-        # 链 2：evaluable 豁免失效（XIUJIU blocked_by=Q-014）
-        w2 = cli_mod._evaluable_expiry_warnings(registry, questions_path=qfile)
-        assert any("PUB-XIUJIU-001" in w and "豁免失效" in w for w in w2), w2
-        # 反证：未裁定 → 双链沉默
-        qfile.write_text(
-            "## Q-013 正五行相主的取用口径\n\n待人类提供口径。\n"
-            "## Q-014 exists 语义\n\n待裁定。\n", encoding="utf-8"
-        )
+        # 反证
+        qfile.write_text("## Q-013 正五行相主的取用口径\n\n待人类提供口径。\n", encoding="utf-8")
         assert cli_mod._c21_static_warnings(registry, questions_path=qfile) == []
-        assert cli_mod._evaluable_expiry_warnings(registry, questions_path=qfile) == []
+        # 链 2：evaluable 豁免失效机制（构造测试——Q-014 已关闭但机制保留备未来使用）
+        from core_rule.models import Rule
+        from core_rule.provenance import Citation
+
+        suspended = Rule(
+            rule_id="TEST-EV-SUSPENDED", version=1, school="public",
+            category="测试", status="待考证", hard_veto=False, severity="慎用",
+            target="day", applies_to=__import__("core_rule.models", fromlist=["AppliesTo"]).AppliesTo(),
+            condition={"fact": "facts.x.value", "op": "eq", "value": True},
+            citation=Citation(source="《测试》", kind="classic"),
+            explanation="测试", tests=("RT-A", "RT-B"),
+            evaluable=False,
+            raw={"blocked_by": "Q-999 测试阻塞", "status": "待考证"},  # raw 必须含 blocked_by
+        )
+        reg2 = _registry_with(registry, suspended)
+        q2 = tmp_path / "q2.md"
+        q2.write_text("## Q-999 测试\n\n**已裁定：foo**\n", encoding="utf-8")
+        w2 = cli_mod._evaluable_expiry_warnings(reg2, questions_path=q2)
+        assert any("TEST-EV-SUSPENDED" in w for w in w2), w2
+        q2.write_text("## Q-999 测试\n\n待裁定。\n", encoding="utf-8")
+        assert cli_mod._evaluable_expiry_warnings(reg2, questions_path=q2) == []
 
     def test_evaluable_false_requires_blocked_by(self, tmp_path) -> None:
         """产物二：evaluable=false 缺 blocked_by → loader 拒绝。"""

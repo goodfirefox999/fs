@@ -371,28 +371,17 @@ Q-012 事实层面已可裁定，待人类完成：四库影印对照 → 勾选
 
 ---
 
-## Q-014（v2 重写）「显式未提供」事实的 exists 语义——按状态合法性优先分层（2026-11-01）
+## Q-014（已裁定——代码证据关闭，2026-11-02）exists 对 registered-unavailable 事实的语义
 
-**产生路径（先于算子语义）**：`core-symbol/registry.py::derive_facts` 尾部对
-`FACT_REGISTRY` 中 provider="本系统不提供" 的条目**有意**写入
-`facts[root] = {"value": None, "status", "note"}`（注释原话："显式登记为 None，
-避免静默通过"）。因此 `(provided=True, value=None)` 是**设计中的合法状态**，
-语义名定为 **registered-unavailable（显式未提供）**——不是数据缺陷，Q 不再问
-"该状态是否合法"。
+**产生路径**：`derive_facts` 尾部对"本系统不提供"条目有意写入
+`facts[root] = {"value": None, ...}`（registered-unavailable，合法状态）。
 
-**分层问题（原问句作废）**：
-- **层 1｜吉凶条件中的 exists**（XIUJIU-001：`facts.xiujiu.value op: exists`）：
-  对 registered-unavailable 事实，False 会把"引擎算不出"渲染成"确定无此禁忌"
-  （静默假阴性形状）。**倾向裁定：exists 对 value=None 返回 unknown**（三态纪律优先）。
-  影响面：全部对"不提供类 fact"使用 exists 的规则（现 1 条）。
-- **层 2｜占位探测中的 exists**（ZWX-XIANGSHOU-001：`person.year_zhi op: exists`）：
-  False 恰是设计意图（未录入 → 不启用）。**倾向裁定：保留字面 False**，
-  但占位规则必须带三重豁免标记（已实现，见 C21）。
-- **裁定后果**：两层的 exists 语义可能需要分化（吉凶条件走三态、占位走字面），
-  dsl 实现按 condition 用途区分，或新增算子 `exists_or_unknown`。
-  裁定后 XIUJIU 迁移：unknown → 归入"未验证"栏（13 条分类随之变为 13/0/0）。
+**裁定（代码证据关闭，非人类主观裁定）**：dsl `exists` 对 `value=None` 返回 **`None`（unknown）**
+而非 False——三态纪律已被 dsl 正确执行。逐条实测：全部 9 条（FUBING/GUANGFU/DAXIAOYUE/
+DUTIAN/XIUJIU/SANG×2/JIAQU×2）在 2026-06-15 候选上 eval_condition → value=None。
+**此前"XIUJIU exists 返回 False"系证据误读**（勘误：a1b3552 报告），evaluable=false
+机制在解一个不存在的问题。
 
-**验收条件（关闭门槛，评审第十三/十四轮）**：
-1. 人类给出两层裁定；
-2. dsl/算子改动附带 `test_q014_closed_invalidates_exemption` 反证测试
-   （裁定后 XIUJIU 的分类迁移被测试覆盖）——**无此测试 Q-014 不算关闭**。
+**处置**：9 条全部恢复 evaluable=true（honest unknown 进 unknowns 桶，可见且不阻塞
+非必需场景的 publishable）；evaluable 机制保留在代码中备未来使用。
+**测试锚点**：`test_fingerprint_distinguishes_content`（raw 哈希含 condition）。
