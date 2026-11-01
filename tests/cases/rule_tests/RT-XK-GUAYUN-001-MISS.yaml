@@ -1,0 +1,6 @@
+case_id: RT-XK-GUAYUN-001-MISS
+kind: rule_test
+rule_id: XK-GUAYUN-001
+expected: miss
+note: 玄空大卦规则 MISS：facts.xuankong.* 起例待实现 → unknown。
+overrides: {}

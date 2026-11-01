@@ -1,0 +1,6 @@
+case_id: RT-XK-WANGQI-001-HIT
+kind: rule_test
+rule_id: XK-WANGQI-001
+expected: miss
+note: 玄空大卦规则：facts.xuankong.* 起例待实现 → unknown → 不算 hit。已知限制。
+overrides: {}

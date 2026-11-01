@@ -1,0 +1,15 @@
+{
+  "_meta": {
+    "source": "河图生成数表",
+    "source_ref": "《易经·系辞》天一生水地六成之……",
+    "verification_status": "unverified"
+  },
+  "generated_numbers": {
+    "天一生水": {"generate": 1, "complete": 6, "element": "水", "direction": "北"},
+    "地二生火": {"generate": 2, "complete": 7, "element": "火", "direction": "南"},
+    "天三生木": {"generate": 3, "complete": 8, "element": "木", "direction": "东"},
+    "地四生金": {"generate": 4, "complete": 9, "element": "金", "direction": "西"},
+    "天五生土": {"generate": 5, "complete": 10, "element": "土", "direction": "中"}
+  },
+  "he_shi": {"note": "合十=两数之和为10；合五=和为5；合十五=和为15", "pairs": [[1,9],[2,8],[3,7],[4,6],[5,10]]}
+}

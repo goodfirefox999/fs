@@ -287,6 +287,14 @@ def derive_facts(
     # ---- 口径回显（报告必须展示本次用了哪个口径）----
     facts["_calibers"] = {"sansha": sansha_caliber, "nayin": nayin_caliber}
 
+    # ---- 玄空大卦 facts（Phase 7，起例待实现→unknown）----
+    facts.setdefault("xuankong", {
+        "guayun_current": None, "chouyao": None,
+        "guaqi_peihe": None, "wangqi_daoshan": None,
+        "status": "待考证",
+        "note": "玄空大卦 64 卦圆图/卦运/抽爻换象/卦气配合——起例待实现",
+    })
+
     # ---- 董公择日 facts（Phase 6，评审扩展版 spec §2.3）----
     facts.setdefault("donggong", {})
     _dg = facts["donggong"]

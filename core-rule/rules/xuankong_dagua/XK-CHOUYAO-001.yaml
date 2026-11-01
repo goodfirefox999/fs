@@ -1,0 +1,44 @@
+# Phase 7 玄空大卦规则包：抽爻换象（丁爻/财爻分列）（spec §2.4 XK)
+api_version: 1
+rule_id: XK-CHOUYAO-001
+version: 1
+school: xuankong_dagua
+category: 抽爻换象（玄空大卦）
+status: 待考证
+hard_veto: false
+severity: 可用
+target: mountain
+evaluable: true
+applies_to:
+  task_kinds:
+  - 入宅
+  - 修造
+  - 安葬
+  node_kinds: []
+  strictness_min: normal
+condition:
+  fact: facts.xuankong.chouyao
+  op: exists
+score_weight: null
+citation:
+  kind: classic
+  source: 《沈氏玄空学》
+  edition: null
+  juan: null
+  pian: null
+  entry: 抽爻换象（丁爻/财爻分列）
+  quote_kind: null
+  quote: null
+  url_or_path: null
+  verified_by: null
+  verified_at: null
+  book_authenticity: 待核
+  confidence: 低
+tests:
+- RT-XK-CHOUYAO-001-HIT
+- RT-XK-CHOUYAO-001-MISS
+explanation: 抽爻换象（丁爻/财爻分列）（玄空大卦）。facts.xuankong.* 由 core-symbol 玄空大卦模块产出（起例待实现，当前 unknown）。
+supersedes: null
+notes: >-
+  抽爻换象（丁爻/财爻分列）。spec §2.4 硬性要求：卦运按阳爻 9 年阴爻 6 年（禁 20 年简化）；
+  抽爻换象 384 爻精度；日课映射流派分歧标 needs_human_review。

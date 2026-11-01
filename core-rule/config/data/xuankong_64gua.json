@@ -1,0 +1,24 @@
+{
+  "_meta": {
+    "source": "先天六十四卦圆图（伏羲先天卦序）",
+    "source_ref": "《易经》先天六十四卦方圆图；玄空大卦用法见《沈氏玄空学》",
+    "verification_status": "unverified",
+    "note": "每卦 5.625°，384 爻每爻 0.9375°。binary 从下爻到上爻（1=阳，0=阴）。卦运按三爻和计算。"
+  },
+  "hexagrams": {
+    "乾": {"binary": "111111", "lower": "乾", "upper": "乾", "guayun": 9, "years": 27},
+    "兑": {"binary": "110110", "lower": "兑", "upper": "兑", "guayun": 4, "years": 24},
+    "离": {"binary": "101101", "lower": "离", "upper": "离", "guayun": 3, "years": 21},
+    "震": {"binary": "100100", "lower": "震", "upper": "震", "guayun": 8, "years": 24},
+    "巽": {"binary": "011011", "lower": "巽", "upper": "巽", "guayun": 2, "years": 18},
+    "坎": {"binary": "010010", "lower": "坎", "upper": "坎", "guayun": 7, "years": 21},
+    "艮": {"binary": "001001", "lower": "艮", "upper": "艮", "guayun": 6, "years": 24},
+    "坤": {"binary": "000000", "lower": "坤", "upper": "坤", "guayun": 1, "years": 18}
+  },
+  "guayun_rule": {
+    "yang_years": 9,
+    "yin_years": 6,
+    "note": "阳爻 9 年，阴爻 6 年。三爻和=本经卦运年期。64 别卦的卦运取其内卦（下三爻）的经卦运。",
+    "wuyun": "玄空大卦无五运"
+  }
+}

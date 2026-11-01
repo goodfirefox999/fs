@@ -1,39 +1,44 @@
-# 本文件由 tools/gen_rules.py 生成，结构统一；规则内容（条件/解释/出处）需人类考证者复核。
-# status: 待考证 = 口诀常见但原文未核，默认不参与正式判定，命中时仅登记为 unknown。
-# citation.quote 为 null 表示「尚未核对原文」，不是缺漏，禁止为填满字段而编造引文。
+# Phase 7 玄空大卦规则包：卦气配合（spec §2.4 XK)
 api_version: 1
 rule_id: XK-GUAQI-001
 version: 1
 school: xuankong_dagua
-category: 玄空卦气
+category: 卦气配合（玄空大卦）
 status: 待考证
 hard_veto: false
 severity: 可用
 target: mountain
+evaluable: true
 applies_to:
-  task_kinds: []
+  task_kinds:
+  - 入宅
+  - 修造
+  - 安葬
   node_kinds: []
   strictness_min: normal
 condition:
-  fact: facts.wuhuang.year.palace
+  fact: facts.xuankong.guaqi_peihe
   op: exists
 score_weight: null
 citation:
   kind: classic
-  source: 《鳌头通书》
+  source: 《沈氏玄空学》
   edition: null
   juan: null
   pian: null
-  entry: null
+  entry: 卦气配合
   quote_kind: null
   quote: null
   url_or_path: null
   verified_by: null
   verified_at: null
+  book_authenticity: 待核
   confidence: 低
 tests:
 - RT-XK-GUAQI-001-HIT
-- RT-XK-GUAQI-001-UNKNOWN
-explanation: 玄空卦气需运星与山向星配合，本系统仅提供年五黄宫位作参考。
+- RT-XK-GUAQI-001-MISS
+explanation: 卦气配合（玄空大卦）。facts.xuankong.* 由 core-symbol 玄空大卦模块产出（起例待实现，当前 unknown）。
 supersedes: null
-notes: 待考证：玄空大卦卦气起例、是否参与否决。默认只进参考层。
+notes: >-
+  卦气配合。spec §2.4 硬性要求：卦运按阳爻 9 年阴爻 6 年（禁 20 年简化）；
+  抽爻换象 384 爻精度；日课映射流派分歧标 needs_human_review。

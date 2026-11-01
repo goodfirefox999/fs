@@ -44,7 +44,7 @@ schools:
       董公规则包：十二建星/三星值日/勾陈黑道/金神七煞（reject 层对接）。
       核心纲领=神煞宜忌。规则前缀 DG。煞贡/直星/人专不解金神七煞。Phase 6 交付。
   xuankong_dagua:
-    enabled: false
+    enabled: true
     participates_in_veto: false
     weight: 0.5
     layer: scoring
