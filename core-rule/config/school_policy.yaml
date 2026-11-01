@@ -20,7 +20,7 @@ schools:
 
   # ---- Layer 4: 五派并列评分 ----
   zhengwuxing:
-    enabled: false
+    enabled: true
     participates_in_veto: false
     weight: 0.8
     layer: scoring
@@ -82,22 +82,22 @@ event_weights:
 # 场景路由：事项 → 参与派别。未列出者用 default_route。
 routing:
   动土: [public, zhengwuxing, sanhe, donggong, xuankong_dagua, tianxing]
-  修造: [public, zhengwuxing, sanhe, donggong, xuankong_dagua, tianxing]
+  修造: [public, zhengwuxing, zhengwuxing, sanhe, donggong, xuankong_dagua, tianxing]
   上梁: [public, zhengwuxing, sanhe, donggong]
   竖柱: [public, zhengwuxing, sanhe, donggong]
   安门: [public, zhengwuxing, donggong]
   安灶: [public, zhengwuxing, donggong]
-  入宅: [public, zhengwuxing, sanhe, donggong, xuankong_dagua]
+  入宅: [public, zhengwuxing, zhengwuxing, sanhe, donggong, xuankong_dagua]
   移徙: [public, zhengwuxing, donggong]
-  安葬: [public, zhengwuxing, sanhe, donggong, tianxing]
-  破土: [public, zhengwuxing, sanhe, donggong, tianxing]
+  安葬: [public, zhengwuxing, zhengwuxing, sanhe, donggong, tianxing]
+  破土: [public, zhengwuxing, zhengwuxing, sanhe, donggong, tianxing]
   立碑: [public, zhengwuxing, sanhe, donggong]
-  修坟: [public, zhengwuxing, sanhe, donggong]
-  修祠: [public, zhengwuxing, sanhe, donggong]
+  修坟: [public, zhengwuxing, zhengwuxing, sanhe, donggong]
+  修祠: [public, zhengwuxing, zhengwuxing, sanhe, donggong]
   安龛: [public, zhengwuxing, donggong]
   升座: [public, zhengwuxing, donggong]
   开光: [public, donggong]
-  嫁娶: [public, zhengwuxing, sanhe, donggong, tianxing]
+  嫁娶: [public, zhengwuxing, zhengwuxing, sanhe, donggong, tianxing]
   纳采: [public, zhengwuxing, donggong]
   出行: [public, donggong]
   签约: [public, zhengwuxing, donggong]

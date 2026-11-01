@@ -1,0 +1,48 @@
+# Phase 4 正五行规则包：调候（评审扩展版 spec §2.1 ZWX_TIAO_HOU）
+# 调候=以月令寒暖燥湿定调和方向，属正五行辅纲（纲领=补龙扶山相主，辅以调候通关）。
+# 数据依赖：zwx_tiaohou_groups.json（月支分组 + 需要的调和地支组）
+api_version: 1
+rule_id: ZWX-TIAOHOU-001
+version: 1
+school: zhengwuxing
+category: 调候（正五行）
+status: 待考证
+hard_veto: false
+severity: 可用
+target: day
+evaluable: true
+applies_to:
+  task_kinds:
+  - 安葬
+  - 修造
+  - 入宅
+  - 嫁娶
+  node_kinds: []
+  strictness_min: normal
+condition:
+  fact: time.month_zhi
+  op: eq
+  value: "亥"
+score_weight: null
+citation:
+  kind: classic
+  source: 《穷通宝鉴》
+  edition: null
+  juan: null
+  pian: null
+  entry: 调候用神
+  quote_kind: null
+  quote: null
+  url_or_path: null
+  verified_by: null
+  verified_at: null
+  book_authenticity: authentic
+  confidence: 低
+tests:
+- RT-ZWX-TIAOHOU-001-HIT
+- RT-ZWX-TIAOHOU-001-MISS
+explanation: 月支{time.month_zhi}为亥（寒月），按调候取温局调和（数据见 zwx_tiaohou_groups.json）。调候与扶抑冲突时以扶抑为主。
+supersedes: null
+notes: >-
+  调候的完整实现需要四柱五行分析（120 格调候用神表），当前 DSL 仅做月支分组判定。
+  详细 120 格表待考证补全（qiongtong_biaojian_120.json）。spec 要求"调候与扶抑冲突以扶抑为主"。

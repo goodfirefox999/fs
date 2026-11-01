@@ -703,14 +703,15 @@ class TestAdr0014EvidenceCap:
             "Q-013 登记被移除后必须重新报警（三重条件的牙齿）"
         )
 
-    def test_zwx_placeholder_not_evaluated(self, golden_ctx, registry) -> None:
-        """评审第十三轮产物三：占位规则不参与评估的实证（zhengwuxing 派默认关闭）。"""
+    def test_zwx_placeholder_participation(self, golden_ctx, registry) -> None:
+        """Phase 4 启用 zhengwuxing 后更新：占位规则（person.year_zhi exists）参与评估。
+
+        zhengwuxing 已启用 → 无命主时 person.year_zhi=None → unknown（非 False）。
+        """
         ev = evaluate(golden_ctx, registry, EvalConfig(task_kind="修造", allow_unverified=True))
-        for res in ev.per_school.values():
-            for bucket in ("vetoes", "cautions", "controversial", "demo_hits",
-                           "positives", "notes", "unknowns", "structural"):
-                assert all(j.rule_id != "ZWX-XIANGSHOU-001" for j in getattr(res, bucket)), bucket
-        assert "zhengwuxing" not in ev.per_school, "默认路由不含 zhengwuxing（school_policy 关闭）"
+        assert "zhengwuxing" in ev.per_school, "Phase 4 启用后 zhengwuxing 应在评估派别中"
+        unk_ids = {j.rule_id for res in ev.per_school.values() for j in res.unknowns}
+        assert "ZWX-XIANGSHOU-001" in unk_ids, "无命主时应为 unknown（person.year_zhi=None）"
 
     def test_agent_signature_blacklist(self, registry) -> None:
         """评审第十二轮：Agent 署名黑名单——非人类 verified_by 被 lint 拒绝。"""

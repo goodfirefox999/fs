@@ -1,0 +1,10 @@
+case_id: RT-ZWX-TONGGUAN-001-HIT
+kind: rule_test
+rule_id: ZWX-TONGGUAN-001
+expected: hit
+note: 规则级测试向量：gan_count 有值即命中（exists 语义）。
+overrides:
+  facts:
+    structure:
+      gan_count:
+        "甲": 1

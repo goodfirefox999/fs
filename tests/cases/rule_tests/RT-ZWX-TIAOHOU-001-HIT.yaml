@@ -1,0 +1,8 @@
+case_id: RT-ZWX-TIAOHOU-001-HIT
+kind: rule_test
+rule_id: ZWX-TIAOHOU-001
+expected: hit
+note: 规则级测试向量：冬月（亥月）调候适用。
+overrides:
+  time:
+    month_zhi: "亥"

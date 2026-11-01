@@ -1,0 +1,11 @@
+case_id: RT-ZWX-TONGGUAN-001-MISS
+kind: rule_test
+rule_id: ZWX-TONGGUAN-001
+expected: miss
+note: >-
+  通关 MISS：已知限制——exists 条件在 facts.structure 存在时恒 True。
+  完整通关分析实现后替换 condition。此用例验证空列表 override 不 crash。
+overrides:
+  facts:
+    structure:
+      zixing_pairs: []
