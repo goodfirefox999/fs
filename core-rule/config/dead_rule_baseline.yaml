@@ -34,20 +34,46 @@ window:
   enabled_schools_only: true
 statistic: 命中候选数/参与评估候选数，按（规则×年份）分组；判据=适用域内零命中
 denominator: 25
-rationale: 豁免理由=可达性归因（docs/research/reachability-2026-11.md）：13 条均为门控未开（命主/口径/起例未实现）或求值恒
-  False 待核，无可达零命中死规则；五维覆盖（日支/坐向/事项/节气邻近/农历日）为前提条件而非充分证据
-recorded_at: '2026-11-01T23:01:12'
-baseline_zero_hit:
-- PUB-CHONGMING-001
-- PUB-CHONGMING-002
-- PUB-DAXIAOYUE-001
-- PUB-DUTIAN-001
-- PUB-FUBING-001
-- PUB-GUANGFU-001
-- PUB-JIAQU-001
-- PUB-JIAQU-002
-- PUB-MING-SANSHA-001
-- PUB-SANG-001
-- PUB-SANG-002
-- PUB-XIUJIU-001
-- PUB-YINFU-001
+rationale: 可达性归因（docs/research/reachability-2026-11.md）：12 条未验证（unknown 门控：命主3/口径未定1/起例未实现8）、1
+  条可疑（XIUJIU exists 语义待裁定 Q-014）；verified_exempt（已验证非死规则）=0，豁免基线为空——'豁免'仅限已验证（评审第十四轮）
+recorded_at: '2026-11-01T23:11:50'
+entries:
+- rule_id: PUB-CHONGMING-001
+  classification: unverified_unknown_gated
+  blocked_by: person_input
+- rule_id: PUB-CHONGMING-002
+  classification: unverified_unknown_gated
+  blocked_by: person_input
+- rule_id: PUB-DAXIAOYUE-001
+  classification: unverified_unknown_gated
+  blocked_by: 起例未实现（unknown_reason 细分待归）
+- rule_id: PUB-DUTIAN-001
+  classification: unverified_unknown_gated
+  blocked_by: 起例未实现（unknown_reason 细分待归）
+- rule_id: PUB-FUBING-001
+  classification: unverified_unknown_gated
+  blocked_by: 起例未实现（unknown_reason 细分待归）
+- rule_id: PUB-GUANGFU-001
+  classification: unverified_unknown_gated
+  blocked_by: 起例未实现（unknown_reason 细分待归）
+- rule_id: PUB-JIAQU-001
+  classification: unverified_unknown_gated
+  blocked_by: 起例未实现（unknown_reason 细分待归）
+- rule_id: PUB-JIAQU-002
+  classification: unverified_unknown_gated
+  blocked_by: 起例未实现（unknown_reason 细分待归）
+- rule_id: PUB-MING-SANSHA-001
+  classification: unverified_unknown_gated
+  blocked_by: person_input
+- rule_id: PUB-SANG-001
+  classification: unverified_unknown_gated
+  blocked_by: 起例未实现（unknown_reason 细分待归）
+- rule_id: PUB-SANG-002
+  classification: unverified_unknown_gated
+  blocked_by: 起例未实现（unknown_reason 细分待归）
+- rule_id: PUB-XIUJIU-001
+  classification: suspected_false_exists_semantics
+  blocked_by: Q-014
+- rule_id: PUB-YINFU-001
+  classification: unverified_unknown_gated
+  blocked_by: Q-005

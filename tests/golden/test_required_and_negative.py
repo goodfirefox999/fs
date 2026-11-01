@@ -798,3 +798,74 @@ class TestAdr0014EvidenceCap:
             registry=registry,
         )
         assert "无专属规则" in md and "不得解读为" in md
+
+    def test_fingerprint_field_coverage(self, registry) -> None:
+        """评审第十四轮产物四：指纹语义字段翻转全覆盖（含 book_authenticity——联动重审状态必须击穿缓存）。"""
+        base = registry.ruleset.by_id["PUB-YUEPO-001"]
+        flips = {
+            "status": dc_replace(base, status="已考证"),
+            "severity": dc_replace(base, severity="慎用"),
+            "hard_veto": dc_replace(base, hard_veto=not base.hard_veto),
+            "condition": dc_replace(base, condition={"fact": "facts.yuepo.hit_facing", "op": "eq", "value": True}),
+            "citation.book_authenticity": dc_replace(base, citation=Citation(
+                source=base.citation.source, kind="classic", book_authenticity="disputed")),
+            "citation.verified_by": dc_replace(base, citation=Citation(
+                source=base.citation.source, kind="classic", verified_by="人类考证人甲")),
+        }
+        from core_rule.loader import RuleSet
+        for name, flipped in flips.items():
+            new_rules = tuple(
+                flipped if r.rule_id == base.rule_id else r for r in registry.ruleset.rules
+            )
+            by_id = {r.rule_id: r for r in new_rules}
+            rs2 = dc_replace(registry.ruleset, rules=new_rules, by_id=by_id,
+                             version=registry.ruleset.version)  # version 故意不变——指纹必须独立击穿
+            assert rs2.fingerprint != registry.ruleset.fingerprint, f"指纹未覆盖字段翻转：{name}"
+
+    def test_blacklist_word_boundary(self, registry) -> None:
+        """评审第十四轮：词边界正则——'AI 助手'命中、'Aijing'人名通过。"""
+        from app_zeri.cli import _check_signatures
+
+        def sig(vb):
+            bad = dc_replace(
+                _synthetic_rule(),
+                citation=Citation(source="《象吉通书》", kind="classic", quote="x", verified_by=vb),
+            )
+            return _check_signatures(_registry_with(registry, bad))
+
+        assert any("疑似非人类署名" in p for p in sig("AI 助手")), "复合词必须命中"
+        assert any("疑似非人类署名" in p for p in sig("auto-bot")), "连写命中"
+        assert not any("疑似非人类署名" in p for p in sig("Aijing")), "人名不受影响（词边界）"
+        assert not any("疑似非人类署名" in p for p in sig("人类考证人甲")), "人类签名通过"
+
+    def test_ci_guard_predicate_and_platform_file(self, tmp_path, monkeypatch) -> None:
+        """评审第十四轮：CI guard 谓词显式化 + 分平台历史文件。"""
+        import tests.bench.test_perf as tp
+
+        monkeypatch.setattr(tp, "HISTORY", tmp_path / "bench_history.jsonl")
+        monkeypatch.delenv("CI", raising=False)
+        monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
+        assert tp._is_ci() is False
+        monkeypatch.setenv("CI", "true")
+        assert tp._is_ci() is True
+        monkeypatch.delenv("CI", raising=False)
+        monkeypatch.setenv("GITHUB_ACTIONS", "true")
+        assert tp._is_ci() is True
+
+    def test_single_month_budget_smoke(self, registry) -> None:
+        """评审第十四轮：缩放版预算冒烟（not-slow 可见）——单月 372 候选 < 0.6s。
+        O(n²) 类回归（如 pareto）在单月尺度即暴露，不必等 CI 的全年 slow 测试。"""
+        import time
+        from datetime import date as _date
+
+        from app_zeri.generator import generate
+        from app_zeri.schemas import SiteSpec, TaskSpec
+
+        t0 = time.perf_counter()
+        r = generate(start=_date(2027, 1, 1), end=_date(2027, 1, 31),
+                     site=SiteSpec(azimuth_deg=320.0, lat=23.13, lon=113.26),
+                     task=TaskSpec(kind="修造", strictness="strict"),
+                     allow_unverified=True, top=20)
+        elapsed = time.perf_counter() - t0
+        assert r.total_candidates == 372
+        assert elapsed < 0.6, f"单月穷举 {elapsed:.2f}s 超 0.6s 冒烟阈（O(n²) 类回归嫌疑）"

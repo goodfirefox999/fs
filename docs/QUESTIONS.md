@@ -368,3 +368,17 @@ Q-012 事实层面已可裁定，待人类完成：四库影印对照 → 勾选
 
 **影响**：zhengwuxing 派启用时的相主判定；当前派别关闭，不影响 publishable/tier
 （实证：默认评估 + allow_unverified 下该规则出现 0 次）。
+
+---
+
+## Q-014 `op: exists` 对「provided 但 value=None」事实的语义（2026-11-01 新增，评审第十三/十四轮）
+
+**背景**：`PUB-XIUJIU-001` condition 为 `facts.xiujiu.value op: exists`；该 fact 的产出形态为
+`(provided=True, value=None)`（"本系统不提供"类 FactSpec）。当前 dsl 对 exists 判 **False**
+（值不存在）——但"系统不提供该事实"在用户语义上是"**未判定**"，按三态纪律应映射 unknown
+而非 False（False 会以"确定无此禁忌"的口吻随 publishable 输出，属静默假阴性形状）。
+
+**待裁定**：exists 对 `(True, None)` 应返回 unknown（三态纪律优先）还是 False
+（存在性语义字面）？若改 unknown，需同步排查全部 `op: exists` 规则的命中语义。
+
+**影响**：XIUJIU-001 的三态归类（当前可疑栏）；dsl exists 算子语义；同类 exists 规则。

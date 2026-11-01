@@ -10,6 +10,7 @@ gaps:
     owner_question: Q-012（H1 勾选后启动 C18）
     note: 期间系统不拦向太岁日课；必需集维持 8 条不因裁定增加
   - id: GAP-TASKKIND-EMPTY
+    gap_type: 产品级信息（非缺陷）——通用规则覆盖是正常事实，登记目的=用户可见提示
     claim: 无事项专属规则（仅通用规则覆盖——task_kinds:[] 的通用规则匹配一切事项，
       用户拿到的是通用结论而非事项针对性判定）
     quote_ref: 出行/开业 在规则库 applies_to 显式清单中出现 0 次（python 全量统计 2026-11-01；

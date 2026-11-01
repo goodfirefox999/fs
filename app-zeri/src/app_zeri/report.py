@@ -246,10 +246,11 @@ def render_markdown(result: VerifyResult, *, registry: RuleRegistry | None = Non
             if r.status != "弃用" and kind in r.applies_to.task_kinds
         )
         if specific == 0:
+            n_universal = sum(res.rules_evaluated for res in ev.per_school.values())
             lines.append(
-                f"> ℹ️ **事项「{kind}」无专属规则**（GAP-TASKKIND-EMPTY）：本次评估仅由"
-                "通用规则（task_kinds 为空的断言/结构规则）覆盖，无事项针对性判定——"
-                "**不得解读为「该事项已按其特点查过忌宜」**。"
+                f"> ℹ️ **事项「{kind}」无专属规则**（GAP-TASKKIND-EMPTY，产品级信息非缺陷）：本次评估"
+                f"仅由 {n_universal} 条通用规则（task_kinds 为空的断言/结构规则）覆盖，"
+                "无事项针对性判定——**不得解读为「该事项已按其特点查过忌宜」**。"
             )
             lines.append("")
     # ADR-0014 决策 0：甲案的用户可见后果——tier 与 publishable 必须联合显示，不得分置

@@ -442,7 +442,11 @@ def _check_signatures(reg) -> list[str]:
     Agent 署名黑名单（评审第十二轮：文档纪律升级为机器强制——
     "是不是人类"无法判定，但已知非人类署名可拒绝）。
     """
-    blacklist = {"agent", "ai", "pytest", "llm", "bot", "auto", "自动化", "测试"}
+    # 词边界正则（评审第十四轮：全等匹配防不住"AI 助手"复合词绕过；
+    # \b 保证"Aijing"类人名不受影响）——启发式辅助，完备防线=status 变更权限约束
+    import re as _re
+
+    pattern = _re.compile(r"\b(pytest|agent|ai|llm|bot|auto)\b", _re.IGNORECASE)
     out: list[str] = []
     for rule in reg.ruleset.rules:
         if rule.status != "已考证":
@@ -450,8 +454,8 @@ def _check_signatures(reg) -> list[str]:
         vb = (rule.citation.verified_by or "").strip()
         if not vb:
             out.append(f"{rule.rule_id}: status=已考证 但 verified_by 为空（状态跃迁提权，ADR-0014）")
-        elif vb.lower() in blacklist or vb in blacklist:
-            out.append(f"{rule.rule_id}: verified_by='{vb}' 疑似非人类署名（黑名单，须真人签名）")
+        elif pattern.search(vb):
+            out.append(f"{rule.rule_id}: verified_by='{vb}' 疑似非人类署名（黑名单词边界命中，须真人签名）")
     return out
 
 

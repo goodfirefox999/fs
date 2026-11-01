@@ -24,22 +24,28 @@ HISTORY = Path(__file__).resolve().parent / "bench_history.jsonl"
 REGRESSION_FACTOR = 1.5
 
 
-def _record_and_check(elapsed: float, pareto_size: int | None = None) -> None:
-    # CI guard（评审第十三轮第五节）：CI runner（ubuntu/py3.12）与本机（mac/py3.14）
-    # 耗时不可比——CI 环境不追加历史、不做相对断言（预算绝对值断言仍在测试体内执行），
-    # 防止 bench_history 中位数被跨机器样本污染。
+def _is_ci() -> bool:
+    """CI 环境检测谓词（评审第十四轮：显式化 + 可测试）。
+
+    依据 GitHub Actions 标准环境变量 CI / GITHUB_ACTIONS；换平台时在此追加。
+    过渡态声明：CI 样本写入 bench_history.ci.jsonl（分平台文件），**不进本地中位数**；
+    相对门禁落地时改为分平台基线（ADR-0014 验收节登记为过渡态，不得固化）。
+    """
     import os
 
-    if os.environ.get("CI"):
-        print(f"[CI] perf 记录跳过（跨机器样本不入史）：{elapsed:.3f}s")
-        return
+    return bool(os.environ.get("CI") or os.environ.get("GITHUB_ACTIONS"))
+
+
+def _record_and_check(elapsed: float, pareto_size: int | None = None) -> None:
+    global HISTORY
+    history = (HISTORY.parent / "bench_history.ci.jsonl") if _is_ci() else HISTORY
     """记录本次耗时，并与历史中位数比较（防止"每次改一点"的渐进劣化）。
 
     评审第十一轮：**先记后断**——失败运行也入历史（带 passed 标记），
     消除"历史只含存活者"的系统性偏差；相对门禁（下一批）不得建立在幸存者中位数上。
     """
     samples: list[float] = []
-    if HISTORY.exists():
+    if history.exists():
         for line in HISTORY.read_text(encoding="utf-8").splitlines():
             if not line.strip():
                 continue
@@ -53,7 +59,7 @@ def _record_and_check(elapsed: float, pareto_size: int | None = None) -> None:
               "candidates": 4380, "elapsed": round(elapsed, 4), "passed": passed}
     if pareto_size is not None:
         record["pareto_size"] = pareto_size  # u 的下游代理（front 规模），监控分组收益退化
-    with HISTORY.open("a", encoding="utf-8") as fh:
+    with history.open("a", encoding="utf-8") as fh:
         fh.write(json.dumps(record) + "\n")
     if median is not None:
         assert passed, (

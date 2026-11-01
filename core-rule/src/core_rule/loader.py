@@ -87,6 +87,9 @@ class RuleSet:
                         r.severity,
                         r.hard_veto,
                         stable_hash(r.condition),
+                        # 评审第十四轮：citation 内容（含 book_authenticity）入指纹——
+                        # 联动重审状态变更必须击穿缓存，防跨重审状态复用
+                        stable_hash(r.citation.to_dict()),
                     )
                     for r in self.rules
                 )

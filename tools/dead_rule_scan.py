@@ -13,9 +13,11 @@
 - 统计量：命中候选数/参与评估候选数，按（规则 × 年份）分组分别统计——
   年支类规则天然只在特定年命中，"全年零命中"不是死规则判据。
 - 判据：适用域内零命中 = 规则在其声明的全部适用 task_kind × 全部年份上均零命中。
-- 处置：warn 不 error（约束 2）——新零命中规则（不在基线豁免内）打印告警并以
+- 处置：warn 不 error（约束 2）——新冒出的零命中规则（不在基线 entries 内）打印告警并以
   退出码 1 供 CI 选用；基线内零命中属已知状态。
-- 基线豁免：core-rule/config/dead_rule_baseline.yaml；--update-baseline 显式重建。
+- 基线登记：core-rule/config/dead_rule_baseline.yaml（entries：分类+blocked_by）；
+  --update-baseline 显式重建；verified_exempt（已验证豁免）当前为空——
+  '豁免'仅限已验证非死规则（评审第十四轮：10 unknown=未验证、1 exists=可疑）。
 """
 
 from __future__ import annotations
@@ -173,9 +175,16 @@ def run_scan():
     baseline = {}
     if BASELINE.exists():
         baseline = yaml.safe_load(BASELINE.read_text(encoding="utf-8")) or {}
-    exempt = set(baseline.get("baseline_zero_hit") or [])
+    # v3 基线 schema：entries（分类+blocked_by）取代扁平 baseline_zero_hit——
+    # "豁免"只留给已验证非死规则（当前为空）；未验证/可疑不享受豁免语义
+    # （评审第十四轮：10 unknown=未验证、1 exists=可疑，措辞不得混用）
+    entries = {e.get("rule_id"): e for e in (baseline.get("entries") or [])}
+    legacy = set(baseline.get("baseline_zero_hit") or [])
+    exempt = {rid for rid, e in entries.items() if e.get("classification") == "verified_exempt"}
+    exempt |= legacy  # 兼容旧扁平字段（逐条迁移后删除）
     new_zero = [rid for rid in zero_hit if rid not in exempt]
-    return out, zero_hit, new_zero, evaluated
+    entries_map = {rid: entries.get(rid, {}) for rid in zero_hit}
+    return out, zero_hit, new_zero, evaluated, entries_map
 
 
 def main() -> int:
@@ -190,7 +199,7 @@ def main() -> int:
                         meta.append((kind, datetime(year, month, day, 10, 0)))
     print("\n".join(coverage_report(meta)))
     print("")
-    out, zero_hit, new_zero, evaluated = run_scan()
+    out, zero_hit, new_zero, evaluated, entries_map = run_scan()
     print(f"扫描完成：{evaluated} 个窗口候选，适用域内规则 {len(out)} 条")
     print("\n分规则 × 年份命中数（判据=适用域内零命中，非全年零命中）：")
     for rid in sorted(out):
@@ -201,15 +210,21 @@ def main() -> int:
     baseline = {}
     if BASELINE.exists():
         baseline = yaml.safe_load(BASELINE.read_text(encoding="utf-8")) or {}
-    exempt = set(baseline.get("baseline_zero_hit") or [])
+    entries_all = {e.get("rule_id"): e for e in (baseline.get("entries") or [])}
+    verified_exempt = {rid for rid, e in entries_all.items() if e.get("classification") == "verified_exempt"}
     print(f"\nzero_hit: {zero_hit}")
-    print(f"基线豁免：{sorted(exempt)}")
+    print(f"verified_exempt（已验证豁免）：{sorted(verified_exempt) or '空（当前无——13 条均为未验证/可疑）'}")
+    classified = {rid: entries_map.get(rid, {}).get("classification", "未登记") for rid in zero_hit}
+    print("\n零命中分类（评审第十四轮：豁免≠未验证≠可疑）：")
+    for rid in zero_hit:
+        print(f"  - {rid}: {classified[rid]}")
+    new_zero = [rid for rid in zero_hit if rid not in entries_all]
     if new_zero:
-        print(f"\n⚠️ warn：新出现零命中规则（不在基线豁免内）：{new_zero}")
-        print("   若属预期（窗口未覆盖其适用域），用 --update-baseline 显式登记；否则排查条件。")
+        print(f"\n⚠️ warn：**新冒出**的零命中规则（不在基线 entries 内）：{new_zero}")
+        print("   用 --update-baseline 显式登记（须带 classification + blocked_by）。")
         rc = 1
     else:
-        print("\n✅ 无新增零命中规则（warn 级，不阻断——评审第十二轮约束 2）")
+        print("\n✅ 零命中集合与基线 entries 完全一致（warn 级，不阻断）")
         rc = 0
 
     if "--update-baseline" in sys.argv:
@@ -226,11 +241,21 @@ def main() -> int:
             },
             "statistic": "命中候选数/参与评估候选数，按（规则×年份）分组；判据=适用域内零命中",
             "denominator": len(out),
-            "rationale": ("豁免理由=可达性归因（docs/research/reachability-2026-11.md）：13 条均为"
-                          "门控未开（命主/口径/起例未实现）或求值恒 False 待核，无可达零命中死规则；"
-                          "五维覆盖（日支/坐向/事项/节气邻近/农历日）为前提条件而非充分证据"),
+            "rationale": ("可达性归因（docs/research/reachability-2026-11.md）：12 条未验证"
+                          "（unknown 门控：命主3/口径未定1/起例未实现8）、1 条可疑"
+                          "（XIUJIU exists 语义待裁定 Q-014）；verified_exempt（已验证非死规则）=0，"
+                          "豁免基线为空——'豁免'仅限已验证（评审第十四轮）"),
             "recorded_at": datetime.now().isoformat(timespec="seconds"),
-            "baseline_zero_hit": zero_hit,
+            "entries": [
+                {"rule_id": rid,
+                 "classification": ("suspected_false_exists_semantics" if rid == "PUB-XIUJIU-001"
+                                    else "unverified_unknown_gated"),
+                 "blocked_by": ("Q-014" if rid == "PUB-XIUJIU-001"
+                                else ("Q-005" if rid == "PUB-YINFU-001" else
+                                      ("person_input" if ("CHONGMING" in rid or "MING-SANSHA" in rid)
+                                       else "起例未实现（unknown_reason 细分待归）")))}
+                for rid in zero_hit
+            ],
         }
         BASELINE.write_text(
             "# C21 死规则扫描基线（口径必须与 tools/dead_rule_scan.py docstring 一致；"
