@@ -64,20 +64,24 @@ def lunar_terms(year: int) -> dict[str, datetime]:
 
 def sxtwl_terms(year: int) -> dict[str, datetime]:
     """sxtwl 节气（UT 儒略日 → 北京时间 naive；+8h 换算，秒级差异属实现差异）。"""
-    import math
     from datetime import timedelta
 
     import sxtwl
 
+    JIEQI_BY_INDEX = ["冬至", "小寒", "大寒", "立春", "雨水", "惊蛰", "春分", "清明",
+                      "谷雨", "立夏", "小满", "芒种", "夏至", "小暑", "大暑", "立秋",
+                      "处暑", "白露", "秋分", "寒露", "霜降", "立冬", "小雪", "大雪"]
     out: dict[str, datetime] = {}
     day = sxtwl.fromSolar(year, 1, 1)
     while day.getSolarYear() == year:
         if day.hasJieQi():
-            jd = day.getJieQiJD() + 8 / 24.0  # UT → 北京时间
-            z, f = math.modf(jd + 0.5)
-            out[day.getCurrentJieQi()] = (
-                datetime(1858, 11, 17) + timedelta(days=int(z), seconds=int(round(f * 86400)))
-            )  # JD 2400000.5 = 1858-11-17（MJD 原点换算；sxtwl 的 JD 为标准儒略日）
+            # sxtwl 的 getJieQiJD 返回**北京时间**儒略日（中国中心库，无需 +8h）——
+            # 首版误加 +8h 导致 +28787s 假分歧（登记表如实暴露后修正，2026-11-01）；
+            jd = day.getJieQiJD()
+            # JD → datetime：Unix epoch = JD 2440587.5（1970-01-01 00:00 UTC）
+            out[JIEQI_BY_INDEX[day.getJieQi()]] = (
+                datetime(1970, 1, 1) + timedelta(days=jd - 2440587.5)
+            )
         day = day.after(1)
     return out
 
@@ -126,21 +130,38 @@ def main() -> int:
     term_total = 0
     max_diff = 0.0
     diff_samples: list[str] = []
+    pending_keys: list[str] = []
     for year in (2026, 2027):
         zt = zeri_terms(year)
         lt = lunar_terms(year)
+        st = sxtwl_terms(year)  # 3-way（评审第十三轮：sxtwl 接入，+8h 换算已在 sxtwl_terms 内）
         for name, zdt in zt.items():
             ldt = lt.get(name)
+            sdt = st.get(name)
             term_total += 1
-            if ldt is None:
-                diff_samples.append(f"- {year} {name}: lunar_python 无此条（键名映射待核）")
-                continue
-            diff = abs((zdt - ldt).total_seconds())
-            max_diff = max(max_diff, diff)
-            if diff > 60:  # 超过 1 分钟记分歧（秒级舍入差异属实现差异）
-                term_diff += 1
-                diff_samples.append(f"- {year} {name}: zeri {zdt} vs lunar {ldt}（差 {diff:.0f}s）")
-    add(f"- 样本 {term_total} 条，>60s 分歧 {term_diff} 条，最大秒差 {max_diff:.0f}s")
+            pairs = []
+            if ldt is not None:
+                pairs.append(("lunar", abs((zdt - ldt).total_seconds())))
+            else:
+                pending_keys.append(f"{year} {name}: lunar_python 键名映射待核")
+            if sdt is not None:
+                pairs.append(("sxtwl", abs((zdt - sdt).total_seconds())))
+            else:
+                pending_keys.append(f"{year} {name}: sxtwl 无此条")
+            for src, diff in pairs:
+                max_diff = max(max_diff, diff)
+                if diff > 60:  # 容差声明：±60s 内视为一致（秒级取整+算法微差）；超阈记分歧
+                    term_diff += 1
+                    ref = {"lunar": ldt, "sxtwl": sdt}[src]
+                    diff_samples.append(f"- {year} {name}: zeri {zdt} vs {src} {ref}（差 {diff:.0f}s）")
+    add(f"- 三边样本 {term_total} 条（zeri/lunar_python/sxtwl），>60s 分歧 {term_diff} 条，"
+        f"最大秒差 {max_diff:.0f}s（容差 ±60s 内视为一致；逐条归因舍入/算法未做——登记不仲裁）")
+    if pending_keys:
+        add("- **待核键映射（挂起项）**：")
+        for pk in pending_keys:
+            add(f"  - {pk}")
+        add("- **结论挂起声明**：零分歧统计不含上述待核条目；键映射复核完成前，"
+            "节气结论为「已比样本内零分歧」暂定态（评审第十三轮第三节）")
     for sample in diff_samples[:12]:
         add(sample)
     add("")

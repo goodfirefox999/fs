@@ -4,8 +4,8 @@ window:
   - 修造
   - 嫁娶
   - 安葬
-  - 出行
-  - 开业
+  - 纳采
+  - 修坟
   years:
   - 2025
   - 2026
@@ -22,11 +22,20 @@ window:
   - 330.0
   - 90.0
   - 0.0
+  - 150.0
+  - 270.0
+  - 30.0
+  - 315.0
+  - 225.0
+  - 45.0
+  - 135.0
   strictness: normal
   allow_unverified: true
   enabled_schools_only: true
 statistic: 命中候选数/参与评估候选数，按（规则×年份）分组；判据=适用域内零命中
-recorded_at: '2026-11-01T22:28:54'
+denominator: 25
+rationale: 豁免理由=日支/坐向/事项/节气邻近/农历日 五维覆盖后仍零命中（非'排除采样盲区'的强表述）
+recorded_at: '2026-11-01T22:48:00'
 baseline_zero_hit:
 - PUB-CHONGMING-001
 - PUB-CHONGMING-002

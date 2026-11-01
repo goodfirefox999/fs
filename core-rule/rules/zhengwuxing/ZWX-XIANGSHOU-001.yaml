@@ -50,4 +50,4 @@ tests:
 - RT-ZWX-XIANGSHOU-001-UNKNOWN
 explanation: 命主年命已录入，正五行相主判定需人类裁定口径后启用。
 supersedes: null
-notes: 待考证：相主以年命纳音还是年支五行。
+notes: 待考证：相主以年命纳音还是年支五行（口径裁定登记于 QUESTIONS Q-013；Q-013 未决前本规则为就绪探测占位，不参与判定——zhengwuxing 派默认关闭）。

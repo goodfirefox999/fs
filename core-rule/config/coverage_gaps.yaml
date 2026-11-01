@@ -9,3 +9,10 @@ gaps:
     blocked_by: C18（向首侧 fact 产出，ADR-0014 落地清单）
     owner_question: Q-012（H1 勾选后启动 C18）
     note: 期间系统不拦向太岁日课；必需集维持 8 条不因裁定增加
+  - id: GAP-TASKKIND-EMPTY
+    claim: 零规则事项（用户可选、引擎不判）
+    quote_ref: task_kinds.yaml 声明 出行/开业；规则库 applies_to 并集中二者均为 0 条规则
+    evidence_level: 事实（rules 统计，2026-11-01 dead_rule_scan v3）
+    blocked_by: 事项专属规则建模（待考证者裁定该事项是否确有独立否决项）
+    owner_question: Q-011（必需集选取）关联
+    note: 与 GAP-TAISUI-FACING 同类——"事项声明支持"与"规则实际覆盖"的差额机器化

@@ -118,6 +118,25 @@ def coverage_report(contexts_meta: list[tuple]) -> list[str]:
                 near += 1
     lines.append(f"④ 节气邻近：{len(moments)} 时刻中距最近节气 <24h 的 {near} 个，"
                  f"最小间距 {min_gap/3600:.1f}h（月柱边界覆盖度）")
+    # ⑤ 农历日维度（评审第十三轮：杨公忌日类规则判农历特定日，与日支不同坐标系）
+    from collections import defaultdict as _dd
+
+    from lunar_python import Solar
+
+    lunar_days: dict = _dd(int)
+    leap_months: set = set()
+    for dt in moments:
+        solar = Solar.fromYmdHms(dt.year, dt.month, dt.day, 10, 0, 0)
+        lunar = solar.getLunar()
+        leap = lunar.getMonth() < 0
+        lunar_days[(abs(lunar.getMonth()), lunar.getDay(), leap)] += 1
+        if leap:
+            leap_months.add(abs(lunar.getMonth()))
+    day_nums = sorted({d for (m, d, lp) in lunar_days})
+    lines.append(f"⑤ 农历日覆盖：{len(lunar_days)} 个唯一（农历月,日,闰）组合；"
+                 f"农历日 {min(day_nums)}–{max(day_nums)} 号覆盖 {len(day_nums)}/30 档；"
+                 f"命中闰月月份：{sorted(leap_months) or '无'}"
+                 "——杨公忌日类农历日规则的判定维度（评审第十三轮第一节）")
     return lines
 
 
@@ -205,6 +224,8 @@ def main() -> int:
                 "enabled_schools_only": True,
             },
             "statistic": "命中候选数/参与评估候选数，按（规则×年份）分组；判据=适用域内零命中",
+            "denominator": len(out),
+            "rationale": "豁免理由=日支/坐向/事项/节气邻近/农历日 五维覆盖后仍零命中（非'排除采样盲区'的强表述）",
             "recorded_at": datetime.now().isoformat(timespec="seconds"),
             "baseline_zero_hit": zero_hit,
         }

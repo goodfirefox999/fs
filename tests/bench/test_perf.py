@@ -25,6 +25,14 @@ REGRESSION_FACTOR = 1.5
 
 
 def _record_and_check(elapsed: float, pareto_size: int | None = None) -> None:
+    # CI guard（评审第十三轮第五节）：CI runner（ubuntu/py3.12）与本机（mac/py3.14）
+    # 耗时不可比——CI 环境不追加历史、不做相对断言（预算绝对值断言仍在测试体内执行），
+    # 防止 bench_history 中位数被跨机器样本污染。
+    import os
+
+    if os.environ.get("CI"):
+        print(f"[CI] perf 记录跳过（跨机器样本不入史）：{elapsed:.3f}s")
+        return
     """记录本次耗时，并与历史中位数比较（防止"每次改一点"的渐进劣化）。
 
     评审第十一轮：**先记后断**——失败运行也入历史（带 passed 标记），

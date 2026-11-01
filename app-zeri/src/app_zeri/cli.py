@@ -306,9 +306,13 @@ def cmd_rules_lint(args: argparse.Namespace) -> int:
     # 必需规则恰为禁用级），非定义相同——新增"待考证+慎用"必需规则即分叉。
     # cap_applied 作用域 = 全库（scope=all_rules），与必需集 8 条无关，勿拿 8 对 10。）
     groups = _lint_groups(reg)
+    # 13) VERIFICATION_GUIDE 三·三联动重审的 lint 不变式（评审第十二/十三轮）：
+    #     已考证规则引用 非authentic 书目 → 当轮重审清单（机器发现，不靠人记）
+    groups["book_authenticity_review"] = _book_authenticity_review(reg)
     print(f"cap_applied: {json.dumps(groups['cap_applied'], ensure_ascii=False)}")
     print(f"unverified_progress: {json.dumps(groups['unverified_progress'], ensure_ascii=False)}")
     print(f"quote_unsigned: {json.dumps(groups['quote_unsigned'], ensure_ascii=False)}")
+    print(f"book_authenticity_review: {json.dumps(groups['book_authenticity_review'], ensure_ascii=False)}")
     # 已知未覆盖的原文硬禁（coverage_gaps.yaml，Q-012/C18；机器可读闭环）
     gaps_path = Path("core-rule/config/coverage_gaps.yaml")
     if gaps_path.exists():
@@ -338,6 +342,35 @@ def _fact_roots(rule) -> set[str]:
     from core_rule.dsl import collect_fact_paths
 
     return {p.split(".")[0] for p in collect_fact_paths(rule.condition)}
+
+
+def cmd_rules_reaudit(args: argparse.Namespace) -> int:
+    """联动重审清单（VERIFICATION_GUIDE 三·三）：列出引用指定书目的全部规则与状态。
+
+    降级/重审操作须人类签名确认，本命令只产出清单——自动发现，不自动改状态。
+    """
+    reg = default_registry()
+    book = args.book
+    hits = [
+        r for r in reg.ruleset.rules
+        if book in (r.citation.source or "")
+    ]
+    if not hits:
+        print(f"无规则引用《{book}》")
+        return 0
+    print(f"引用《{book}》的规则 {len(hits)} 条（book_authenticity 变更时按 VERIFICATION_GUIDE 三·三当轮重审）：")
+    print("")
+    print("| 规则 | status | book_authenticity | quote_kind | verified_by |")
+    print("|---|---|---|---|---|")
+    for r in sorted(hits, key=lambda x: x.rule_id):
+        auth = getattr(r.citation, "book_authenticity", None) or "待核"
+        print(f"| `{r.rule_id}` | {r.status} | {auth} | {r.citation.quote_kind or '—'} | {r.citation.verified_by or '—'} |")
+    need = [r.rule_id for r in hits if r.status == "已考证"
+            and (getattr(r.citation, "book_authenticity", None) or "待核") != "authentic"]
+    if need:
+        print(f"\n⚠️ 需当轮重审（已考证 × 非 authentic 书目）：{need}")
+        print("处置：降回 待考证（重审后再签）或修订 book_authenticity——两条路都须人类签名。")
+    return 0
 
 
 def _lint_groups(reg) -> dict[str, list[str]]:
@@ -371,6 +404,12 @@ def _c21_static_warnings(reg) -> list[str]:
     （facts.* 引擎事实 / time.* 时刻派生 / course.* 四柱派生）；
     仅引用 site.* / person.*（用户输入，跨候选不变）= "每候选恒命中"的死规则形态。
     动态层（适用域内零命中）见 tools/dead_rule_scan.py + dead_rule_baseline.yaml。
+
+    op=exists 豁免为**三重条件**（评审第十三轮：形态豁免过宽，缺任一照报）：
+    ① op=exists；② explanation/notes 含 待裁定/占位/待启用 标记；
+    ③ 口径问题已登记裁定队列（Q-013，notes 引用之）。
+    实现备注：本豁免于 2026-11-01 补实现——此前 GUIDE 三·五声称已豁免而代码未落地
+    （文档与实现不符，已修正；详见提交历史）。
     """
     from core_rule.dsl import collect_fact_paths
 
@@ -380,6 +419,14 @@ def _c21_static_warnings(reg) -> list[str]:
             continue
         paths = collect_fact_paths(rule.condition)
         if paths and not any(p.startswith(ns) for p in paths for ns in CANDIDATE_NS):
+            marker = (rule.explanation or "") + (rule.notes or "")
+            is_placeholder = (
+                rule.condition.get("op") == "exists"
+                and any(k in marker for k in ("待裁定", "占位", "待启用", "裁定口径"))
+                and "Q-013" in marker
+            )
+            if is_placeholder:
+                continue  # 就绪探测占位（设计意图即恒真），口径登记于 Q-013
             out.append(
                 f"{rule.rule_id}: condition 仅引用用户输入（site/person），"
                 "无候选派生因子（facts/time/course）——C21 静态层"
@@ -392,12 +439,36 @@ def _check_signatures(reg) -> list[str]:
 
     loader 已硬校验（无签名拒绝加载），本检查为 lint 层纵深——
     覆盖程序化构造的 ruleset（dc_replace 注入等）绕过 loader 的路径。
+    Agent 署名黑名单（评审第十二轮：文档纪律升级为机器强制——
+    "是不是人类"无法判定，但已知非人类署名可拒绝）。
     """
-    return [
-        f"{rule.rule_id}: status=已考证 但 verified_by 为空（状态跃迁提权，ADR-0014）"
-        for rule in reg.ruleset.rules
-        if rule.status == "已考证" and not rule.citation.verified_by
-    ]
+    blacklist = {"agent", "ai", "pytest", "llm", "bot", "auto", "自动化", "测试"}
+    out: list[str] = []
+    for rule in reg.ruleset.rules:
+        if rule.status != "已考证":
+            continue
+        vb = (rule.citation.verified_by or "").strip()
+        if not vb:
+            out.append(f"{rule.rule_id}: status=已考证 但 verified_by 为空（状态跃迁提权，ADR-0014）")
+        elif vb.lower() in blacklist or vb in blacklist:
+            out.append(f"{rule.rule_id}: verified_by='{vb}' 疑似非人类署名（黑名单，须真人签名）")
+    return out
+
+
+def _book_authenticity_review(reg) -> list[str]:
+    """VERIFICATION_GUIDE 三·三联动重审的机器发现（评审第十三轮产物二）。
+
+    已考证规则引用 book_authenticity ∈ {缺省待核, disputed, pseudepigraphic} 的书目
+    → 当轮重审清单（降级须人类签名确认，本函数只产出清单）。
+    """
+    out: list[str] = []
+    for rule in reg.ruleset.rules:
+        if rule.status != "已考证":
+            continue
+        auth = getattr(rule.citation, "book_authenticity", None) or "待核"
+        if auth != "authentic":
+            out.append(f"{rule.rule_id}: 引用《{rule.citation.source}》book_authenticity={auth} → 当轮重审")
+    return out
 
 
 def _check_required_set(reg) -> list[str]:
@@ -561,6 +632,9 @@ def build_parser() -> argparse.ArgumentParser:
     p_lint_cmd.add_argument("--cases", default=None)
     p_lint_cmd.add_argument("--manifest", default=None, help="规则清单路径（默认 core-rule/config/rules_manifest.yaml）")
     p_lint_cmd.set_defaults(func=cmd_rules_lint)
+    p_reaudit = lint_sub.add_parser("reaudit", help="联动重审清单：列出引用某书目的规则（GUIDE 三·三）")
+    p_reaudit.add_argument("--book", required=True, help="书目名（含书名号可省）")
+    p_reaudit.set_defaults(func=cmd_rules_reaudit)
     p_diff = lint_sub.add_parser("diff", help="比较两版规则库")
     p_diff.add_argument("old")
     p_diff.add_argument("new")

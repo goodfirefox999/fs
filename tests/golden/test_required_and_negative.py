@@ -638,7 +638,12 @@ class TestAdr0014EvidenceCap:
         assert set(groups.get("unverified_progress", [])) == set(groups.get("cap_applied", [])), (
             "当前构造下两组恰好同集（10 条待考证+禁用）——结构重合非定义相同，见 _lint_groups 注释"
         )
-        assert groups.get("coverage_gaps") == ["GAP-TAISUI-FACING"], "覆盖缺口机器行"
+        assert set(groups.get("coverage_gaps", [])) == {"GAP-TAISUI-FACING", "GAP-TASKKIND-EMPTY"}, (
+            "覆盖缺口机器行（向太岁硬禁 + 零规则事项）"
+        )
+        assert groups.get("book_authenticity_review", []) == [], (
+            "已考证×非authentic 书目=0（当前无已考证规则）——出现条目即触发 GUIDE 三·三当轮重审"
+        )
 
     def test_adr0014_anchor_markers_present(self) -> None:
         """评审第十轮：行号是 db11804 快照，符号/标记注释才是机器可校验锚点——漂移即测试失败。"""
@@ -673,15 +678,45 @@ class TestAdr0014EvidenceCap:
 
     def test_c21_static_candidate_specificity(self, registry) -> None:
         """C21 静态层（warn 级）：候选派生命名空间 = facts./time./course.。
-        实测抓到 1 条真违规（ZWX-XIANGSHOU-001 仅 person.*——同命主恒命中），
-        其余全库规则引用 facts/time/course 路径。"""
+
+        ZWX-XIANGSHOU-001（person-only）按三重条件豁免（exists + 待裁定标记 + Q-013 登记）
+        ——设计意图为就绪探测占位，非死规则（评审第十三轮翻案）。
+        本测试同时锁死：豁免条件三要素缺一不可（否则 ZWX 会重新出现）。"""
         from app_zeri.cli import _c21_static_warnings
 
-        warnings = _c21_static_warnings(registry)
-        assert any("ZWX-XIANGSHOU-001" in w for w in warnings), warnings
-        assert len(warnings) == 1, f"基线：静态警告恰 1 条（现 {len(warnings)}）——新增请核对是否真死规则"
-        # 语义自检：site./person. 不在候选派生命名空间内
-        assert not any("site.mountain".startswith(ns) for ns in ("facts.", "time.", "course."))
+        assert _c21_static_warnings(registry) == [], "全库不应有静态违规（占位已豁免）"
+        rule = registry.ruleset.by_id["ZWX-XIANGSHOU-001"]
+        assert rule.condition.get("op") == "exists", "豁免前提①：exists"
+        marker = (rule.explanation or "") + (rule.notes or "")
+        assert "裁定" in marker, "豁免前提②：待裁定标记"
+        assert "Q-013" in marker, "豁免前提③：裁定队列登记（Q-013）"
+        # 反证：三要素若缺 Q-013 登记，同一规则会被 flag（防止将来有人删 Q-013 却留占位）
+        stripped = dc_replace(rule, notes="待考证：相主口径。")
+        reg2 = _registry_with(registry, stripped)
+        assert any("ZWX-XIANGSHOU-001" in w for w in _c21_static_warnings(reg2)), (
+            "Q-013 登记被移除后必须重新报警（三重条件的牙齿）"
+        )
+
+    def test_zwx_placeholder_not_evaluated(self, golden_ctx, registry) -> None:
+        """评审第十三轮产物三：占位规则不参与评估的实证（zhengwuxing 派默认关闭）。"""
+        ev = evaluate(golden_ctx, registry, EvalConfig(task_kind="修造", allow_unverified=True))
+        for res in ev.per_school.values():
+            for bucket in ("vetoes", "cautions", "controversial", "demo_hits",
+                           "positives", "notes", "unknowns", "structural"):
+                assert all(j.rule_id != "ZWX-XIANGSHOU-001" for j in getattr(res, bucket)), bucket
+        assert "zhengwuxing" not in ev.per_school, "默认路由不含 zhengwuxing（school_policy 关闭）"
+
+    def test_agent_signature_blacklist(self, registry) -> None:
+        """评审第十二轮：Agent 署名黑名单——非人类 verified_by 被 lint 拒绝。"""
+        from app_zeri.cli import _check_signatures
+
+        for fake in ("pytest", "agent", "AI", "llm", "bot"):
+            bad = dc_replace(
+                _synthetic_rule(),
+                citation=Citation(source="测试专用（非古籍）", kind="classic", quote="x", verified_by=fake),
+            )
+            reg = _registry_with(registry, bad)
+            assert any("疑似非人类署名" in p for p in _check_signatures(reg)), fake
 
     def test_c21_dead_rule_baseline_covers_current(self) -> None:
         """C21 动态层：死规则扫描的零命中集合 ⊆ 基线豁免（工具退出码 0）。"""
