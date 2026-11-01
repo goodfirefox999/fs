@@ -15,6 +15,7 @@ from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+import yaml
 import pytest
 
 from app_zeri.report import render_markdown
@@ -639,8 +640,9 @@ class TestAdr0014EvidenceCap:
             "当前构造下两组恰好同集（10 条待考证+禁用）——结构重合非定义相同，见 _lint_groups 注释"
         )
         assert set(groups.get("coverage_gaps", [])) == {
-            "GAP-TAISUI-FACING", "GAP-TASKKIND-EMPTY", "GAP-QILI-NOTIMPLEMENTED",
-        }, "覆盖缺口机器行（向太岁硬禁 + 零专属规则事项 + 起例未实现 9 条）"
+            "GAP-TAISUI-FACING", "GAP-TASKKIND-EMPTY",
+            "GAP-QILI-NOTIMPLEMENTED", "GAP-SIGNATURE-PERMISSION",
+        }, "覆盖缺口机器行（4 条：硬禁/零专属事项/起例未实现/签名权限）"
         assert groups.get("book_authenticity_review", []) == [], (
             "已考证×非authentic 书目=0（当前无已考证规则）——出现条目即触发 GUIDE 三·三当轮重审"
         )
@@ -840,10 +842,10 @@ class TestAdr0014EvidenceCap:
             )
             return _check_signatures(_registry_with(registry, bad))
 
-        assert any("疑似非人类署名" in p for p in sig("AI 助手")), "复合词必须命中"
-        assert any("疑似非人类署名" in p for p in sig("auto-bot")), "连写命中"
-        assert not any("疑似非人类署名" in p for p in sig("Aijing")), "人名不受影响（词边界）"
-        assert not any("疑似非人类署名" in p for p in sig("人类考证人甲")), "人类签名通过"
+        for vb in ("AI 助手", "AI助手", "助手AI", "ai助手", "auto-bot", "机器人", "Qwen"):
+            assert any("疑似非人类署名" in p for p in sig(vb)), f"{vb} 必须命中（评审第十五轮实测表）"
+        for vb in ("Aijing", "人类考证人甲", "艾青"):
+            assert not any("疑似非人类署名" in p for p in sig(vb)), f"{vb} 人名不受影响"
 
     def test_ci_guard_predicate_and_platform_file(self, tmp_path, monkeypatch) -> None:
         """评审第十四轮：CI guard 谓词显式化 + 分平台历史文件。"""
@@ -916,3 +918,112 @@ class TestAdr0014EvidenceCap:
             )
             tested.add(name)
         assert "notes" not in tested and "notes" in exempt, "豁免清单未生效"
+
+    def test_publishable_three_state_semantics(self, golden_ctx, registry) -> None:
+        """评审第十四/十五轮产物四（C19 前置）：publishable 对三态的处理规则锁死。
+
+        规则：unknown 仅通过**必需集**阻塞 publishable（required_blockers）；
+        非必需规则的 unknown 只进 unknowns 桶/报告"未知"节，不影响 publishable；
+        evaluable=false 规则不参与评估，也不影响 publishable（且被准入 lint 拦在必需集外）。
+        """
+        # 场景 A：必需集全部已考证 + 一条**非必需**规则 unknown → publishable=True
+        required = registry.required_for("修造")
+        verified_rules = [
+            dc_replace(
+                registry.ruleset.by_id[rid], status="已考证",
+                citation=Citation(source=registry.ruleset.by_id[rid].citation.source,
+                                  kind="classic", quote="占位原文", quote_kind="原文",
+                                  verified_by="人类考证人甲", book_authenticity="authentic"),
+            ) for rid in required
+        ]
+        # 非必需 unknown 规则：YINFU（Q-005 门控，不在修造必需集）
+        reg_a = _registry_with(registry, *verified_rules)
+        ev_a = evaluate(golden_ctx, reg_a, EvalConfig(task_kind="修造", strictness="normal"))
+        assert ev_a.publishable is True, (
+            "非必需规则的 unknown 不得阻塞 publishable（三态语义核心）"
+        )
+        assert any(j.rule_id == "PUB-YINFU-001"
+                   for res in ev_a.per_school.values() for j in res.unknowns), (
+            "非必需 unknown 仍必须出现在 unknowns 桶（可见性）"
+        )
+        # 场景 B：必需集含一条 unknown（把 YUEPO 改回待考证）→ publishable=False
+        mixed = [r for r in verified_rules if r.rule_id != "PUB-YUEPO-001"] + [
+            registry.ruleset.by_id["PUB-YUEPO-001"]
+        ]
+        reg_b = _registry_with(registry, *mixed)
+        ev_b = evaluate(golden_ctx, reg_b, EvalConfig(task_kind="修造", strictness="normal"))
+        assert ev_b.publishable is False, "必需规则 unknown 必须阻塞 publishable"
+        assert any(b["rule_id"] == "PUB-YUEPO-001" for b in ev_b.required_blockers)
+
+    def test_evaluable_false_required_admission(self, registry) -> None:
+        """产物二第 3 小点：evaluable=false 规则进必需集 → lint 拦截（准入新条件）。"""
+        from app_zeri.cli import _check_required_set
+        from core_rule.policy import RequiredRuleSet
+
+        suspended = dc_replace(
+            _synthetic_rule(), rule_id="TEST-SUSPENDED", status="待考证",
+            evaluable=False, hard_veto=False, severity="慎用",
+        )
+        reg = _registry_with(registry, suspended)
+        rr = RequiredRuleSet(
+            core=("TEST-SUSPENDED",),
+            criteria={"require_hard_veto": False, "allowed_targets": ["mountain", "facing", "day", "person"],
+                      "forbidden_schools": []},
+        )
+        reg = dc_replace(reg, required_rules=rr)
+        problems = _check_required_set(reg)
+        assert any("required_set_not_evaluable" in p for p in problems), problems
+
+    def test_evaluable_expiry_on_q_resolution(self, registry, tmp_path) -> None:
+        """评审第十五轮（第三次要求，本轮 fixture 打通）：Q 裁定后豁免失效——两条链路。
+
+        链 1（占位探测）：Q-013 已裁定 → ZWX 静态豁免失效（_c21_static_warnings 报警）；
+        链 2（evaluable=false）：Q-014 已裁定 → XIUJIU 豁免失效（_evaluable_expiry_warnings）。
+        各配反证（未裁定 → 沉默）。临时 QUESTIONS 副本，不触碰真文件。
+        """
+        import app_zeri.cli as cli_mod
+
+        qfile = tmp_path / "QUESTIONS.md"
+        qfile.write_text(
+            "## Q-013 正五行相主的取用口径\n\n**已裁定：取年命纳音**\n"
+            "## Q-014 exists 语义\n\n**已裁定：吉凶条件返回 unknown**\n", encoding="utf-8"
+        )
+        # 链 1：占位豁免失效
+        w1 = cli_mod._c21_static_warnings(registry, questions_path=qfile)
+        assert any("ZWX-XIANGSHOU-001" in w and "豁免失效" in w for w in w1), w1
+        # 链 2：evaluable 豁免失效（XIUJIU blocked_by=Q-014）
+        w2 = cli_mod._evaluable_expiry_warnings(registry, questions_path=qfile)
+        assert any("PUB-XIUJIU-001" in w and "豁免失效" in w for w in w2), w2
+        # 反证：未裁定 → 双链沉默
+        qfile.write_text(
+            "## Q-013 正五行相主的取用口径\n\n待人类提供口径。\n"
+            "## Q-014 exists 语义\n\n待裁定。\n", encoding="utf-8"
+        )
+        assert cli_mod._c21_static_warnings(registry, questions_path=qfile) == []
+        assert cli_mod._evaluable_expiry_warnings(registry, questions_path=qfile) == []
+
+    def test_evaluable_false_requires_blocked_by(self, tmp_path) -> None:
+        """产物二：evaluable=false 缺 blocked_by → loader 拒绝。"""
+        import pytest as _pytest
+
+        from core_rule.errors import DSLValidationError
+        from core_rule.loader import load_rule
+
+        data = {
+            "api_version": 1, "rule_id": "PUB-TEST-EV-001", "version": 1,
+            "school": "public", "category": "测试", "status": "待考证",
+            "severity": "慎用", "target": "day", "evaluable": False,
+            "hard_veto": False,
+            "applies_to": {"task_kinds": ["修造"], "node_kinds": [], "strictness_min": "normal"},
+            "condition": {"fact": "facts.x.value", "op": "eq", "value": True},
+            "citation": {"source": "《测试》", "kind": "classic"},
+            "explanation": "测试", "tests": ["RT-A", "RT-B"],
+        }
+        path = tmp_path / "r.yaml"
+        path.write_text(yaml.safe_dump(data, allow_unicode=True), encoding="utf-8")
+        with _pytest.raises(DSLValidationError, match="blocked_by"):
+            load_rule(path)
+        data["blocked_by"] = "Q-999 测试阻塞"
+        path.write_text(yaml.safe_dump(data, allow_unicode=True), encoding="utf-8")
+        rule = load_rule(path)
+        assert rule.evaluable is False

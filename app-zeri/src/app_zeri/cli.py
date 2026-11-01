@@ -294,7 +294,11 @@ def cmd_rules_lint(args: argparse.Namespace) -> int:
     problems.extend(_check_signatures(reg))
 
     # 12) C21 静态层（warn 不 error——评审第十二轮约束 2；动态层见 tools/dead_rule_scan.py）
-    warnings.extend(_c21_static_warnings(reg))
+    warnings.extend(_c21_static_warnings(reg))  # QUESTIONS 路径用默认（真文件）
+
+    # 12b) evaluable=false 生命周期（评审第十四/十五轮，fixture 反证见测试）：
+    #      blocked_by 指向的 Q 已裁定 → 豁免失效，规则必须恢复评估或显式废弃
+    warnings.extend(_evaluable_expiry_warnings(reg))
 
     stats = rs.stats()
     print("规则库统计：")
@@ -396,8 +400,41 @@ def _lint_groups(reg) -> dict[str, list[str]]:
 
 CANDIDATE_NS = ("facts.", "time.", "course.")
 
+QUESTIONS_PATH = Path("docs/QUESTIONS.md")
 
-def _c21_static_warnings(reg) -> list[str]:
+
+def _q_resolved(qid: str, questions_path: Path | None = None) -> bool:
+    """QUESTIONS.md 中 Q-xxx 是否已裁定（section 含「已裁定」）。供豁免失效检查。"""
+    path = questions_path or QUESTIONS_PATH
+    if not path.exists():
+        return False
+    text = path.read_text(encoding="utf-8")
+    marker = f"## {qid} "
+    i = text.find(marker)
+    if i < 0:
+        return False
+    j = text.find("\n## ", i + 1)
+    section = text[i:j if j > 0 else len(text)]
+    return "已裁定" in section
+
+
+def _evaluable_expiry_warnings(reg, questions_path: Path | None = None) -> list[str]:
+    """evaluable=false 的豁免生命周期：blocked_by 指向的 Q 已裁定 → 豁免失效（warn）。"""
+    out: list[str] = []
+    for rule in reg.ruleset.rules:
+        if getattr(rule, "evaluable", True):
+            continue
+        bb = str(rule.raw.get("blocked_by") or "")
+        for token in bb.replace("、", " ").replace("+", " ").split():
+            if token.startswith("Q-") and _q_resolved(token, questions_path):
+                out.append(
+                    f"{rule.rule_id}: evaluable=false 的阻塞项 {token} 已裁定——"
+                    "豁免失效，恢复评估或显式废弃（VERIFICATION_GUIDE 三·三联动）"
+                )
+    return out
+
+
+def _c21_static_warnings(reg, questions_path: Path | None = None) -> list[str]:
     """C21 静态层：候选特异因子检查（warn 级）。
 
     断言级规则 condition 必须引用至少一个候选派生路径
@@ -408,11 +445,13 @@ def _c21_static_warnings(reg) -> list[str]:
     op=exists 豁免为**三重条件**（评审第十三轮：形态豁免过宽，缺任一照报）：
     ① op=exists；② explanation/notes 含 待裁定/占位/待启用 标记；
     ③ 口径问题已登记裁定队列（Q-013，notes 引用之）。
+    **生命周期（评审第十五轮）**：Q-013 裁定完成 → 豁免失效，占位规则必须处置。
     实现备注：本豁免于 2026-11-01 补实现——此前 GUIDE 三·五声称已豁免而代码未落地
     （文档与实现不符，已修正；详见提交历史）。
     """
     from core_rule.dsl import collect_fact_paths
 
+    q013_resolved = _q_resolved("Q-013", questions_path)
     out: list[str] = []
     for rule in reg.ruleset.rules:
         if rule.status == "定义级":
@@ -425,11 +464,12 @@ def _c21_static_warnings(reg) -> list[str]:
                 and any(k in marker for k in ("待裁定", "占位", "待启用", "裁定口径"))
                 and "Q-013" in marker
             )
-            if is_placeholder:
-                continue  # 就绪探测占位（设计意图即恒真），口径登记于 Q-013
+            if is_placeholder and not q013_resolved:
+                continue  # 就绪探测占位（设计意图即恒真）；Q-013 裁定后豁免失效
+            suffix = "（Q-013 已裁定——占位豁免失效，须处置）" if is_placeholder else ""
             out.append(
                 f"{rule.rule_id}: condition 仅引用用户输入（site/person），"
-                "无候选派生因子（facts/time/course）——C21 静态层"
+                f"无候选派生因子（facts/time/course）——C21 静态层{suffix}"
             )
     return out
 
@@ -442,11 +482,18 @@ def _check_signatures(reg) -> list[str]:
     Agent 署名黑名单（评审第十二轮：文档纪律升级为机器强制——
     "是不是人类"无法判定，但已知非人类署名可拒绝）。
     """
-    # 词边界正则（评审第十四轮：全等匹配防不住"AI 助手"复合词绕过；
-    # \b 保证"Aijing"类人名不受影响）——启发式辅助，完备防线=status 变更权限约束
+    # 评审第十五轮实测：\b 在 CJK 相邻时失效（"AI助手"无空格绕过）——
+    # ASCII token 用显式边界 (?<![A-Za-z0-9])…(?![A-Za-z0-9])，中文词（机器人/千问/通义等）
+    # 直接子串匹配（CJK 无词边界概念）。仍是启发式辅助（fail-open）；
+    # 完备防线 = verified_by 结构校验（非空+日期+可联系锚点）+ status 变更权限
+    # （CODEOWNERS/分支保护——已登记 coverage_gaps GAP-SIGNATURE-PERMISSION，阻塞待接）。
     import re as _re
 
-    pattern = _re.compile(r"\b(pytest|agent|ai|llm|bot|auto)\b", _re.IGNORECASE)
+    ascii_pat = _re.compile(
+        r"(?<![A-Za-z0-9])(pytest|agent|ai|llm|bot|auto|qwen|gpt|claude)(?![A-Za-z0-9])",
+        _re.IGNORECASE,
+    )
+    cjk_words = ("机器人", "千问", "通义", "智能体", "大模型")
     out: list[str] = []
     for rule in reg.ruleset.rules:
         if rule.status != "已考证":
@@ -454,8 +501,8 @@ def _check_signatures(reg) -> list[str]:
         vb = (rule.citation.verified_by or "").strip()
         if not vb:
             out.append(f"{rule.rule_id}: status=已考证 但 verified_by 为空（状态跃迁提权，ADR-0014）")
-        elif pattern.search(vb):
-            out.append(f"{rule.rule_id}: verified_by='{vb}' 疑似非人类署名（黑名单词边界命中，须真人签名）")
+        elif ascii_pat.search(vb) or any(w in vb for w in cjk_words):
+            out.append(f"{rule.rule_id}: verified_by='{vb}' 疑似非人类署名（黑名单命中，须真人签名）")
     return out
 
 
@@ -514,6 +561,11 @@ def _check_required_set(reg) -> list[str]:
                 problems.append(
                     f"required_set_controversial: {where} 的 {rid} status=有争议，"
                     "出处核查未通过（ADR-0013），不得作为发布门槛"
+                )
+            if not getattr(rule, "evaluable", True):
+                problems.append(
+                    f"required_set_not_evaluable: {where} 的 {rid} evaluable=false"
+                    "（起例未实现挂起，Q-014）——必需集规则必须可评估"
                 )
             roots = _fact_roots(rule)
             if group == "core" and "person" in roots:

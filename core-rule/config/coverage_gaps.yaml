@@ -1,30 +1,42 @@
 api_version: 1
-# 已知未覆盖的原文硬禁（Q-012 联动；评审第十轮：机器可读，闭环不靠人记）。
-# C18（向首侧 fact 产出）完成时删除对应条目，lint 的 coverage_gaps 行自动少一项。
+# 已知未覆盖/实现面差额/防线缺口登记（评审第十四/十五轮）。
+# 闭环规则：阻塞项完成后删除对应条目，lint 的 coverage_gaps 行随之缩短。
 gaps:
   - id: GAP-TAISUI-FACING
-    claim: 向太岁硬禁
-    quote_ref: P1「坐三煞，向太歲，此不能制者也，不可犯也」；P5「向太歲則坐于歲破矣，雖有吉星，不能解也」
+    claim: 向太岁硬禁（Q-012）
+    quote_ref: P1「坐三煞，向太歲，此不能制者也，不可犯也」；P5「向太歲則坐于歲破矣」
     evidence_level: A（预检逐字核到，待影印复核+签名）
-    blocked_by: C18（向首侧 fact 产出，ADR-0014 落地清单）
-    owner_question: Q-012（H1 勾选后启动 C18）
+    blocked_by: C18（向首侧 fact 产出）
+    owner_question: Q-012
     note: 期间系统不拦向太岁日课；必需集维持 8 条不因裁定增加
   - id: GAP-TASKKIND-EMPTY
     gap_type: 产品级信息（非缺陷）——通用规则覆盖是正常事实，登记目的=用户可见提示
-    claim: 无事项专属规则（仅通用规则覆盖——task_kinds:[] 的通用规则匹配一切事项，
-      用户拿到的是通用结论而非事项针对性判定）
-    quote_ref: 出行/开业 在规则库 applies_to 显式清单中出现 0 次（python 全量统计 2026-11-01；
-      初版"零规则事项/引擎不判"系 head 截断误判，已更正）
-    evidence_level: 事实（rules 统计，2026-11-01 dead_rule_scan v3）
-    blocked_by: 事项专属规则建模（待考证者裁定该事项是否确有独立否决项）
-    owner_question: Q-011（必需集选取）关联
-    note: 与 GAP-TAISUI-FACING 同类——"事项声明支持"与"规则实际覆盖"的差额机器化
+    claim: >-
+      出行/开业无事项专属规则（显式清单 0 次；task_kinds 为空的通用规则 22 条
+      覆盖一切事项——初版"零规则事项/引擎不判"系 head 截断误判，已更正）
+    quote_ref: rules 统计（python 全量 2026-11-01，dead_rule_scan v3 注释同步）
+    evidence_level: 事实
+    blocked_by: 事项专属规则建模（待考证者裁定是否确有独立否决项）
+    owner_question: Q-011 关联
+    note: 渲染判据=显式专属规则数==0；提示含通用规则数 N
   - id: GAP-QILI-NOTIMPLEMENTED
     gap_type: 实现面差额（声明但引擎不判定）——evaluable=false 排除出评估集
-    claim: 9 条起例未实现/未提供规则（DAXIAOYUE/DUTIAN/FUBING/GUANGFU/SANG×2/XIUJIU/JIAQU×2）
-      保留在规则库但不参与评估——修复前用户看到的规则数≠可判定数
+    claim: >-
+      9 条起例未实现/未提供规则（DAXIAOYUE/DUTIAN/FUBING/GUANGFU/SANG×2/XIUJIU/JIAQU×2）
+      保留在规则库但不参与评估——修复前用户看到的规则数不等于可判定数
     quote_ref: FACT_REGISTRY provider="本系统不提供"（registry.py）+ Q-014 exists 语义
     evidence_level: 事实（代码统计 2026-11-01）
     blocked_by: Q-014（exists 语义）+ 起例实现（逐条）
     owner_question: Q-014 / Q-005（YINFU 同源口径门控另列）
     note: 实现后逐条改回 evaluable=true 走考证流程；本条目随之缩短
+  - id: GAP-SIGNATURE-PERMISSION
+    gap_type: 防线缺口（黑名单 fail-open 的完备防线未接）
+    claim: >-
+      status 变更权限未约束到人类账号（CODEOWNERS/分支保护未配置）——
+      verified_by 黑名单是 fail-open 启发式，换名即绕过
+    quote_ref: VERIFICATION_GUIDE 四 + 评审第十五轮第五节
+    evidence_level: 事实（仓库无 CODEOWNERS 文件）
+    blocked_by: CODEOWNERS 配置（status 已考证行的变更权限约束到人类账号）
+    owner_question: 无（工程侧）
+    note: 补充方向=verified_by 结构化校验（非空+日期+可联系锚点，fail-closed）
+

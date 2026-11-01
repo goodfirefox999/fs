@@ -8,6 +8,7 @@ school: public
 category: 重丧日（安葬专属）
 status: 待考证
 evaluable: false
+blocked_by: Q-014 + 起例实现
 hard_veto: false
 severity: 慎用
 target: day

@@ -308,10 +308,16 @@ def load_rule(path: Path) -> Rule:
     # evaluable=false：起例未实现/口径未定的规则保留在库但排除出评估集（Q-014；
     # 评审第十三/十四轮）——仅限待考证（已考证/定义级规则必须可评估）
     evaluable = bool(raw.get("evaluable", True))
-    if not evaluable and status != "待考证":
-        raise DSLValidationError(
-            f"evaluable=false 仅限 status=待考证（当前 {status}）", rule_id=rule_id
-        )
+    blocked_by = raw.get("blocked_by")
+    if not evaluable:
+        if status != "待考证":
+            raise DSLValidationError(
+                f"evaluable=false 仅限 status=待考证（当前 {status}）", rule_id=rule_id
+            )
+        if not blocked_by:
+            raise DSLValidationError(
+                "evaluable=false 必须带 blocked_by（阻塞项：Q-xxx/起例实现等）", rule_id=rule_id
+            )
 
     return Rule(
         rule_id=rule_id,
