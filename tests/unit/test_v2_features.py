@@ -176,7 +176,7 @@ class TestConflictSplit:
         ev = evaluate(
             base_ctx, registry,
             EvalConfig(task_kind="修造", strictness="strict", schools=("public", "zhengwuxing"),
-                       allow_unverified=True),
+                       allow_unverified=True, demo_veto=True),
         )
         types = {c["type"] for c in ev.conflicts}
         assert types & {"state_divergence", "verdict_conflict"}
@@ -211,7 +211,7 @@ class TestConflictSplit:
         ev = evaluate(
             base_ctx, registry,
             EvalConfig(task_kind="修造", strictness="strict", schools=("public", "zhengwuxing"),
-                       allow_unverified=True),
+                       allow_unverified=True, demo_veto=True),
         )
         hashes = {r.fact_hash for r in ev.per_school.values()}
         assert len(hashes) == 1, "各派必须看到相同的输入事实"
@@ -228,7 +228,7 @@ class TestStrictness:
     def test_normal_caution_is_unsure(self, base_ctx, registry) -> None:
         ev = evaluate(
             self._ctx(base_ctx), registry,
-            EvalConfig(task_kind="修造", strictness="normal", allow_unverified=True),
+            EvalConfig(task_kind="修造", strictness="normal", allow_unverified=True, demo_veto=True),
         )
         assert ev.state == STATE_UNSURE
         assert ev.vectors["assertion_caution_count"] >= 1
@@ -236,7 +236,7 @@ class TestStrictness:
     def test_strict_upgrades_caution_to_rejected(self, base_ctx, registry) -> None:
         ev = evaluate(
             self._ctx(base_ctx), registry,
-            EvalConfig(task_kind="修造", strictness="strict", allow_unverified=True),
+            EvalConfig(task_kind="修造", strictness="strict", allow_unverified=True, demo_veto=True),
         )
         assert ev.state == STATE_BLOCKED
         assert ev.tier == TIER_REJECTED
@@ -244,7 +244,7 @@ class TestStrictness:
     def test_loose_downgrades_caution_to_note(self, base_ctx, registry) -> None:
         ev = evaluate(
             self._ctx(base_ctx), registry,
-            EvalConfig(task_kind="修造", strictness="loose", allow_unverified=True),
+            EvalConfig(task_kind="修造", strictness="loose", allow_unverified=True, demo_veto=True),
         )
         assert ev.vectors["assertion_caution_count"] == 0
         assert ev.state in (STATE_OK, STATE_UNSURE)
@@ -369,7 +369,7 @@ class TestPublishable:
 
     def test_rejected_not_publishable(self, base_ctx, registry) -> None:
         ctx = deep_merge(base_ctx, {"facts": {"suipo": {"hit_mountain": True}}})
-        ev = evaluate(ctx, registry, EvalConfig(task_kind="修造", strictness="strict", allow_unverified=True))
+        ev = evaluate(ctx, registry, EvalConfig(task_kind="修造", strictness="strict", allow_unverified=True, demo_veto=True))
         assert ev.publishable is False
 
 
@@ -396,7 +396,7 @@ class TestRobustness:
             start=date(2027, 7, 1), end=date(2027, 7, 5),
             site=SiteSpec(azimuth_deg=320.0, lat=23.13, lon=113.26, angle_uncertainty_deg=3.0),
             task=TaskSpec(kind="修造", strictness="strict"),
-            allow_unverified=True, top=4, with_robustness=True,
+            allow_unverified=True, demo_veto=True, top=4, with_robustness=True,
         )
         assert result.robustness is not None
         rb = result.robustness
@@ -498,7 +498,7 @@ class TestMutationGaps:
     def test_demo_participation_marked(self, base_ctx, registry) -> None:
         """变异 `participation = "演示" → "判定"` 的守卫：演示命中必须标记为演示。"""
         ctx = deep_merge(base_ctx, {"facts": {"suipo": {"hit_mountain": True}}})
-        ev = evaluate(ctx, registry, EvalConfig(task_kind="修造", strictness="normal", allow_unverified=True))
+        ev = evaluate(ctx, registry, EvalConfig(task_kind="修造", strictness="normal", allow_unverified=True, demo_veto=True))
         demo = [j for res in ev.per_school.values() for j in res.vetoes if j.rule_id == "PUB-SUIPO-001"]
         assert demo, "岁破占山应命中"
         assert demo[0].participation == "演示"
@@ -514,7 +514,7 @@ class TestMutationGaps:
         """
         ev = evaluate(
             base_ctx, registry,
-            EvalConfig(task_kind="修造", strictness="normal", allow_unverified=True,
+            EvalConfig(task_kind="修造", strictness="normal", allow_unverified=True, demo_veto=True,
                        required_rule_ids=("ASSERT-REPEAT-001",)),
         )
         assert ev.tier != "REJECTED", "慎用类演示命中不应产生 REJECTED"

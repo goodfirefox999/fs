@@ -15,6 +15,7 @@ import yaml
 
 from .dsl import collect_fact_paths, condition_depth, validate_condition
 from .errors import DSLValidationError
+from .severity_cap import effective_severity
 from .models import (
     ASSERTION_SEVERITIES,
     DEFINITIONAL_SEVERITY,
@@ -57,6 +58,18 @@ class RuleSet:
     by_school: dict[str, tuple[Rule, ...]]
     #: 规则 id 元组（预计算，供缓存 key 使用；每次现算会有 456k 次字符串操作开销）
     rule_ids: tuple[str, ...] = ()
+    #: ADR-0014 决策 1：声明>上限的规则 id 集（load 期预计算；cap 警告按 run 聚合，
+    #: 不进 per-candidate 循环）。__post_init__ 派生，dc_replace 也会重算。
+    cap_applied_ids: frozenset[str] = frozenset()
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "cap_applied_ids",
+            frozenset(
+                r.rule_id for r in self.rules if effective_severity(r) != r.severity
+            ),
+        )
 
     def get(self, rule_id: str) -> Rule:
         return self.by_id[rule_id]
@@ -75,8 +88,9 @@ class RuleSet:
     ) -> tuple[Rule, ...]:
         """按适用范围筛选规则。
 
-        ``include_unverified=False`` 时，``待考证``/``有争议``/``draft`` 规则不进入判定
+        ``include_unverified=False`` 时，``待考证``/``draft`` 规则不进入判定
         （但仍会在 engine 中作为 unknown 登记，见 4.3 节与"未知必须暴露"要求）。
+        ADR-0014 C12：``有争议`` 规则默认参与评估（判定（存疑）），故随 ``已考证`` 放行。
         """
         allowed_schools = set(schools) if schools is not None else None
         out: list[Rule] = []
@@ -85,7 +99,7 @@ class RuleSet:
                 continue
             if allowed_schools is not None and rule.school not in allowed_schools:
                 continue
-            if not include_unverified and rule.status != "已考证":
+            if not include_unverified and rule.status not in ("已考证", "有争议"):
                 continue
             if task_kind is not None and not rule.applies_to.matches(
                 task_kind=task_kind, node_kind=node_kind, strictness=strictness

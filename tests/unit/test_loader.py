@@ -178,13 +178,19 @@ def test_missing_dir_raises() -> None:
 
 
 def test_ruleset_select_filters() -> None:
+    """ADR-0014 C12：有争议规则默认参与评估（随已考证放行），待考证仍需 include_unverified。"""
     from core_rule import default_registry
 
     reg = default_registry()
-    verified = reg.ruleset.select(include_unverified=False)
-    assert verified == ()
+    default_selected = reg.ruleset.select(include_unverified=False)
+    default_ids = {r.rule_id for r in default_selected}
+    assert "PUB-SANSHA-003" in default_ids and "PUB-TAISUI-001" in default_ids, (
+        "有争议规则应默认被 select 放行（判定（存疑））"
+    )
+    assert all(r.status in ("已考证", "有争议") for r in default_selected)
     all_rules = reg.ruleset.select(include_unverified=True)
     assert len(all_rules) >= 40
+    assert len(all_rules) > len(default_selected), "待考证规则仍需显式 include_unverified"
 
 
 class TestSchoolPolicy:

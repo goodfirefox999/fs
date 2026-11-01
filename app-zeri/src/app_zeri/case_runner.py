@@ -110,6 +110,8 @@ def _run_one(case: Case, *, allow_unverified: bool = True) -> CaseOutcome:
             person=person,
             cal=cal,
             allow_unverified=allow_unverified,
+            # 案例库运行为联调视图：演示命中计入结论（金标准期望含演示否决/正向，ADR-0014 决策 3）
+            demo_veto=True,
         )
     except Exception as exc:  # noqa: BLE001 - 案例失败必须记录而非中断整批
         return CaseOutcome(case=case, state="", tier="", error=f"{type(exc).__name__}: {exc}")

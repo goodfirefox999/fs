@@ -214,6 +214,7 @@ def generate(
     registry: RuleRegistry | None = None,
     schools: tuple[str, ...] | None = None,
     allow_unverified: bool = False,
+    demo_veto: bool = False,
     top: int = 20,
     daily_window: tuple[time, time] | None = None,
     exclude_weekdays: Iterable[int] = (),
@@ -243,6 +244,7 @@ def generate(
         strictness=task.strictness,
         schools=schools,
         allow_unverified=allow_unverified,
+        demo_veto=demo_veto,
         granularity=task.granularity,
     )
 

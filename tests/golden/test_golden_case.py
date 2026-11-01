@@ -37,7 +37,7 @@ def golden():
         task=TaskSpec(kind="修造", nodes=("修造",), strictness="strict"),
         person=PersonSpec(),
         schools=("public", "zhengwuxing"),
-        allow_unverified=True,
+        allow_unverified=True, demo_veto=True,
     )
 
 
@@ -150,13 +150,13 @@ def test_bazi_under_alternative_boundaries() -> None:
         site=SiteSpec(azimuth_deg=320.0, lon=113.26),
         task=TaskSpec(kind="修造", strictness="strict"),
         cal=CalendarConfig(day_boundary="late"),
-        allow_unverified=True,
+        allow_unverified=True, demo_veto=True,
     )
     early = verify(
         dt=datetime(2027, 7, 11, 23, 30, tzinfo=CST),
         site=SiteSpec(azimuth_deg=320.0, lon=113.26),
         task=TaskSpec(kind="修造", strictness="strict"),
         cal=CalendarConfig(day_boundary="early"),
-        allow_unverified=True,
+        allow_unverified=True, demo_veto=True,
     )
     assert base.context["course"]["day"]["zhi"] != early.context["course"]["day"]["zhi"]

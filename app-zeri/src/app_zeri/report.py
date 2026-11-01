@@ -106,6 +106,31 @@ def _school_block(res: SchoolResult) -> list[str]:
             lines.append(f"- `{j.rule_id}`：{j.hit_detail}")
         lines.append("")
 
+    # ADR-0014 决策 0：存疑命中——参与评估但暂不采信，不入否决/tier
+    if res.controversial:
+        lines.append(
+            "**存疑命中（status=有争议：口径与建模存疑，暂不采信；"
+            "不入否决、不影响 tier——ADR-0014 决策 0）**"
+        )
+        lines.append("")
+        lines.extend(_judgment_rows(res.controversial))
+        lines.append("")
+        for j in res.controversial:
+            lines.append(f"- `{j.rule_id}`：{j.hit_detail}")
+        lines.append("")
+
+    # ADR-0014 决策 3：演示命中恒开渲染（demo_veto=False 时不计入 state/tier）
+    if res.demo_hits:
+        lines.append(
+            "**演示命中（规则未考证，不作为排除依据；未计入 state/tier——ADR-0014 决策 3）**"
+        )
+        lines.append("")
+        lines.extend(_judgment_rows(res.demo_hits))
+        lines.append("")
+        for j in res.demo_hits:
+            lines.append(f"- `{j.rule_id}`：{j.hit_detail}")
+        lines.append("")
+
     if res.positives:
         lines.append("**正向证据**")
         lines.append("")
@@ -170,6 +195,13 @@ def render_markdown(result: VerifyResult, *, registry: RuleRegistry | None = Non
     lines: list[str] = []
     lines.append("# 择日复核报告")
     lines.append("")
+    # ADR-0014 决策 3：demo_veto=True 时首行显著标注（结论不可作为发布依据）
+    if (ev.manifest.get("config") or {}).get("demo_veto"):
+        lines.append(
+            "> 🚧 **含演示否决（--demo-veto）：演示命中已计入结论，"
+            "本报告不可作为发布依据（ADR-0014 决策 3）。**"
+        )
+        lines.append("")
     lines.append(f"- 候选时刻：`{time_ctx['datetime']}`（{time_ctx['timezone']}）")
     lines.append(f"- 事项：{task['kind']}" + (f"（节点：{task['node']}）" if task.get("node") else ""))
     lines.append(f"- 严格档：{task['strictness']}")
@@ -204,6 +236,20 @@ def render_markdown(result: VerifyResult, *, registry: RuleRegistry | None = Non
         f"可发布：**{'是' if ev.publishable else '否'}**"
     )
     lines.append("")
+    # ADR-0014 决策 0：甲案的用户可见后果——tier 与 publishable 必须联合显示，不得分置
+    if ev.vectors.get("controversial_count"):
+        lines.append(
+            "> ⚠️ **存疑命中提示**：有争议规则命中 = 暂不采信 —— tier 不变、"
+            "publishable 兜底、不参与否决；明细见「存疑命中」节（ADR-0014 决策 0）。"
+        )
+        lines.append("")
+    # ADR-0014 决策 1：声明/生效双显示（审计链）
+    cap_ids = ev.vectors.get("cap_applied_ids") or []
+    if cap_ids:
+        lines.append(
+            f"- 声明/生效严重度差异（ADR-0014 上限，考证签名后自动恢复）：{', '.join(f'`{i}`' for i in cap_ids)}"
+        )
+        lines.append("")
     if ev.publishable:
         lines.append(
             "> ℹ️ **「可发布」= 安全底线语义**：该事项的必需规则集已全部可判定，"
@@ -248,6 +294,34 @@ def render_markdown(result: VerifyResult, *, registry: RuleRegistry | None = Non
         lines.append(
             "> ⚠️ **本次结论不可对外发布**：" + "；".join(blockers) + "。"
             "详见下方「未知」与「冲突」两节。"
+        )
+        lines.append("")
+        # ADR-0014 决策 5：未激活状态合并说明（两个"未激活"不得让用户自己拼因果）
+        verified_total: int | None = None
+        verified_required: int | None = None
+        if registry is not None:
+            verified_total = sum(
+                1 for r in registry.ruleset.rules if r.status == "已考证"
+            )
+            verified_required = sum(
+                1
+                for rid in ev.required_rule_ids
+                if registry.ruleset.by_id.get(rid) is not None
+                and registry.ruleset.by_id[rid].status in ("已考证", "定义级")
+            )
+        lines.append("**当前状态（未激活项合并说明）**：")
+        lines.append("")
+        lines.append(
+            f"- 可发布=否：必需集 {len(ev.required_rule_ids)} 条中 "
+            f"{verified_required if verified_required is not None else '?'} 条已考证（阻塞项见下表）"
+        )
+        if verified_total == 0:
+            lines.append(
+                "- strict 档未激活：已考证规则 0 条，从严能力待 P0 考证完成后生效"
+                "（当前 strict 与 normal 在否决力上等价）"
+            )
+        lines.append(
+            "- 共同原因：P0 考证未完成；补完必需集原文并签名后，publishable 与 strict 同时解锁"
         )
         lines.append("")
 

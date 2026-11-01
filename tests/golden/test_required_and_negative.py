@@ -164,7 +164,7 @@ class TestNegativeWithSyntheticVerifiedRule:
         """未考证规则命中只能渲染为「演示性不可用」。"""
         ev = evaluate(
             golden_ctx, registry,
-            EvalConfig(task_kind="修造", strictness="strict", allow_unverified=True),
+            EvalConfig(task_kind="修造", strictness="strict", allow_unverified=True, demo_veto=True),
         )
         assert ev.vectors["verified_veto_count"] == 0
         assert ev.vectors["demo_veto_count"] >= 1
@@ -318,15 +318,19 @@ class TestAdr0013SourceAudit:
             assert rule.citation.quote_kind == "原文", rid
 
     def test_sansha003_hit_registers_caution_not_veto(self, golden_ctx, registry) -> None:
-        """D6：normal 与 strict 两档下 003 命中均为慎用登记，均不进 vetoes。"""
+        """ADR-0014 决策 0（T7 单元版）：003（有争议）两档下均入存疑桶，结构化标记，不入 vetoes/cautions。"""
         from tests.conftest import deep_merge
 
         ctx = deep_merge(golden_ctx, {"facts": {"sansha": {"year": {"hit_facing": True}}}})
         for strictness in ("normal", "strict"):
             ev = evaluate(
                 ctx, registry,
-                EvalConfig(task_kind="修造", strictness=strictness, allow_unverified=True),
+                EvalConfig(task_kind="修造", strictness=strictness),
             )
+            hits = [
+                j for res in ev.per_school.values() for j in res.controversial
+                if j.rule_id == "PUB-SANSHA-003"
+            ]
             vetoes = [
                 j for res in ev.per_school.values() for j in res.vetoes
                 if j.rule_id == "PUB-SANSHA-003"
@@ -335,5 +339,218 @@ class TestAdr0013SourceAudit:
                 j for res in ev.per_school.values() for j in res.cautions
                 if j.rule_id == "PUB-SANSHA-003"
             ]
-            assert not vetoes, f"strictness={strictness}：有争议规则不得升级为否决"
-            assert cautions, f"strictness={strictness}：命中应登记为慎用"
+            assert hits, f"strictness={strictness}：命中应入存疑桶"
+            assert all(j.doubt is True and j.source_status == "controversial" for j in hits)
+            assert all(j.severity == "慎用" for j in hits), "cap 后生效严重度=慎用"
+            assert not vetoes and not cautions, "存疑规则不得进入 vetoes/cautions"
+
+
+class TestAdr0014EvidenceCap:
+    """ADR-0014：证据等级→否决力上限、存疑不压 tier、demo 三态、CLI 依赖校验。"""
+
+    def _registry_without(self, registry, *rids):
+        drop = set(rids)
+        kept = tuple(r for r in registry.ruleset.rules if r.rule_id not in drop)
+        by_id = {r.rule_id: r for r in kept}
+        from core_rule.provenance import stable_hash
+
+        ruleset = dc_replace(
+            registry.ruleset, rules=kept, by_id=by_id,
+            version="rl-" + stable_hash([(r.rule_id, r.version) for r in kept]),
+        )
+        return RuleRegistry(
+            ruleset=ruleset, policy=registry.policy, task_kinds=registry.task_kinds,
+            calibers=registry.calibers, required_rules=registry.required_rules,
+        )
+
+    @staticmethod
+    def _hits(ev, bucket, rid):
+        return [j for res in ev.per_school.values() for j in getattr(res, bucket) if j.rule_id == rid]
+
+    @staticmethod
+    def _controversial_ctx(golden_ctx):
+        from tests.conftest import deep_merge
+
+        return deep_merge(golden_ctx, {"facts": {"sansha": {"year": {"hit_facing": True}}}})
+
+    def test_unverified_capped_and_rendered_not_counted(self, golden_ctx, registry) -> None:
+        """T6：待考证+禁用 → cap 为慎用、只渲染不计入；双向验证渲染层仍生成文案。"""
+        from tests.conftest import deep_merge
+
+        ctx = deep_merge(golden_ctx, {"facts": {"wuhuang": {"year": {"hit_mountain": True}}}})
+        ev = evaluate(ctx, registry, EvalConfig(task_kind="修造", strictness="strict", allow_unverified=True))
+        hits = self._hits(ev, "demo_hits", "PUB-WUHUANG-001")
+        assert hits, "演示命中应入 demo_hits 桶（渲染恒开）"
+        j = hits[0]
+        assert j.source_status == "unverified" and j.doubt is False
+        assert j.declared_severity == "禁用" and j.severity == "慎用", "cap：待考证的禁用按慎用生效"
+        assert not self._hits(ev, "vetoes", "PUB-WUHUANG-001")
+        assert not self._hits(ev, "cautions", "PUB-WUHUANG-001")
+        from core_rule.severity_cap import cap_warning
+
+        assert cap_warning(j and registry.ruleset.by_id["PUB-WUHUANG-001"]) is not None
+        assert "未考证，无引文可核" in (cap_warning(registry.ruleset.by_id["PUB-WUHUANG-001"]) or "")
+        from app_zeri.verifier import VerifyResult
+        from core_eval import detect_structure
+
+        md = render_markdown(
+            VerifyResult(evaluation=ev, context=ctx,
+                         structure=detect_structure(zhis=["未", "未", "卯", "未"], gans=["丁", "丁", "辛", "乙"])),
+            registry=registry,
+        )
+        assert "声明/生效严重度差异" in md and "PUB-WUHUANG-001" in md, "审计链双显示（渲染层）"
+
+    def test_controversial_hit_changes_nothing(self, golden_ctx, registry) -> None:
+        """T7+T12+T17：甲案不变式（单元级）——存疑命中不改 tier/state/publishable/blockers。"""
+        ctx = self._controversial_ctx(golden_ctx)
+        ev_full = evaluate(ctx, registry, EvalConfig(task_kind="修造", strictness="strict"))
+        ev_ctrl = evaluate(
+            ctx, self._registry_without(registry, "PUB-SANSHA-003"),
+            EvalConfig(task_kind="修造", strictness="strict"),
+        )
+        assert ev_full.tier == ev_ctrl.tier
+        assert ev_full.state == ev_ctrl.state
+        assert ev_full.publishable == ev_ctrl.publishable
+        assert ev_full.required_blockers == ev_ctrl.required_blockers
+        hits = self._hits(ev_full, "controversial", "PUB-SANSHA-003")
+        assert hits and all(j.doubt and j.source_status == "controversial" for j in hits)
+
+    def test_verified_caution_still_escalates_in_strict(self, golden_ctx, registry) -> None:
+        """T8：不变式回归——已考证慎用 strict 仍升级；同规则待考证则不升级且入 demo 桶。"""
+        cautious_verified = dc_replace(_synthetic_rule(), severity="慎用", hard_veto=False)
+        reg = _registry_with(registry, cautious_verified)
+        ev = evaluate(golden_ctx, reg, EvalConfig(task_kind="修造", strictness="strict"))
+        assert self._hits(ev, "vetoes", "TEST-VERIFIED-001"), "已考证慎用 strict 仍升级"
+        # version=2：_select_cached 缓存 key 仍为 (version, rule_ids)（指纹升级是延期项），
+        # 同 id 同 version 不同内容会串味——本测试用 version 区分，指纹缺口另册登记
+        unverified = dc_replace(
+            cautious_verified, status="待考证", version=2,
+            citation=Citation(source="测试专用（非古籍）", kind="classic"),
+        )
+        reg2 = _registry_with(registry, unverified)
+        ev2 = evaluate(golden_ctx, reg2, EvalConfig(task_kind="修造", strictness="strict", allow_unverified=True))
+        assert not self._hits(ev2, "vetoes", "TEST-VERIFIED-001"), "待考证 strict 不升级（不变式）"
+        assert self._hits(ev2, "demo_hits", "TEST-VERIFIED-001")
+
+    def test_cli_verify_default_mode_controversial(self) -> None:
+        """T9（E2E，评审缺口）：默认档 CLI 全链路——003 结构化存疑、渲染有提示、无"不可用（确定）"。"""
+        import json as _json
+        import os
+        import subprocess
+        import sys
+
+        root = Path(__file__).resolve().parents[2]
+        env = dict(os.environ)
+        env["PYTHONPATH"] = ":".join(
+            [str(root / p) for p in ("core-time/src", "core-symbol/src", "core-rule/src", "core-eval/src", "app-zeri/src")]
+            + [str(root)]
+        )
+        base_cmd = [sys.executable, "-m", "app_zeri.cli", "verify", "--course", "2026-06-15T10:00",
+                    "--azimuth", "150", "--task", "修造"]
+        proc = subprocess.run(base_cmd + ["--json"], capture_output=True, text=True, cwd=root, env=env, timeout=180)
+        assert proc.returncode == 0, proc.stderr[-500:]
+        data = _json.loads(proc.stdout)
+
+        def find(obj, rid, out):
+            if isinstance(obj, dict):
+                if obj.get("rule_id") == rid:
+                    out.append(obj)
+                for v in obj.values():
+                    find(v, rid, out)
+            elif isinstance(obj, list):
+                for v in obj:
+                    find(v, rid, out)
+
+        items: list = []
+        find(data, "PUB-SANSHA-003", items)
+        assert items, "默认档 JSON 应含 003 判定（存疑）"
+        assert all(i.get("doubt") is True and i.get("source_status") == "controversial" for i in items)
+        proc_md = subprocess.run(base_cmd, capture_output=True, text=True, cwd=root, env=env, timeout=180)
+        assert proc_md.returncode == 0
+        assert "存疑命中" in proc_md.stdout
+        assert "不可用（确定）" not in proc_md.stdout
+
+    def test_cli_demo_veto_requires_allow_unverified(self) -> None:
+        """T11：单独 --demo-veto → exit≠0（不静默忽略）；双开 → 首行显著标注。"""
+        import os
+        import subprocess
+        import sys
+
+        root = Path(__file__).resolve().parents[2]
+        env = dict(os.environ)
+        env["PYTHONPATH"] = ":".join(
+            [str(root / p) for p in ("core-time/src", "core-symbol/src", "core-rule/src", "core-eval/src", "app-zeri/src")]
+            + [str(root)]
+        )
+        base_cmd = [sys.executable, "-m", "app_zeri.cli", "verify", "--course", "2027-07-11T14:00",
+                    "--azimuth", "320", "--task", "修造"]
+        bad = subprocess.run(base_cmd + ["--demo-veto"], capture_output=True, text=True, cwd=root, env=env, timeout=180)
+        assert bad.returncode != 0, "单独 --demo-veto 必须 exit≠0"
+        good = subprocess.run(base_cmd + ["--allow-unverified", "--demo-veto"], capture_output=True, text=True, cwd=root, env=env, timeout=180)
+        assert good.returncode == 0, good.stderr[-300:]
+        first_block = good.stdout.split("##")[0]
+        assert "含演示否决" in first_block, "首行显著标注（决策 3）"
+
+    def test_demo_veto_defaults_false(self) -> None:
+        """T13：默认值断言（决策 3）。"""
+        cfg = EvalConfig(task_kind="修造")
+        assert cfg.demo_veto is False
+        assert cfg.to_dict()["demo_veto"] is False
+
+    def test_cap_single_source_consistency(self, golden_ctx, registry) -> None:
+        """T14：三处调用点同源——lint id 集、逐规则函数、引擎实际生效值一致。"""
+        from core_rule.severity_cap import cap_severity, effective_severity
+
+        rs = registry.ruleset
+        assert rs.cap_applied_ids == {r.rule_id for r in rs.rules if effective_severity(r) != r.severity}
+        ev = evaluate(self._controversial_ctx(golden_ctx), registry, EvalConfig(task_kind="修造"))
+        for res in ev.per_school.values():
+            for j in res.vetoes + res.cautions + res.controversial + res.demo_hits + res.positives + res.notes:
+                assert j.severity == cap_severity(j.declared_severity or j.severity, j.status), j.rule_id
+
+    def test_strict_capability_note_is_dynamic(self, golden_ctx, registry) -> None:
+        """T15（决策 5）：标注由引擎动态统计——已考证 0 条出现，≥1 条自动消失。"""
+        from app_zeri.verifier import VerifyResult
+        from core_eval import detect_structure
+
+        def md_of(reg):
+            ev = evaluate(golden_ctx, reg, EvalConfig(task_kind="修造", strictness="strict"))
+            return render_markdown(
+                VerifyResult(evaluation=ev, context=golden_ctx,
+                             structure=detect_structure(zhis=["未", "未", "卯", "未"], gans=["丁", "丁", "辛", "乙"])),
+                registry=reg,
+            )
+
+        assert "strict 档未激活" in md_of(registry), "已考证 0 条 → 标注出现"
+        reg2 = _registry_with(registry, _synthetic_rule())
+        assert "strict 档未激活" not in md_of(reg2), "已考证 ≥1 → 标注自动消失（非写死字符串）"
+
+    def test_status_transition_requires_signature_lint(self, registry) -> None:
+        """T16：状态跃迁提权的 lint 纵深（覆盖绕过 loader 的程序化 ruleset）。"""
+        from app_zeri.cli import _check_signatures
+
+        bad = dc_replace(
+            _synthetic_rule(),
+            citation=Citation(source="测试专用（非古籍）", kind="classic", quote="x", verified_by=None),
+        )
+        reg = _registry_with(registry, bad)
+        problems = _check_signatures(reg)
+        assert any("TEST-VERIFIED-001" in p and "verified_by" in p for p in problems)
+        assert _check_signatures(registry) == []
+
+    def test_judgment_serialization_backward_compatible(self, golden_ctx, registry) -> None:
+        """评审五.1：schema 变更兼容——新字段带默认值、旧键齐全。"""
+        from dataclasses import MISSING, fields
+
+        ev = evaluate(self._controversial_ctx(golden_ctx), registry, EvalConfig(task_kind="修造"))
+        j = next(j for res in ev.per_school.values() for j in res.controversial)
+        d = j.to_dict()
+        for key in ("rule_id", "participation", "severity", "status", "warnings",
+                    "unknown_reason", "remedy", "source_status", "doubt", "declared_severity"):
+            assert key in d, key
+        new_fields = ("source_status", "doubt", "declared_severity")
+        for f in fields(j):
+            if f.name in new_fields:
+                assert f.default is not MISSING or f.default_factory is not MISSING, (
+                    f"{f.name} 必须带默认值（旧构造点/旧 JSON 兼容）"
+                )

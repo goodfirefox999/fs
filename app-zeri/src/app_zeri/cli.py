@@ -142,6 +142,9 @@ def _registry_with_calibers(args: argparse.Namespace):
 # 子命令实现
 # --------------------------------------------------------------------------- #
 def cmd_verify(args: argparse.Namespace) -> int:
+    if args.demo_veto and not args.allow_unverified:
+        print("错误：--demo-veto 必须与 --allow-unverified 同用（演示命中仅在联调模式存在，ADR-0014 决策 3）", file=sys.stderr)
+        return 2
     cal = _cal_from_args(args)
     site = _site_from_args(args)
     person = _person_from_args(args)
@@ -156,6 +159,7 @@ def cmd_verify(args: argparse.Namespace) -> int:
         registry=_registry_with_calibers(args),
         schools=_schools(args),
         allow_unverified=args.allow_unverified,
+        demo_veto=args.demo_veto,
     )
     text = render_json(result) if args.json else render_markdown(result)
     if args.out:
@@ -169,6 +173,9 @@ def cmd_verify(args: argparse.Namespace) -> int:
 
 
 def cmd_gen(args: argparse.Namespace) -> int:
+    if args.demo_veto and not args.allow_unverified:
+        print("错误：--demo-veto 必须与 --allow-unverified 同用（演示命中仅在联调模式存在，ADR-0014 决策 3）", file=sys.stderr)
+        return 2
     cal = _cal_from_args(args)
     site = _site_from_args(args)
     person = _person_from_args(args)
@@ -187,6 +194,7 @@ def cmd_gen(args: argparse.Namespace) -> int:
         registry=_registry_with_calibers(args),
         schools=_schools(args),
         allow_unverified=args.allow_unverified,
+        demo_veto=args.demo_veto,
         top=args.top,
         with_sensitivity=args.sensitivity,
         with_robustness=args.robustness,
@@ -273,11 +281,24 @@ def cmd_rules_lint(args: argparse.Namespace) -> int:
                 f"{rule.rule_id}: citation.quote 已填但 verified_by 为空（未经人类签名，不得升级已考证）"
             )
 
+    # 10) ADR-0014 决策 1：声明/生效双显示（cap 单一来源 core_rule.severity_cap）
+    from core_rule.severity_cap import cap_warning
+
+    for rid in sorted(rs.cap_applied_ids):
+        rule = rs.by_id[rid]
+        w = cap_warning(rule)
+        if w:
+            warnings.append(w)
+
+    # 11) 状态跃迁提权（ADR-0014）：已考证必须有人类签名（loader 之外的 lint 纵深）
+    problems.extend(_check_signatures(reg))
+
     stats = rs.stats()
     print("规则库统计：")
     print(json.dumps(stats, ensure_ascii=False, indent=2))
     print(f"事项模板：{len(reg.task_kinds)} 个")
     print(f"派别：{', '.join(reg.policy.enabled_schools())}（启用） / {', '.join(reg.policy.schools)}（全部）")
+    print(f"cap_applied_ids: {json.dumps(sorted(rs.cap_applied_ids), ensure_ascii=False)}")
     if warnings:
         print("\n提示（不阻断）：")
         for w in warnings:
@@ -296,6 +317,19 @@ def _fact_roots(rule) -> set[str]:
     from core_rule.dsl import collect_fact_paths
 
     return {p.split(".")[0] for p in collect_fact_paths(rule.condition)}
+
+
+def _check_signatures(reg) -> list[str]:
+    """状态跃迁提权（ADR-0014）：已考证必须有人类签名。
+
+    loader 已硬校验（无签名拒绝加载），本检查为 lint 层纵深——
+    覆盖程序化构造的 ruleset（dc_replace 注入等）绕过 loader 的路径。
+    """
+    return [
+        f"{rule.rule_id}: status=已考证 但 verified_by 为空（状态跃迁提权，ADR-0014）"
+        for rule in reg.ruleset.rules
+        if rule.status == "已考证" and not rule.citation.verified_by
+    ]
 
 
 def _check_required_set(reg) -> list[str]:
@@ -431,6 +465,10 @@ def build_parser() -> argparse.ArgumentParser:
     p_verify.add_argument("--course", required=True, help="日课时刻，如 2027-07-11T14:00")
     add_common(p_verify)
     p_verify.add_argument("--fail-on-veto", action="store_true", help="命中否决时返回码 2")
+    p_verify.add_argument(
+        "--demo-veto", action="store_true",
+        help="演示命中计入否决（联调视图；须与 --allow-unverified 同用，ADR-0014 决策 3）",
+    )
     p_verify.set_defaults(func=cmd_verify)
 
     p_gen = sub.add_parser("gen", help="生成候选")
@@ -441,6 +479,10 @@ def build_parser() -> argparse.ArgumentParser:
     p_gen.add_argument(
         "--robustness", action="store_true",
         help="执行稳健性评估（坐向 ±uncertainty + 口径开关），输出稳健集/敏感集",
+    )
+    p_gen.add_argument(
+        "--demo-veto", action="store_true",
+        help="演示命中计入否决（联调视图；须与 --allow-unverified 同用，ADR-0014 决策 3）",
     )
     add_common(p_gen)
     p_gen.set_defaults(func=cmd_gen)

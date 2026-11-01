@@ -51,6 +51,7 @@ def verify_context(
     registry: RuleRegistry | None = None,
     schools: tuple[str, ...] | None = None,
     allow_unverified: bool = False,
+    demo_veto: bool = False,
 ) -> VerifyResult:
     """对已构建的 ctx 执行复核（供敏感性分析/批量场景复用）。"""
     reg = registry or default_registry()
@@ -61,6 +62,7 @@ def verify_context(
         strictness=task.get("strictness", "normal"),
         schools=schools,
         allow_unverified=allow_unverified,
+        demo_veto=demo_veto,
         granularity=task.get("granularity", "day_hour"),
     )
     evaluation = evaluate(ctx, reg, cfg)
@@ -101,6 +103,7 @@ def verify(
     registry: RuleRegistry | None = None,
     schools: tuple[str, ...] | None = None,
     allow_unverified: bool = False,
+    demo_veto: bool = False,
 ) -> VerifyResult:
     """复核一个日课候选。"""
     reg = registry or default_registry()
@@ -112,4 +115,7 @@ def verify(
         cal=cal,
         calibers=reg.calibers,
     )
-    return verify_context(ctx, registry=registry, schools=schools, allow_unverified=allow_unverified)
+    return verify_context(
+        ctx, registry=registry, schools=schools,
+        allow_unverified=allow_unverified, demo_veto=demo_veto,
+    )

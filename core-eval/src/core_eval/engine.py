@@ -45,6 +45,7 @@ from core_rule.dsl import eval_condition, resolve_path
 from core_rule.models import SEVERITIES, Rule
 from core_rule.provenance import Provenance, stable_hash
 from core_rule.registry import RuleRegistry
+from core_rule.severity_cap import cap_severity, participates_in_tier  # ADR-0014 单一来源
 
 __all__ = [
     "STATE_BLOCKED",
@@ -164,6 +165,9 @@ class EvalConfig:
     strictness: str = STRICTNESS_NORMAL
     schools: tuple[str, ...] | None = None
     allow_unverified: bool = False
+    #: ADR-0014 决策 3：演示命中计入 state/tier 的联调开关（默认 False=只渲染不计入；
+    #: 须与 allow_unverified 同用，CLI 层做依赖校验）
+    demo_veto: bool = False
     granularity: str = "day_hour"
     max_depth: int = 4
     #: 该事项的必需规则 id（决定 publishable 的判定范围）。为空时由 registry 注入。
@@ -176,6 +180,7 @@ class EvalConfig:
             "strictness": self.strictness,
             "schools": list(self.schools) if self.schools else None,
             "allow_unverified": self.allow_unverified,
+            "demo_veto": self.demo_veto,
             "granularity": self.granularity,
             "required_rule_ids": list(self.required_rule_ids),
         }
@@ -211,6 +216,13 @@ class Judgment:
     unknown_reason: str | None = None
     #: 解除条件提示（告诉用户"补什么就能判定"）
     remedy: str | None = None
+    #: ADR-0014 决策 2：证据来源的结构化标记（verified/controversial/unverified/definitional）。
+    #: 可行动性必须结构化——warning 中文文案只是它的渲染，不是替代。
+    source_status: str | None = None
+    #: ADR-0014 决策 0：判定（存疑）——有争议规则默认参与评估，但不入任何结论强度桶
+    doubt: bool = False
+    #: ADR-0014 决策 1：声明严重度（severity 字段存生效值；审计链要求声明/生效双显示）
+    declared_severity: str | None = None
 
     @property
     def is_demo(self) -> bool:
@@ -257,6 +269,9 @@ class Judgment:
             "unknown_paths": list(self.unknown_paths),
             "unknown_reason": self.unknown_reason,
             "remedy": self.remedy,
+            "source_status": self.source_status,
+            "doubt": self.doubt,
+            "declared_severity": self.declared_severity,
             "warnings": list(self.warnings),
             "score_weight": self.score_weight,
         }
@@ -275,6 +290,10 @@ class SchoolResult:
     unknowns: list[Judgment] = field(default_factory=list)
     #: 定义级结构命中（含"慎用"与"中性"两类；慎用者同时计入 strong_avoid）
     structural: list[Judgment] = field(default_factory=list)
+    #: ADR-0014 决策 0：存疑命中（有争议规则默认参与评估；只渲染，不入结论强度桶）
+    controversial: list[Judgment] = field(default_factory=list)
+    #: ADR-0014 决策 3：演示命中（demo_veto=False 时只渲染不计入；True 时按声明严重度路由）
+    demo_hits: list[Judgment] = field(default_factory=list)
     rank_score: float | None = None
     rules_evaluated: int = 0
     #: 该派看到的输入事实哈希（用于验证"各派 fact 完全一致"）
@@ -295,6 +314,9 @@ class SchoolResult:
             "note_count": len(self.notes),
             "positive_count": len(self.positives),
             "unknown_count": len(self.unknowns),
+            # ADR-0014：存疑/演示命中单列，不入 strong_avoid（决策 0/3）
+            "controversial_count": len(self.controversial),
+            "demo_hit_count": len(self.demo_hits),
         }
 
     def to_dict(self) -> dict[str, Any]:
@@ -311,6 +333,8 @@ class SchoolResult:
             "notes": [j.to_dict() for j in self.notes],
             "positives": [j.to_dict() for j in self.positives],
             "unknowns": [j.to_dict() for j in self.unknowns],
+            "controversial": [j.to_dict() for j in self.controversial],
+            "demo_hits": [j.to_dict() for j in self.demo_hits],
         }
 
 
@@ -459,6 +483,15 @@ def classify_unknown(
     return UNKNOWN_MISSING_INPUT, "补输入即可判定"
 
 
+#: ADR-0014 决策 2：status → source_status 结构化标记
+_SOURCE_STATUS = {
+    "已考证": "verified",
+    "定义级": "definitional",
+    "有争议": "controversial",
+    "待考证": "unverified",
+}
+
+
 def _make_judgment(
     rule: Rule,
     *,
@@ -470,6 +503,8 @@ def _make_judgment(
     severity: str,
     unknown_paths: tuple[str, ...] = (),
     warnings: tuple[str, ...] = (),
+    doubt: bool = False,
+    declared_severity: str | None = None,
 ) -> Judgment:
     prov = Provenance(
         rule_id=rule.rule_id,
@@ -510,6 +545,9 @@ def _make_judgment(
         definitional=rule.is_definitional,
         unknown_reason=reason,
         remedy=remedy,
+        source_status=_SOURCE_STATUS.get(rule.status),
+        doubt=doubt,
+        declared_severity=declared_severity if declared_severity is not None else rule.severity,
     )
 
 
@@ -533,6 +571,10 @@ def _evaluate_school(
     positives: list[Judgment] = []
     unknowns: list[Judgment] = []
     structural: list[Judgment] = []
+    # ADR-0014 决策 0：存疑命中（有争议规则默认参与评估，只渲染，不入结论强度桶）
+    controversial: list[Judgment] = []
+    # ADR-0014 决策 3：demo_veto=False 时演示命中只渲染不计入
+    demo_hits: list[Judgment] = []
     evaluated = 0
 
     strict = cfg.strictness == STRICTNESS_STRICT
@@ -560,7 +602,8 @@ def _evaluate_school(
                     participation="输入不足",
                     input_hash=input_hash,
                     school=school,
-                    severity=rule.severity,
+                    severity=cap_severity(rule.severity, rule.status),
+                    declared_severity=rule.severity,
                     unknown_paths=tuple(outcome.unknown_paths),
                     warnings=("输入不足，该规则无法判定",),
                 )
@@ -571,9 +614,12 @@ def _evaluate_school(
             continue
 
         # ---- 命中 ----
-        severity = rule.severity_for(school)
+        declared = rule.severity_for(school)
+        severity = cap_severity(declared, rule.status)  # ADR-0014 决策 1：单一来源 cap
         is_verified = rule.status in ("已考证", "定义级")
-        participating = is_verified or cfg.allow_unverified
+        is_controversial = rule.status == "有争议"
+        # ADR-0014 C12：有争议规则默认参与评估（判定（存疑））；待考证仍需 --allow-unverified
+        participating = is_verified or cfg.allow_unverified or is_controversial
         if not participating:
             unknowns.append(
                 _make_judgment(
@@ -584,6 +630,7 @@ def _evaluate_school(
                     input_hash=input_hash,
                     school=school,
                     severity=severity,
+                    declared_severity=declared,
                     warnings=(f"规则命中但依据为「{rule.status}」，未参与正式判定",),
                 )
             )
@@ -591,11 +638,19 @@ def _evaluate_school(
 
         warnings: tuple[str, ...] = ()
         participation = "判定"
-        if not is_verified:
+        doubt = False
+        if is_controversial:
+            # ADR-0014 决策 0/2：存疑判定——参与评估、结构化标记，不入任何结论强度桶
+            doubt = True
+        elif not is_verified:
             # 演示命中：规则未考证，链路可跑通，但**不作为排除依据**
+            # （渲染恒开；是否计入 state/tier 由 demo_veto 控制——决策 3 三态）
             participation = "演示"
             warnings = (f"依据为「{rule.status}」，属演示命中，不作为排除依据，不得对外发布",)
 
+        is_demo = participation == "演示"
+        # demo_veto=True 为显式联调例外：演示路由按**声明** severity（恢复"不可用"渲染路径）
+        route_severity = declared if (is_demo and cfg.demo_veto) else severity
         judgment = _make_judgment(
             rule,
             ctx=ctx,
@@ -603,8 +658,10 @@ def _evaluate_school(
             participation=participation,
             input_hash=input_hash,
             school=school,
-            severity=severity,
+            severity=route_severity,
             warnings=warnings,
+            doubt=doubt,
+            declared_severity=declared,
         )
 
         # 定义级：结构事实。进 structural；"慎用"由 state 计算与 strong_avoid 统一处理
@@ -612,22 +669,34 @@ def _evaluate_school(
             structural.append(judgment)
             continue
 
-        if severity == "禁用" and rule.hard_veto:
+        # ADR-0014 决策 0（甲案不变式）：存疑规则的证据强度不足以支撑任何结论强度
+        # —— 只渲染，不入 vetoes/cautions/positives，不影响 state/tier/publishable
+        if doubt:
+            controversial.append(judgment)
+            continue
+
+        # ADR-0014 决策 3（三态）：demo_veto=False 时演示命中只渲染不路由
+        if is_demo and not cfg.demo_veto:
+            demo_hits.append(judgment)
+            continue
+
+        if route_severity == "禁用" and rule.hard_veto:
             if veto_enabled:
                 vetoes.append(judgment)
             else:
                 notes.append(judgment)
             continue
-        if severity == "慎用":
+        if route_severity == "慎用":
             if loose:
                 notes.append(judgment)
-            elif strict and rule.status != "有争议":
-                vetoes.append(judgment)  # strict 档：断言级强忌升级为否决
+            elif strict and (is_demo or participates_in_tier(rule)):
+                # ADR-0014 不变式：strict 只强化"已确定"的判断（升级要求 status=已考证）。
+                # demo_veto=True 的演示路径是显式联调例外（恢复旧渲染视图，participation=演示）。
+                vetoes.append(judgment)
             else:
-                # ADR-0013 D6：status=有争议 的规则在任何档位都不得获得比其证据更强的否决力
                 cautions.append(judgment)
             continue
-        if severity in ("推荐", "可用"):
+        if route_severity in ("推荐", "可用"):
             positives.append(judgment)
         else:
             notes.append(judgment)
@@ -655,6 +724,8 @@ def _evaluate_school(
         positives=positives,
         unknowns=unknowns,
         structural=structural,
+        controversial=controversial,
+        demo_hits=demo_hits,
         rank_score=rank_score,
         rules_evaluated=evaluated,
         fact_hash=fact_hash,
@@ -868,8 +939,14 @@ def evaluate(
         "note_count": note_count,
         "positive_count": positive,
         "demo_hit_count": sum(
-            1 for r in per_school.values() for j in r.vetoes + r.cautions + r.positives if j.is_demo
+            len(r.demo_hits)
+            + sum(1 for j in r.vetoes + r.cautions + r.positives if j.is_demo)
+            for r in per_school.values()
         ),
+        # ADR-0014 决策 0：存疑命中计数（渲染层；不入 strong_avoid/tier）
+        "controversial_count": sum(len(r.controversial) for r in per_school.values()),
+        # ADR-0014 决策 1：声明/生效差异规则（load 期预计算，审计链双显示）
+        "cap_applied_ids": sorted(registry.ruleset.cap_applied_ids),
         "verified_veto_count": sum(
             1 for r in per_school.values() for j in r.vetoes if not j.is_demo
         ),

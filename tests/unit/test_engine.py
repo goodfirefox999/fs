@@ -38,7 +38,7 @@ class TestThreeState:
 
     def test_veto_means_blocked(self, base_ctx, registry) -> None:
         ctx = _with_veto(base_ctx)
-        ev = evaluate(ctx, registry, EvalConfig(task_kind="修造", strictness="strict", allow_unverified=True))
+        ev = evaluate(ctx, registry, EvalConfig(task_kind="修造", strictness="strict", allow_unverified=True, demo_veto=True))
         assert ev.state == STATE_BLOCKED
         assert ev.tier == TIER_REJECTED
         assert ev.vectors["hard_fail_count"] > 0
@@ -46,7 +46,7 @@ class TestThreeState:
     def test_caution_means_unsure(self, base_ctx, registry) -> None:
         # 注意：strict 档会把断言级慎用升级为否决（ADR-0008），故此处用 normal
         ctx = _with_caution(base_ctx)
-        ev = evaluate(ctx, registry, EvalConfig(task_kind="修造", strictness="normal", allow_unverified=True))
+        ev = evaluate(ctx, registry, EvalConfig(task_kind="修造", strictness="normal", allow_unverified=True, demo_veto=True))
         assert ev.state == STATE_UNSURE
         assert ev.tier == TIER_NEEDS_REVIEW
 
@@ -61,7 +61,7 @@ class TestThreeState:
     def test_no_hit_means_ok_but_unknown_keeps_needs_review(self, base_ctx, registry) -> None:
         """无 veto/caution 时 state=可用，但 unknown 仍把 tier 拉到 NEEDS_REVIEW。"""
         ctx = _strip_hits(base_ctx)
-        ev = evaluate(ctx, registry, EvalConfig(task_kind="修造", strictness="strict", allow_unverified=True))
+        ev = evaluate(ctx, registry, EvalConfig(task_kind="修造", strictness="strict", allow_unverified=True, demo_veto=True))
         assert ev.state == STATE_OK
         assert ev.tier in (TIER_NEEDS_REVIEW, TIER_ACCEPTABLE, TIER_PREFERRED)
 
@@ -120,14 +120,14 @@ class TestNoSingleScore:
         ev = evaluate(
             base_ctx, registry,
             EvalConfig(task_kind="修造", strictness="strict", schools=("public", "zhengwuxing"),
-                       allow_unverified=True),
+                       allow_unverified=True, demo_veto=True),
         )
         assert set(ev.per_school) == {"public", "zhengwuxing"}
         # 各派独立 state，且综合 state 取最严
         assert ev.state in {r.state for r in ev.per_school.values()}
 
     def test_rank_score_only_when_ok(self, base_ctx, registry) -> None:
-        ev = evaluate(base_ctx, registry, EvalConfig(task_kind="修造", strictness="strict", allow_unverified=True))
+        ev = evaluate(base_ctx, registry, EvalConfig(task_kind="修造", strictness="strict", allow_unverified=True, demo_veto=True))
         for res in ev.per_school.values():
             if res.state != STATE_OK:
                 assert res.rank_score is None
@@ -140,7 +140,7 @@ class TestConflict:
         ev = evaluate(
             base_ctx, registry,
             EvalConfig(task_kind="修造", strictness="strict", schools=("public", "zhengwuxing"),
-                       allow_unverified=True),
+                       allow_unverified=True, demo_veto=True),
         )
         assert ev.conflicts, "public 与 zhengwuxing 三态不一致时必须登记冲突"
         types = {c["type"] for c in ev.conflicts}
@@ -151,7 +151,7 @@ class TestConflict:
         ev = evaluate(
             base_ctx, registry,
             EvalConfig(task_kind="修造", strictness="strict", schools=("public", "zhengwuxing"),
-                       allow_unverified=True),
+                       allow_unverified=True, demo_veto=True),
         )
         assert ev.tier != TIER_PREFERRED
 
@@ -162,7 +162,7 @@ class TestVetoParticipation:
         ctx = _with_veto(base_ctx)
         ev = evaluate(
             ctx, registry,
-            EvalConfig(task_kind="修造", strictness="strict", schools=("doushou",), allow_unverified=True),
+            EvalConfig(task_kind="修造", strictness="strict", schools=("doushou",), allow_unverified=True, demo_veto=True),
         )
         res = ev.per_school["doushou"]
         assert res.counts["hard_fail_count"] == 0
@@ -191,7 +191,7 @@ class TestDisagreement:
         ev = evaluate(
             base_ctx, registry,
             EvalConfig(task_kind="修造", strictness="strict", schools=("public", "zhengwuxing"),
-                       allow_unverified=True),
+                       allow_unverified=True, demo_veto=True),
         )
         d = disagreement_of_evaluation(ev)
         assert 0.0 < d < 1.0
@@ -199,14 +199,14 @@ class TestDisagreement:
 
 class TestRanker:
     def test_sort_key_prefers_fewer_bad(self, base_ctx, registry) -> None:
-        ev_bad = evaluate(_with_veto(base_ctx), registry, EvalConfig(task_kind="修造", strictness="strict", allow_unverified=True))
-        ev_ok = evaluate(_with_caution(base_ctx), registry, EvalConfig(task_kind="修造", strictness="strict", allow_unverified=True))
+        ev_bad = evaluate(_with_veto(base_ctx), registry, EvalConfig(task_kind="修造", strictness="strict", allow_unverified=True, demo_veto=True))
+        ev_ok = evaluate(_with_caution(base_ctx), registry, EvalConfig(task_kind="修造", strictness="strict", allow_unverified=True, demo_veto=True))
         assert sort_key(ev_ok) < sort_key(ev_bad)
 
     def test_rank_orders(self, base_ctx, registry) -> None:
         evs = [
-            evaluate(_with_veto(base_ctx), registry, EvalConfig(task_kind="修造", strictness="normal", allow_unverified=True)),
-            evaluate(_with_caution(base_ctx), registry, EvalConfig(task_kind="修造", strictness="normal", allow_unverified=True)),
+            evaluate(_with_veto(base_ctx), registry, EvalConfig(task_kind="修造", strictness="normal", allow_unverified=True, demo_veto=True)),
+            evaluate(_with_caution(base_ctx), registry, EvalConfig(task_kind="修造", strictness="normal", allow_unverified=True, demo_veto=True)),
         ]
         ordered = rank(evs)
         assert ordered[0].tier == TIER_NEEDS_REVIEW
@@ -214,8 +214,8 @@ class TestRanker:
 
     def test_pareto_front_subset(self, base_ctx, registry) -> None:
         evs = [
-            evaluate(_with_veto(base_ctx), registry, EvalConfig(task_kind="修造", strictness="strict", allow_unverified=True)),
-            evaluate(_with_caution(base_ctx), registry, EvalConfig(task_kind="修造", strictness="strict", allow_unverified=True)),
+            evaluate(_with_veto(base_ctx), registry, EvalConfig(task_kind="修造", strictness="strict", allow_unverified=True, demo_veto=True)),
+            evaluate(_with_caution(base_ctx), registry, EvalConfig(task_kind="修造", strictness="strict", allow_unverified=True, demo_veto=True)),
         ]
         front = pareto_front(evs)
         assert front and len(front) <= len(evs)
