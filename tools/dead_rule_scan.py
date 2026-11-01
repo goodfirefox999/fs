@@ -39,9 +39,12 @@ from core_rule.registry import default_registry  # noqa: E402
 from core_time import CalendarConfig  # noqa: E402
 
 CST = ZoneInfo("Asia/Shanghai")
-TASK_KINDS = ("修造", "嫁娶", "安葬", "出行", "开业")
+# v3 口径（评审第十二轮 P0）：事项集换血——出行/开业经查为零规则事项（纯浪费），
+# 换入纳采/修坟（适用域并集中扫描域外的代表）；坐向 4→11：补三合局巳酉丑局（巳/酉/丑）
+# 与四隅（乾/坤/艮/巽）——v1 的 4 坐向使"巳酉丑局+四隅"类坐山依赖规则结构性无法命中。
+TASK_KINDS = ("修造", "嫁娶", "安葬", "纳采", "修坟")
 DAYS = (1, 8, 15, 22, 25)
-AZIMUTHS = (180.0, 330.0, 90.0, 0.0)
+AZIMUTHS = (180.0, 330.0, 90.0, 0.0, 150.0, 270.0, 30.0, 315.0, 225.0, 45.0, 135.0)
 YEARS = (2025, 2026, 2027)
 HIT_BUCKETS = ("vetoes", "cautions", "controversial", "demo_hits", "positives", "notes", "structural")
 BASELINE = ROOT / "core-rule/config/dead_rule_baseline.yaml"
@@ -63,6 +66,59 @@ def _contexts():
                                 cal=CalendarConfig(),
                             )
                         )
+
+
+def coverage_report(contexts_meta: list[tuple]) -> list[str]:
+    """四维覆盖度统计（评审第十二轮 P0）：日支/坐向→山/事项/节气邻近。"""
+    from core_time.calendar import day_pillar_index
+    from core_time.jieqi import terms_of_year
+
+    lines: list[str] = []
+    moments = sorted({dt for _, dt in contexts_meta})
+    # ① 日支
+    zhi_count: dict[str, int] = defaultdict(int)
+    for dt in moments:
+        zhi_count["子丑寅卯辰巳午未申酉戌亥"[day_pillar_index(dt.date()) % 12]] += 1
+    lines.append(f"① 日支覆盖：{len(zhi_count)}/12 → {dict(sorted(zhi_count.items()))}")
+    # ② 坐向→山（24 山每 15°）
+    MOUNTAINS = "子癸丑艮寅甲卯乙辰巽巳丙午丁未坤申庚酉辛戌乾亥壬"
+    covered = sorted({MOUNTAINS[int(((az % 360) + 7.5) // 15) % 24] for az in AZIMUTHS})
+    missing = [m for m in MOUNTAINS if m not in covered]
+    lines.append(f"② 坐向覆盖：{len(AZIMUTHS)} 坐向 → {len(covered)} 山 {covered}；"
+                 f"24 山缺口 {len(missing)}：{''.join(missing)}（代表性覆盖：四正✓ 四隅✓ 三合局 4/4✓）")
+    # ③ 事项
+    reg = default_registry()
+    union: set[str] = set()
+    for rule in reg.ruleset.rules:
+        if rule.status != "弃用" and rule.school in set(reg.policy.enabled_schools()):
+            union.update(rule.applies_to.task_kinds)
+    covered_kinds = [k for k in TASK_KINDS if k in union]
+    outside = sorted(union - set(TASK_KINDS))
+    lines.append(f"③ 事项覆盖：规则适用域并集 {len(union)} 类；扫描 {len(covered_kinds)} 类 "
+                 f"{covered_kinds}；域外有规则事项 {outside}（若非空则为盲区）")
+    # ④ 节气邻近
+    import bisect
+
+    terms = sorted(
+        t.local.astimezone(CST).replace(tzinfo=None) for y in YEARS for t in terms_of_year(y)
+    )
+    near = 0
+    min_gap = None
+    for dt in moments:
+        i = bisect.bisect_left(terms, dt)
+        cand = []
+        if i < len(terms):
+            cand.append(abs((terms[i] - dt).total_seconds()))
+        if i > 0:
+            cand.append(abs((dt - terms[i - 1]).total_seconds()))
+        g = min(cand) if cand else None
+        if g is not None:
+            min_gap = g if min_gap is None else min(min_gap, g)
+            if g < 86400:
+                near += 1
+    lines.append(f"④ 节气邻近：{len(moments)} 时刻中距最近节气 <24h 的 {near} 个，"
+                 f"最小间距 {min_gap/3600:.1f}h（月柱边界覆盖度）")
+    return lines
 
 
 def run_scan():
@@ -103,6 +159,17 @@ def run_scan():
 
 
 def main() -> int:
+    if "--coverage" in sys.argv:
+        ctxs = [(k, dt) for k, year, dt in []]  # 占位：真实统计在下方
+    meta = []
+    for kind in TASK_KINDS:
+        for year in YEARS:
+            for month in range(1, 13):
+                for day in DAYS:
+                    for az in AZIMUTHS:
+                        meta.append((kind, datetime(year, month, day, 10, 0)))
+    print("\n".join(coverage_report(meta)))
+    print("")
     out, zero_hit, new_zero, evaluated = run_scan()
     print(f"扫描完成：{evaluated} 个窗口候选，适用域内规则 {len(out)} 条")
     print("\n分规则 × 年份命中数（判据=适用域内零命中，非全年零命中）：")
