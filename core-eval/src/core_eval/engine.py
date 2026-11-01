@@ -738,6 +738,60 @@ def _evaluate_school(
 # --------------------------------------------------------------------------- #
 # 冲突检测（四类，只登记不裁定）
 # --------------------------------------------------------------------------- #
+def _sub_rule_payload(j: Judgment) -> dict[str, Any]:
+    """单条子规则 → spec §2 sub_rules 条目。
+
+    ``verdict`` 取**生效严重度**（证据封顶后；ADR-0014）；``score_delta`` 仅对
+    参与评分的桶给值（可用 +1 / 慎用 -1），否决与 unknown/记录不给分——
+    否决日期已退出评分环节，unknown 不得伪装成分数。
+    """
+    return {
+        "rule_id": j.rule_id,
+        "verdict": j.severity,
+        "status": j.status,
+        "participation": j.participation,
+        "declared_severity": j.declared_severity,
+        "source_ref": {
+            "source": (j.citation or {}).get("source"),
+            "entry": (j.citation or {}).get("entry"),
+        },
+    }
+
+
+def _school_payload(
+    name: str,
+    res: SchoolResult,
+    layer: str,
+    tendency: str,
+    conflicts: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """SchoolResult → spec §2 school_results 条目（五派并列，互不覆盖）。"""
+    sub_rules: list[dict[str, Any]] = []
+    for bucket, delta in (("vetoes", None), ("cautions", -1), ("positives", 1)):
+        for j in getattr(res, bucket):
+            entry = _sub_rule_payload(j)
+            entry["score_delta"] = delta
+            entry["bucket"] = bucket
+            sub_rules.append(entry)
+    for j in res.unknowns:
+        entry = _sub_rule_payload(j)
+        entry["score_delta"] = None
+        entry["bucket"] = "unknowns"
+        sub_rules.append(entry)
+    return {
+        "school": name,
+        "overall_tendency": tendency,
+        "score_delta": len(res.positives) - len(res.vetoes) - len(res.cautions),
+        "layer": layer,
+        "sub_rules": sub_rules,
+        "conflict_flags": [
+            {"schools": c["schools"], "issue": c["issue"]}
+            for c in conflicts
+            if name in c["schools"]
+        ],
+    }
+
+
 def _detect_conflicts(per_school: dict[str, SchoolResult]) -> list[dict[str, Any]]:
     """检测冲突。
 
@@ -999,34 +1053,38 @@ def evaluate(
             seen_blocked.add(u["rule_id"])
 
     # ---- 五派并列输出 schema（spec §4 仲裁层）----
+    # tendency 先行：spec §4 冲突 = 两派 tendency 相反 → {schools, issue}，不裁决
+    def _tendency_of(res: SchoolResult) -> str:
+        if res.vetoes:
+            return "unfavorable"
+        if res.cautions:
+            return "neutral"
+        if res.positives:
+            return "favorable"
+        return "neutral"
+
+    tendencies = {name: _tendency_of(res) for name, res in per_school.items()}
+    conflicted = [n for n, t in tendencies.items() if t in ("favorable", "unfavorable")]
+    conflicts_fso: list[dict[str, Any]] = []
+    for i, s1 in enumerate(conflicted):
+        for s2 in conflicted[i + 1:]:
+            t1, t2 = tendencies[s1], tendencies[s2]
+            if {t1, t2} == {"favorable", "unfavorable"}:
+                conflicts_fso.append({"schools": [s1, s2], "issue": f"{s1}={t1} vs {s2}={t2}"})
+
     five_school_output = {}
     for school_name, school_spec in registry.policy.schools.items():
         if school_name in per_school:
-            res = per_school[school_name]
-            tendency = "neutral"
-            if res.vetoes:
-                tendency = "unfavorable"
-            elif res.cautions:
-                tendency = "neutral"
-            elif res.positives:
-                tendency = "favorable"
-            five_school_output[school_name] = {
-                "tendency": tendency,
-                "score_delta": len(res.positives) - len(res.vetoes) - len(res.cautions),
-                "layer": registry.policy.schools[school_name].layer,
-                "sub_rules": {
-                    "vetoes": [j.rule_id for j in res.vetoes],
-                    "cautions": [j.rule_id for j in res.cautions],
-                    "unknowns": [j.rule_id for j in res.unknowns],
-                    "positives": [j.rule_id for j in res.positives],
-                    "notes": [j.rule_id for j in res.notes],
-                },
-                "source_ref": "per_school evaluation",
-            }
-    conflicts_fso = []
+            five_school_output[school_name] = _school_payload(
+                school_name,
+                per_school[school_name],
+                registry.policy.schools[school_name].layer,
+                tendencies[school_name],
+                conflicts_fso,
+            )
     tendency_list = [
-        (name, d["tendency"]) for name, d in five_school_output.items()
-        if d["tendency"] in ("favorable", "unfavorable")
+        (name, d["overall_tendency"]) for name, d in five_school_output.items()
+        if d["overall_tendency"] in ("favorable", "unfavorable")
     ]
     for i, (s1, t1) in enumerate(tendency_list):
         for s2, t2 in tendency_list[i+1:]:

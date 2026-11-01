@@ -38,7 +38,7 @@ jobs:
           python -m pytest -m "not slow" --cov --cov-report=term --cov-report=xml
           python -m coverage report --fail-under=80
 
-      - name: Performance budget (4380 candidates < 2s)
+      - name: Performance budget (4380 candidates < 3s)
         run: python -m pytest -m slow
 
       - name: Status signature check

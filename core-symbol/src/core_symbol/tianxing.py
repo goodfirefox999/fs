@@ -129,8 +129,14 @@ def _noon_ut_julday(year: int, month: int, day: int) -> float:
     return _swe.julday(year, month, day, 4.0)
 
 
+@lru_cache(maxsize=4096)
 def _positions(year: int, month: int, day: int) -> dict[str, Any]:
-    """七政四余黄道经度（Moshier，无数据文件依赖）。"""
+    """七政四余黄道经度（Moshier，无数据文件依赖）。
+
+    按日期缓存：口径为**用事日北京正午**取象（见模块头口径 2），同日各时辰
+    候选共享同一星象——全年 4380 候选只需 ~365×9 次 calc_ut，而非逐候选计算
+    （曾致 perf 基线 1.9s → 3.8s 回归）。返回值只读，调用方不得修改。
+    """
     assert _swe is not None
     jd = _noon_ut_julday(year, month, day)
     out: dict[str, Any] = {}

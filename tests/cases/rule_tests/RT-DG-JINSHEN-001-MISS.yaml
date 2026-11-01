@@ -1,9 +1,10 @@
+# RT-DG-JINSHEN-001-MISS
 case_id: RT-DG-JINSHEN-001-MISS
 kind: rule_test
 rule_id: DG-JINSHEN-001
 expected: miss
-note: 董公规则 MISS：fact 无值。
+note: 董公 is_jinshen 显式覆盖——非金神七煞日。
 overrides:
   facts:
     donggong:
-      is_jinshen: null
+      is_jinshen: false

@@ -1,9 +1,10 @@
+# RT-DG-JIANCHU-001-MISS
 case_id: RT-DG-JIANCHU-001-MISS
 kind: rule_test
 rule_id: DG-JIANCHU-001
 expected: miss
-note: 董公规则 MISS：fact 无值。
+note: 董公 jianchu 显式覆盖——建除：成日（不在破/闭）。
 overrides:
   facts:
     donggong:
-      jianchu: null
+      jianchu: 成

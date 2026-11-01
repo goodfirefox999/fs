@@ -29,6 +29,7 @@ from core_eval import (
     pareto_front,
     rank,
 )
+from core_eval.arbitration import build_spec_output
 from core_eval.disagreement import aggregate_disagreement, disagreement_of_evaluation
 from core_eval.sensitivity import analyze as analyze_sensitivity
 from core_rule.registry import RuleRegistry, default_registry
@@ -152,6 +153,8 @@ class GenResult:
     sensitivity: SensitivityReport | None = None
     robustness: RobustnessReport | None = None
     relaxed: bool = False
+    #: 评审扩展版 spec §4 仲裁结构：rejected_dates / scored_dates / consensus_dates
+    spec_output: dict[str, Any] | None = None
 
     @property
     def usable(self) -> list[VerifyResult]:
@@ -189,6 +192,7 @@ class GenResult:
             "no_solution": self.no_solution.to_dict() if self.no_solution else None,
             "sensitivity": self.sensitivity.to_dict() if self.sensitivity else None,
             "robustness": self.robustness.to_dict() if self.robustness else None,
+            "spec_output": self.spec_output,
             "candidates": [r.to_dict() for r in self.ranked],
         }
 
@@ -334,6 +338,7 @@ def generate(
     return GenResult(
         ranked=ordered[: max(1, top)],
         all_evaluations=evaluations,
+        spec_output=build_spec_output([(r.evaluation, r.context) for r in results]),
         total_candidates=len(ordered),
         tier_histogram=histogram,
         disagreement=aggregate_disagreement(evaluations),

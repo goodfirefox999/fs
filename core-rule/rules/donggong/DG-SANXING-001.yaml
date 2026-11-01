@@ -20,7 +20,8 @@ applies_to:
   strictness_min: normal
 condition:
   fact: facts.donggong.star
-  op: exists
+  op: in
+  value: [煞贡, 直星, 人专]
 score_weight: null
 citation:
   kind: classic
@@ -39,7 +40,7 @@ citation:
 tests:
 - RT-DG-SANXING-001-HIT
 - RT-DG-SANXING-001-MISS
-explanation: 三星值日：按董公择日规则判定（数据见 donggong_*.json）。
+explanation: 三星值日（煞贡/直星/人专）。facts.donggong.star 由 60 甲子逐日表（donggong_sanxing_60jiazi.json）查出；in 判定——「无」不作吉论。
 supersedes: null
 notes: >-
-  三星值日。数据来源 donggong_*.json，值待考证。
+  三星值日。spec §2.3：值日 score_delta +2，reason 注明「仅解中低神煞，不解金神七煞」；金神七煞前置 reject 不可被三星绕过（Layer 3 优先）。

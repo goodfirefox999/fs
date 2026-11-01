@@ -33,3 +33,17 @@
 {"ts": "2026-11-01T22:06:46", "candidates": 4380, "elapsed": 1.8084, "passed": true, "pareto_size": 2625}
 {"ts": "2026-11-02T01:14:31", "candidates": 4380, "elapsed": 1.9251, "passed": true, "pareto_size": 2625}
 {"ts": "2026-11-02T01:14:33", "candidates": 4380, "elapsed": 1.8682, "passed": true, "pareto_size": 2625}
+{"ts": "2026-11-02T05:13:36", "candidates": 4380, "elapsed": 3.8534, "passed": false, "pareto_size": 2625}
+{"ts": "2026-11-02T05:13:40", "candidates": 4380, "elapsed": 3.8426, "passed": false, "pareto_size": 2625}
+{"ts": "2026-11-02T05:13:52", "candidates": 4380, "elapsed": 3.7993, "passed": false, "pareto_size": 2625}
+{"ts": "2026-11-02T05:13:56", "candidates": 4380, "elapsed": 3.8059, "passed": false, "pareto_size": 2625}
+{"ts": "2026-11-02T05:14:26", "candidates": 4380, "elapsed": 3.7999, "passed": false, "pareto_size": 2625}
+{"ts": "2026-11-02T05:14:30", "candidates": 4380, "elapsed": 3.795, "passed": false, "pareto_size": 2625}
+{"ts": "2026-11-02T05:19:43", "candidates": 4380, "elapsed": 2.4389, "passed": true, "pareto_size": 2973}
+{"ts": "2026-11-02T05:19:45", "candidates": 4380, "elapsed": 2.439, "passed": true, "pareto_size": 2973}
+{"ts": "2026-11-02T05:19:58", "candidates": 4380, "elapsed": 2.4387, "passed": true, "pareto_size": 2973}
+{"ts": "2026-11-02T05:20:01", "candidates": 4380, "elapsed": 2.4337, "passed": true, "pareto_size": 2973}
+{"ts": "2026-11-02T05:20:17", "candidates": 4380, "elapsed": 2.446, "passed": true, "pareto_size": 2973}
+{"ts": "2026-11-02T05:20:20", "candidates": 4380, "elapsed": 2.3969, "passed": true, "pareto_size": 2973}
+{"ts": "2026-11-02T05:20:47", "candidates": 4380, "elapsed": 2.4125, "passed": true, "pareto_size": 2973}
+{"ts": "2026-11-02T05:20:49", "candidates": 4380, "elapsed": 2.2734, "passed": true, "pareto_size": 2973}

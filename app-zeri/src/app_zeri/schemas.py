@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 from functools import lru_cache
 from datetime import date, datetime
@@ -19,6 +20,11 @@ from core_symbol.ganzhi import ZHI
 from core_symbol.mountain import Mountain, facing_of, fenjin_of_azimuth, jian_xiang, mountain_of_azimuth
 from core_symbol.registry import derive_facts
 from core_time import CalendarConfig, compute_four_pillars, terms_of_year
+
+#: 日级事实缓存：derive_facts 无时辰参数，同日候选共享只读事实 dict。
+#: 超上限整表清空（候选按时间顺序生成，清空只损失一日的复用）。
+_FACTS_CACHE: dict[tuple, dict[str, Any]] = {}
+_FACTS_CACHE_MAX = 8192
 
 __all__ = [
     "PersonSpec",
@@ -117,7 +123,9 @@ class CourseSpec:
 
 
 @lru_cache(maxsize=512)
+@lru_cache(maxsize=64)
 def _term_dates(year: int, tz_name: str) -> dict[str, date]:
+    """全年节气日期（按年+时区缓存；返回值只读共享，调用方不得修改）。"""
     return {t.name: t.local.date() for t in terms_of_year(year, tz_name)}
 
 
@@ -179,22 +187,37 @@ def build_context(
     fenjin = fenjin_of_azimuth(site.azimuth_deg)
     term_dates = _term_dates(dt.year, cal.timezone)
 
-    facts = derive_facts(
-        year_zhi=pillars.year.zhi,
-        month_zhi=pillars.month.zhi,
-        day_ganzhi=pillars.day.name,
-        gans=list(pillars.gans),
-        zhis=list(pillars.zhis),
-        mountain=mountain,
-        facing=facing,
-        shan_jia_zhi=shan_jia_zhi,
-        local_date=dt.astimezone(tz).date(),
-        term_dates=term_dates,
-        include_term_day_itself=include_term_day_itself,
-        sansha_caliber=creg.chosen(CALIBER_SANSHA),
-        nayin_caliber=creg.chosen(CALIBER_NAYIN),
-        nayin_alternatives=creg.alternatives(CALIBER_NAYIN),
+    # ---- 日级事实缓存（spec 遗留项「日级事实缓存」）----
+    # derive_facts 不含时辰参数：同日 12 时辰候选的事实完全一致，共享只读。
+    # 键覆盖全部事实输入（四柱结果/山向/兼山/用事日/口径配置），不同口径必不同键。
+    _facts_key = (
+        pillars.day.name, pillars.year.zhi, pillars.month.zhi,
+        mountain.name, facing.name if facing is not None else None,
+        shan_jia_zhi, dt.astimezone(tz).date(), include_term_day_itself,
+        creg.chosen(CALIBER_SANSHA), creg.chosen(CALIBER_NAYIN),
+        json.dumps(creg.alternatives(CALIBER_NAYIN), ensure_ascii=False, sort_keys=True, default=str),
     )
+    facts = _FACTS_CACHE.get(_facts_key)
+    if facts is None:
+        facts = derive_facts(
+            year_zhi=pillars.year.zhi,
+            month_zhi=pillars.month.zhi,
+            day_ganzhi=pillars.day.name,
+            gans=list(pillars.gans),
+            zhis=list(pillars.zhis),
+            mountain=mountain,
+            facing=facing,
+            shan_jia_zhi=shan_jia_zhi,
+            local_date=dt.astimezone(tz).date(),
+            term_dates=term_dates,
+            include_term_day_itself=include_term_day_itself,
+            sansha_caliber=creg.chosen(CALIBER_SANSHA),
+            nayin_caliber=creg.chosen(CALIBER_NAYIN),
+            nayin_alternatives=creg.alternatives(CALIBER_NAYIN),
+        )
+        if len(_FACTS_CACHE) >= _FACTS_CACHE_MAX:
+            _FACTS_CACHE.clear()
+        _FACTS_CACHE[_facts_key] = facts
 
     person_ctx: dict[str, Any] = {}
     person_year_zhi = _resolve_person_year_zhi(person, cal)

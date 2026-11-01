@@ -1,9 +1,10 @@
+# RT-DG-SANXING-001-MISS
 case_id: RT-DG-SANXING-001-MISS
 kind: rule_test
 rule_id: DG-SANXING-001
 expected: miss
-note: 董公规则 MISS：fact 无值。
+note: 董公 star 显式覆盖——非三星值日（无）。
 overrides:
   facts:
     donggong:
-      star: null
+      star: 无

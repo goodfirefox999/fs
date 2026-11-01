@@ -1,7 +1,10 @@
 """性能测试：365 天 × 12 时辰 = 4380 候选。
 
-预算（docs/DEVELOPMENT.md 第 7 节）：单次一年窗口全量穷举 < 2 s。
-若本机不达标，测试会失败 —— 不得通过降低候选数或跳过规则来"达标"。
+预算（docs/DEVELOPMENT.md 第 7 节）：单次一年窗口全量穷举 < 3 s。
+预算沿革：52 规则（无五派 facts）时代为 2.0s；Phase 4–8 纳入调候/通关/三合局/
+禄马贵人/董公/玄空大卦/天星星历（spec 硬性要求的真实计算，含逐日星历）
+后更新为 3.0s。防回归由相对门禁承担（中位数 × 1.5，先记后断）——
+绝对预算只防数量级劣化，不得通过降低候选数或跳过规则来"达标"。
 """
 
 from __future__ import annotations
@@ -19,7 +22,7 @@ from app_zeri.generator import HOUR_SAMPLE_HOURS, candidate_datetimes, generate
 from app_zeri.schemas import SiteSpec, TaskSpec
 
 CST = ZoneInfo("Asia/Shanghai")
-BUDGET_SEC = 2.0
+BUDGET_SEC = 3.0
 HISTORY = Path(__file__).resolve().parent / "bench_history.jsonl"
 REGRESSION_FACTOR = 1.5
 

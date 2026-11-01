@@ -16,6 +16,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Callable
 
@@ -339,20 +340,28 @@ def derive_facts(
         # 勾陈黑道
         heidao = _dg_data.get("heidao", {}).get("by_month_branch", {}).get(month_branch, [])
         _dg["is_heidao"] = day_gz[-1] in heidao
+        # 建除十二神（十二建星）：月建（月支）起建，日支顺数
+        #   建除满平定执破危成收开闭；破/闭一般不利（spec §2.3 DG_JIAN_CHU）。
+        #   月支取节气月（engine 已按节气定月支），与通书建星口径一致。
+        _JIANCHU_STARS = ("建", "除", "满", "平", "定", "执", "破", "危", "成", "收", "开", "闭")
+        if month_branch in ZHI and day_gz[-1] in ZHI:
+            offset = (ZHI.index(day_gz[-1]) - ZHI.index(month_branch)) % 12
+            _dg["jianchu"] = _JIANCHU_STARS[offset]
+        else:
+            _dg["jianchu"] = None
         _dg["status"] = "待考证"
     else:
         _dg["star"] = None
         _dg["is_jinshen"] = None
         _dg["is_dasha"] = None
         _dg["is_heidao"] = None
+        _dg["jianchu"] = None
         _dg["status"] = "待考证"
 
     # ---- 正五行调候 facts（Phase 4 收尾：引用 qiongtong_biaojian_120.json）----
     facts.setdefault("tiaohou", {})
     try:
-        import json as _json
-        _tiao_path = Path(__file__).resolve().parent.parent.parent.parent / "core-rule" / "config" / "data" / "qiongtong_biaojian_120.json"
-        _tiao_data = _json.loads(_tiao_path.read_text(encoding="utf-8"))
+        _tiao_data = _load_data_file("qiongtong_biaojian_120.json") or {}
         _day_gan = gans[0] if gans else "甲"
         _month_key = {"子": "子", "丑": "丑", "寅": "寅", "卯": "卯", "辰": "辰",
                       "巳": "巳", "午": "午", "未": "未", "申": "申", "酉": "酉",
@@ -428,13 +437,7 @@ def derive_facts(
     })
 
     # ---- 禄马贵人到山 facts（Phase 5）----
-    _lu_ma_gui_data = None
-    try:
-        import json as _json
-        _lmg_path = Path(__file__).resolve().parent.parent.parent.parent / "core-rule" / "config" / "data" / "lu_ma_gui_ren.json"
-        _lu_ma_gui_data = _json.loads(_lmg_path.read_text(encoding="utf-8"))
-    except Exception:
-        pass
+    _lu_ma_gui_data = _load_data_file("lu_ma_gui_ren.json")
     facts.setdefault("lumaguiren", {"to_shan": None, "to_ming": None, "status": "待考证"})
     if _lu_ma_gui_data and shan_jia_zhi:
         # 查日课天干的禄神是否=坐山
@@ -465,18 +468,30 @@ def derive_facts(
     return facts
 
 
-def _load_donggong_data() -> dict[str, Any] | None:
-    """加载董公择日 JSON 数据（合并 4 个文件为一个 dict）。"""
+@lru_cache(maxsize=32)
+def _load_data_file(filename: str) -> dict[str, Any] | None:
+    """读取 ``core-rule/config/data`` 下的 JSON 数据文件（进程级缓存）。
+
+    查表型数据（董公/调候/禄马贵人等）按调用方约定**只读**；缓存避免逐候选
+    文件 IO（4380 候选曾因此多耗 ~1.7s）。文件缺失/损坏返回 None 并缓存。
+    """
     import json
-    data_dir = Path(__file__).resolve().parent.parent.parent.parent / "core-rule" / "config" / "data"
+    path = Path(__file__).resolve().parent.parent.parent.parent / "core-rule" / "config" / "data" / filename
     try:
-        sanxing = json.loads((data_dir / "donggong_sanxing_60jiazi.json").read_text(encoding="utf-8"))
-        jinshen = json.loads((data_dir / "donggong_jinshen_qisha.json").read_text(encoding="utf-8"))
-        dasha = json.loads((data_dir / "donggong_dasha_reject.json").read_text(encoding="utf-8"))
-        heidao = json.loads((data_dir / "donggong_gouchen_heidao.json").read_text(encoding="utf-8"))
-        return {"sanxing": sanxing, "jinshen": jinshen, "dasha": dasha, "heidao": heidao}
+        return json.loads(path.read_text(encoding="utf-8"))
     except (FileNotFoundError, json.JSONDecodeError):
         return None
+
+
+def _load_donggong_data() -> dict[str, Any] | None:
+    """加载董公择日 JSON 数据（合并 4 个文件为一个 dict，经缓存）。"""
+    sanxing = _load_data_file("donggong_sanxing_60jiazi.json")
+    jinshen = _load_data_file("donggong_jinshen_qisha.json")
+    dasha = _load_data_file("donggong_dasha_reject.json")
+    heidao = _load_data_file("donggong_gouchen_heidao.json")
+    if sanxing is None and jinshen is None and dasha is None and heidao is None:
+        return None
+    return {"sanxing": sanxing, "jinshen": jinshen, "dasha": dasha, "heidao": heidao}
 
 
 def _get_season(month: int) -> str:

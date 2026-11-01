@@ -20,7 +20,8 @@ applies_to:
   strictness_min: normal
 condition:
   fact: facts.donggong.jianchu
-  op: exists
+  op: in
+  value: [破, 闭]
 score_weight: null
 citation:
   kind: classic
@@ -39,7 +40,7 @@ citation:
 tests:
 - RT-DG-JIANCHU-001-HIT
 - RT-DG-JIANCHU-001-MISS
-explanation: 建除十二神：按董公择日规则判定（数据见 donggong_*.json）。
+explanation: 建除十二神。facts.donggong.jianchu 由月建（节气月支）起建顺数日支得出（建除满平定执破危成收开闭）；命中破/闭（一般不利）。
 supersedes: null
 notes: >-
-  建除十二神。数据来源 donggong_*.json，值待考证。
+  建除十二神。spec §2.3：破日、闭日一般不利（score_delta -1 方向）；成/开/定/满各有宜忌，宜忌细化待事件级建星宜忌表（待考证）。

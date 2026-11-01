@@ -26,10 +26,8 @@ def test_case_files_exist() -> None:
     assert len(CASE_FILES) >= 80, f"规则测试向量不足：{len(CASE_FILES)}"
 
 
-KNOWN_LIMIT_MISS = {
-    "RT-DG-JINSHEN-001-MISS", "RT-DG-SANXING-001-MISS", "RT-DG-DASHA-001-MISS",
-    "RT-DG-GOUCHEN-001-MISS", "RT-DG-JIANCHU-001-MISS",
-}
+#: 已知限制向量（当前为空——DG/XK/TX 全部向量已可实测）
+KNOWN_LIMIT_MISS: set[str] = set()
 
 @pytest.mark.parametrize("case_path", CASE_FILES, ids=[p.stem for p in CASE_FILES])
 

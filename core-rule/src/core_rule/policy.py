@@ -96,12 +96,16 @@ def load_school_policy(path: Path | str) -> SchoolPolicy:
     schools: dict[str, SchoolSpec] = {}
     for name, spec in (data["schools"] or {}).items():
         spec = spec or {}
+        layer = str(spec.get("layer", "scoring"))
+        if layer not in ("reject", "scoring"):
+            raise DSLValidationError(f"{name} 的 layer 非法（reject|scoring）: {layer}")
         schools[name] = SchoolSpec(
             name=name,
             enabled=bool(spec.get("enabled", True)),
             participates_in_veto=bool(spec.get("participates_in_veto", True)),
             weight=float(spec.get("weight", 1.0)),
             description=str(spec.get("description", "")),
+            layer=layer,
         )
     routing_raw = data.get("routing") or {}
     routing = {k: tuple(v or ()) for k, v in routing_raw.items()}

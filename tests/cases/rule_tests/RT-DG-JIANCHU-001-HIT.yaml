@@ -1,9 +1,10 @@
+# RT-DG-JIANCHU-001-HIT
 case_id: RT-DG-JIANCHU-001-HIT
 kind: rule_test
 rule_id: DG-JIANCHU-001
 expected: hit
-note: 董公规则 HIT：fact 有值。
+note: 董公 jianchu 显式覆盖——建除：破日（不利）。
 overrides:
   facts:
     donggong:
-      jianchu: true
+      jianchu: 破

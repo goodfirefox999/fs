@@ -1,8 +1,9 @@
+# RT-DG-JINSHEN-001-HIT
 case_id: RT-DG-JINSHEN-001-HIT
 kind: rule_test
 rule_id: DG-JINSHEN-001
 expected: hit
-note: 董公规则 HIT：fact 有值。
+note: 董公 is_jinshen 显式覆盖——金神七煞日（前置 reject）。
 overrides:
   facts:
     donggong:

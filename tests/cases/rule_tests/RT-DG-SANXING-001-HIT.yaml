@@ -1,9 +1,10 @@
+# RT-DG-SANXING-001-HIT
 case_id: RT-DG-SANXING-001-HIT
 kind: rule_test
 rule_id: DG-SANXING-001
 expected: hit
-note: 董公规则 HIT：fact 有值。
+note: 董公 star 显式覆盖——三星值日：煞贡。
 overrides:
   facts:
     donggong:
-      star: true
+      star: 煞贡

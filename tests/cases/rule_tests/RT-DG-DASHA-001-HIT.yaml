@@ -1,8 +1,9 @@
+# RT-DG-DASHA-001-HIT
 case_id: RT-DG-DASHA-001-HIT
 kind: rule_test
 rule_id: DG-DASHA-001
 expected: hit
-note: 董公规则 HIT：fact 有值。
+note: 董公 is_dasha 显式覆盖——受死/四废/往亡/十恶大败命中。
 overrides:
   facts:
     donggong:
