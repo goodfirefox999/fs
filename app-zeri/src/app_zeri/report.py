@@ -236,14 +236,22 @@ def render_markdown(result: VerifyResult, *, registry: RuleRegistry | None = Non
         f"可发布：**{'是' if ev.publishable else '否'}**"
     )
     lines.append("")
-    # GAP-TASKKIND-EMPTY 渲染（评审第十四轮产物四）：零规则事项的用户可见提示——
-    # "事项声明支持"与"规则实际覆盖"的差额不能只躺在 coverage_gaps.yaml 里
-    if registry is not None and sum(res.rules_evaluated for res in ev.per_school.values()) == 0:
-        lines.append(
-            "> ⚠️ **该事项暂无规则覆盖**（GAP-TASKKIND-EMPTY）：引擎对本次事项未评估任何规则，"
-            "下述结论为空集结论，**不得解读为「无禁忌」**。"
+    # GAP-TASKKIND-EMPTY 渲染（评审第十四轮产物四）：无事项专属规则的用户可见提示——
+    # 通用规则（task_kinds:[]）恒覆盖一切事项，故判据是"显式含本事项的专属规则数==0"
+    # 而非 rules_evaluated==0（初版判据在开业上 22 条通用规则前失效，已修正）
+    if registry is not None:
+        kind = task.get("kind", "")
+        specific = sum(
+            1 for r in registry.ruleset.rules
+            if r.status != "弃用" and kind in r.applies_to.task_kinds
         )
-        lines.append("")
+        if specific == 0:
+            lines.append(
+                f"> ℹ️ **事项「{kind}」无专属规则**（GAP-TASKKIND-EMPTY）：本次评估仅由"
+                "通用规则（task_kinds 为空的断言/结构规则）覆盖，无事项针对性判定——"
+                "**不得解读为「该事项已按其特点查过忌宜」**。"
+            )
+            lines.append("")
     # ADR-0014 决策 0：甲案的用户可见后果——tier 与 publishable 必须联合显示，不得分置
     if ev.vectors.get("controversial_count"):
         lines.append(

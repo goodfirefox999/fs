@@ -775,7 +775,8 @@ class TestAdr0014EvidenceCap:
         # loader 层仅校验非空（ADR-0014 引用节）；黑名单为 lint 纵深
 
     def test_taskkind_empty_renders_warning(self, registry) -> None:
-        """产物四：零规则事项渲染显式提示（GAP-TASKKIND-EMPTY 用户可见化）。"""
+        """产物四（修正）：开业无专属规则（显式清单 0 次）但通用规则仍评估 22 条——
+        渲染判据 = 显式专属规则数==0，提示"仅通用覆盖、无事项针对性判定"。"""
         from app_zeri.schemas import CourseSpec
         from app_zeri.verifier import VerifyResult
         from core_eval import detect_structure
@@ -788,10 +789,12 @@ class TestAdr0014EvidenceCap:
             cal=CalendarConfig(),
         )
         ev = evaluate(ctx, registry, EvalConfig(task_kind="开业"))
-        assert sum(res.rules_evaluated for res in ev.per_school.values()) == 0
+        assert sum(res.rules_evaluated for res in ev.per_school.values()) == 22, (
+            "通用规则（task_kinds:[]）恒覆盖——初版 rules_evaluated==0 判据错误"
+        )
         md = render_markdown(
             VerifyResult(evaluation=ev, context=ctx,
                          structure=detect_structure(zhis=["未", "未", "卯", "未"], gans=["丁", "丁", "辛", "乙"])),
             registry=registry,
         )
-        assert "该事项暂无规则覆盖" in md and "不得解读为" in md
+        assert "无专属规则" in md and "不得解读为" in md
