@@ -49,6 +49,10 @@ class Citation:
     url_or_path: str | None = None
     verified_by: str | None = None
     verified_at: str | None = None
+    #: 书目真实性（VERIFICATION_GUIDE 三）：authentic（官修/原著）｜disputed（托名/存疑）｜
+    #: pseudepigraphic（确证托名）｜None=待核。可采性优先于真伪——托名不排除引用，
+    #: 但不得声称"古法/原著"（评审第十三轮 GUIDE 三·三联动重审的判定字段）。
+    book_authenticity: str | None = None
     confidence: str | None = None  # 高 / 中 / 低
 
     @property
@@ -79,6 +83,7 @@ class Citation:
             "verified_by": self.verified_by,
             "verified_at": self.verified_at,
             "confidence": self.confidence,
+            "book_authenticity": self.book_authenticity,
         }
 
     @classmethod
@@ -96,6 +101,7 @@ class Citation:
             verified_by=data.get("verified_by"),
             verified_at=data.get("verified_at"),
             confidence=data.get("confidence"),
+            book_authenticity=data.get("book_authenticity"),
         )
 
 

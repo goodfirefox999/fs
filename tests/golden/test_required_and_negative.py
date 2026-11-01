@@ -736,3 +736,40 @@ class TestAdr0014EvidenceCap:
         )
         assert proc.returncode == 0, f"出现基线外零命中规则：\n{proc.stdout[-600:]}"
         assert "zero_hit:" in proc.stdout
+
+    def test_book_authenticity_review_construction(self, registry) -> None:
+        """评审第十四轮产物三：联动重审门禁的构造样本 + 反证（政策不得空转）。
+
+        构造：status=已考证 + 引用 book_authenticity=待核 书目 → 必须进重审清单；
+        反证：同规则 book_authenticity=authentic → 不得出现。
+        """
+        from app_zeri.cli import _book_authenticity_review
+
+        pending = dc_replace(
+            _synthetic_rule(), rule_id="TEST-AUTH-PENDING",
+            citation=Citation(source="《象吉通书》", kind="classic", quote="x",
+                              verified_by="人类考证人甲"),
+        )  # book_authenticity 缺省=待核
+        reg = _registry_with(registry, pending)
+        review = _book_authenticity_review(reg)
+        assert any("TEST-AUTH-PENDING" in w and "待核" in w for w in review), review
+        # 反证：authentic 后不报警
+        ok = dc_replace(pending, citation=Citation(
+            source="《象吉通书》", kind="classic", quote="x",
+            verified_by="人类考证人甲", book_authenticity="authentic"))
+        reg2 = _registry_with(registry, ok)
+        assert _book_authenticity_review(reg2) == [], "authentic 书目不得进重审清单"
+
+    def test_signatures_layer_is_error(self, registry) -> None:
+        """评审第十四轮：签名校验层级确认——lint **error**（exit 1），loader 只查空。"""
+        from app_zeri.cli import _check_signatures
+
+        bad = dc_replace(
+            _synthetic_rule(),
+            citation=Citation(source="《象吉通书》", kind="classic", quote="x", verified_by="pytest"),
+        )
+        reg = _registry_with(registry, bad)
+        problems = _check_signatures(reg)
+        assert any("疑似非人类署名" in p for p in problems), problems
+        # 层级：_check_signatures 的产出进 cmd_rules_lint 的 problems → exit 1（error 级）
+        # loader 层仅校验非空（ADR-0014 引用节）；黑名单为 lint 纵深
