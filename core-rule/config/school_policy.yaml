@@ -36,8 +36,8 @@ schools:
       三合规则包：三合局/六合/禄马贵人到山。核心纲领=地支三合形式。
       规则前缀 SH。与正五行共享禄马贵人表但补龙逻辑独立。Phase 5 交付。
   donggong:
-    enabled: false
-    participates_in_veto: false
+    enabled: true
+    participates_in_veto: true
     weight: 0.6
     layer: scoring
     description: >-

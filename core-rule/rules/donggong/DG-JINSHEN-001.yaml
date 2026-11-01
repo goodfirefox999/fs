@@ -1,0 +1,46 @@
+# Phase 6 董公规则包：金神七煞（spec §2.3 DG-JINSHEN-001)
+api_version: 1
+rule_id: DG-JINSHEN-001
+version: 1
+school: donggong
+category: 金神七煞（董公派）
+status: 待考证
+hard_veto: true
+severity: 禁用
+target: day
+evaluable: true
+applies_to:
+  task_kinds:
+  - 安葬
+  - 修造
+  - 嫁娶
+  - 入宅
+  - 开业
+  node_kinds: []
+  strictness_min: normal
+condition:
+  fact: facts.donggong.is_jinshen
+  op: eq
+  value: true
+score_weight: null
+citation:
+  kind: classic
+  source: 《董公择日要览》
+  edition: null
+  juan: null
+  pian: null
+  entry: 金神七煞
+  quote_kind: null
+  quote: null
+  url_or_path: null
+  verified_by: null
+  verified_at: null
+  book_authenticity: 待核
+  confidence: 低
+tests:
+- RT-DG-JINSHEN-001-HIT
+- RT-DG-JINSHEN-001-MISS
+explanation: 金神七煞：按董公择日规则判定（数据见 donggong_*.json）。
+supersedes: null
+notes: >-
+  金神七煞。此规则为 Layer 3 前置 reject——即使煞贡/直星/人专值日也不能覆盖（spec §2.3）。数据来源 donggong_*.json，值待考证。

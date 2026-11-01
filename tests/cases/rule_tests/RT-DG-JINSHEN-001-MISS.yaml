@@ -1,0 +1,9 @@
+case_id: RT-DG-JINSHEN-001-MISS
+kind: rule_test
+rule_id: DG-JINSHEN-001
+expected: miss
+note: 董公规则 MISS：fact 无值。
+overrides:
+  facts:
+    donggong:
+      is_jinshen: null

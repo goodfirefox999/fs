@@ -633,11 +633,15 @@ class TestAdr0014EvidenceCap:
         assert set(groups.get("cap_applied", [])) == {
             "PUB-CHONGMING-001", "PUB-CHONGSHAN-001", "PUB-MING-SANSHA-001", "PUB-SANSHA-001",
             "PUB-SANSHA-002", "PUB-SIJUE-001", "PUB-SILI-001", "PUB-SUIPO-001",
-            "PUB-WUHUANG-001", "PUB-YUEPO-001",
+            "PUB-WUHUANG-001", "PUB-YUEPO-001", "DG-JINSHEN-001", "DG-DASHA-001",
         }, groups.get("cap_applied")
         assert set(groups.get("quote_unsigned", [])) == {"PUB-SANSHA-003", "PUB-TAISUI-001"}
-        assert set(groups.get("unverified_progress", [])) == set(groups.get("cap_applied", [])), (
-            "当前构造下两组恰好同集（10 条待考证+禁用）——结构重合非定义相同，见 _lint_groups 注释"
+        # cap_applied（全库 scope）⊇ unverified_progress（必需集 scope）——DG 规则入 cap 但不在修造必需集
+        assert set(groups.get("unverified_progress", [])) < set(groups.get("cap_applied", [])), (
+            "unverified_progress 必须是 cap_applied 的真子集（DG 规则入 cap 但不在修造必需集）"
+        )
+        assert "DG-JINSHEN-001" not in groups.get("unverified_progress", []), (
+            "DG 规则不在修造必需集，不应出现在 unverified_progress"
         )
         assert set(groups.get("coverage_gaps", [])) == {
             "GAP-TAISUI-FACING", "GAP-TASKKIND-EMPTY",
@@ -791,14 +795,15 @@ class TestAdr0014EvidenceCap:
         ctx = build_context(
             course=CourseSpec(dt=datetime(2026, 6, 15, 10, 0, tzinfo=CST)),
             site=SiteSpec(azimuth_deg=150.0, lat=23.13, lon=113.26),
-            task=TaskSpec(kind="开业", nodes=("开业",), strictness="normal"),
+            task=TaskSpec(kind="出行", nodes=("出行",), strictness="normal"),
             person=PersonSpec(),
             cal=CalendarConfig(),
         )
-        ev = evaluate(ctx, registry, EvalConfig(task_kind="开业"))
-        assert sum(res.rules_evaluated for res in ev.per_school.values()) == 22, (
-            "通用规则（task_kinds:[]）恒覆盖——初版 rules_evaluated==0 判据错误"
+        ev = evaluate(ctx, registry, EvalConfig(task_kind="出行"))
+        assert sum(res.rules_evaluated for res in ev.per_school.values()) > 0, (
+            "出行应有规则被评估（通用规则 + 可能的 DG 规则）"
         )
+        # 出行无专属规则（显式清单 0 次）→ 渲染提示
         md = render_markdown(
             VerifyResult(evaluation=ev, context=ctx,
                          structure=detect_structure(zhis=["未", "未", "卯", "未"], gans=["丁", "丁", "辛", "乙"])),

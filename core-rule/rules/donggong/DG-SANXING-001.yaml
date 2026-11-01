@@ -1,0 +1,45 @@
+# Phase 6 董公规则包：三星值日（spec §2.3 DG-SANXING-001)
+api_version: 1
+rule_id: DG-SANXING-001
+version: 1
+school: donggong
+category: 三星值日（董公派）
+status: 待考证
+hard_veto: false
+severity: 可用
+target: day
+evaluable: true
+applies_to:
+  task_kinds:
+  - 安葬
+  - 修造
+  - 嫁娶
+  - 入宅
+  - 开业
+  node_kinds: []
+  strictness_min: normal
+condition:
+  fact: facts.donggong.star
+  op: exists
+score_weight: null
+citation:
+  kind: classic
+  source: 《董公择日要览》
+  edition: null
+  juan: null
+  pian: null
+  entry: 三星值日
+  quote_kind: null
+  quote: null
+  url_or_path: null
+  verified_by: null
+  verified_at: null
+  book_authenticity: 待核
+  confidence: 低
+tests:
+- RT-DG-SANXING-001-HIT
+- RT-DG-SANXING-001-MISS
+explanation: 三星值日：按董公择日规则判定（数据见 donggong_*.json）。
+supersedes: null
+notes: >-
+  三星值日。数据来源 donggong_*.json，值待考证。

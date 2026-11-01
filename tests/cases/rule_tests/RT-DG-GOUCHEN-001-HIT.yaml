@@ -1,0 +1,9 @@
+case_id: RT-DG-GOUCHEN-001-HIT
+kind: rule_test
+rule_id: DG-GOUCHEN-001
+expected: hit
+note: 董公规则 HIT：fact 有值。
+overrides:
+  facts:
+    donggong:
+      is_heidao: true
