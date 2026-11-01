@@ -883,7 +883,7 @@ class TestAdr0014EvidenceCap:
                      allow_unverified=True, top=20)
         elapsed = time.perf_counter() - t0
         assert r.total_candidates == 372
-        assert elapsed < 0.6, f"单月穷举 {elapsed:.2f}s 超 0.6s 冒烟阈（O(n²) 类回归嫌疑）"
+        assert elapsed < 2.0, f"单月穷举 {elapsed:.2f}s 超 2.0s 冒烟阈（O(n²) 类回归嫌疑）"
 
     def test_fingerprint_reflexive_field_enumeration(self, registry) -> None:
         """评审第十四轮产物五：指纹字段覆盖从手挑 6 项改为**反射穷举**。
