@@ -670,3 +670,34 @@ class TestAdr0014EvidenceCap:
         hit_a = self._hits(ev_a, "vetoes", "TEST-VERIFIED-001")
         hit_b = self._hits(ev_b, "vetoes", "TEST-VERIFIED-001")
         assert hit_a and not hit_b, "同 id 同 version 不同 condition：两次评估不得串味（_select_cached key 含指纹）"
+
+    def test_c21_static_candidate_specificity(self, registry) -> None:
+        """C21 静态层（warn 级）：候选派生命名空间 = facts./time./course.。
+        实测抓到 1 条真违规（ZWX-XIANGSHOU-001 仅 person.*——同命主恒命中），
+        其余全库规则引用 facts/time/course 路径。"""
+        from app_zeri.cli import _c21_static_warnings
+
+        warnings = _c21_static_warnings(registry)
+        assert any("ZWX-XIANGSHOU-001" in w for w in warnings), warnings
+        assert len(warnings) == 1, f"基线：静态警告恰 1 条（现 {len(warnings)}）——新增请核对是否真死规则"
+        # 语义自检：site./person. 不在候选派生命名空间内
+        assert not any("site.mountain".startswith(ns) for ns in ("facts.", "time.", "course."))
+
+    def test_c21_dead_rule_baseline_covers_current(self) -> None:
+        """C21 动态层：死规则扫描的零命中集合 ⊆ 基线豁免（工具退出码 0）。"""
+        import os
+        import subprocess
+        import sys as _sys
+
+        root = Path(__file__).resolve().parents[2]
+        env = dict(os.environ)
+        env["PYTHONPATH"] = ":".join(
+            [str(root / p) for p in ("core-time/src", "core-symbol/src", "core-rule/src", "core-eval/src", "app-zeri/src")]
+            + [str(root)]
+        )
+        proc = subprocess.run(
+            [_sys.executable, "tools/dead_rule_scan.py"],
+            capture_output=True, text=True, cwd=root, env=env, timeout=600,
+        )
+        assert proc.returncode == 0, f"出现基线外零命中规则：\n{proc.stdout[-600:]}"
+        assert "zero_hit:" in proc.stdout

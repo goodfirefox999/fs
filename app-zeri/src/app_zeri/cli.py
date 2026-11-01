@@ -293,6 +293,9 @@ def cmd_rules_lint(args: argparse.Namespace) -> int:
     # 11) 状态跃迁提权（ADR-0014）：已考证必须有人类签名（loader 之外的 lint 纵深）
     problems.extend(_check_signatures(reg))
 
+    # 12) C21 静态层（warn 不 error——评审第十二轮约束 2；动态层见 tools/dead_rule_scan.py）
+    warnings.extend(_c21_static_warnings(reg))
+
     stats = rs.stats()
     print("规则库统计：")
     print(json.dumps(stats, ensure_ascii=False, indent=2))
@@ -356,6 +359,32 @@ def _lint_groups(reg) -> dict[str, list[str]]:
             if rule.status != "定义级" and rule.citation.has_quote and not rule.citation.verified_by
         ),
     }
+
+
+CANDIDATE_NS = ("facts.", "time.", "course.")
+
+
+def _c21_static_warnings(reg) -> list[str]:
+    """C21 静态层：候选特异因子检查（warn 级）。
+
+    断言级规则 condition 必须引用至少一个候选派生路径
+    （facts.* 引擎事实 / time.* 时刻派生 / course.* 四柱派生）；
+    仅引用 site.* / person.*（用户输入，跨候选不变）= "每候选恒命中"的死规则形态。
+    动态层（适用域内零命中）见 tools/dead_rule_scan.py + dead_rule_baseline.yaml。
+    """
+    from core_rule.dsl import collect_fact_paths
+
+    out: list[str] = []
+    for rule in reg.ruleset.rules:
+        if rule.status == "定义级":
+            continue
+        paths = collect_fact_paths(rule.condition)
+        if paths and not any(p.startswith(ns) for p in paths for ns in CANDIDATE_NS):
+            out.append(
+                f"{rule.rule_id}: condition 仅引用用户输入（site/person），"
+                "无候选派生因子（facts/time/course）——C21 静态层"
+            )
+    return out
 
 
 def _check_signatures(reg) -> list[str]:

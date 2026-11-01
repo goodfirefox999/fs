@@ -1,0 +1,3 @@
+sxtwl==2.0.7
+lunar_python==1.4.8
+# C20 oracle 对算专用（dev-only）：禁入运行时依赖；升级必须重跑 calendar_diff_register 并复核登记表
