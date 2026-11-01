@@ -58,11 +58,11 @@
 （`cap_severity` / `effective_severity` / `participates_in_tier` / `cap_warning`）。
 三处调用点（施工实测）：
 
-| 调用点 | 位置 |
+| 调用点 | 位置（文件:行，施工实测） |
 |---|---|
-| ① 评估路由 | `core-eval/src/core_eval/engine.py::_evaluate_school`——`severity = cap_severity(declared, rule.status)`；veto 守卫 `route_severity == "禁用" and rule.hard_veto`；strict 分支 `participates_in_tier(rule)` |
-| ② lint | `app-zeri/src/app_zeri/cli.py::cmd_rules_lint` 第 10 节——`cap_warning()` 逐条 + `cap_applied_ids` 机器可读行 |
-| ③ 报告 | `app-zeri/src/app_zeri/report.py::render_markdown`——"声明/生效严重度差异"行（读 `vectors.cap_applied_ids`） |
+| ① 评估路由 | `core-eval/src/core_eval/engine.py:618`（`severity = cap_severity(declared, rule.status)`）、`:683`（veto 显式守卫 `route_severity == "禁用" and rule.hard_veto`）、`:692`（strict 分支 `participates_in_tier(rule)`） |
+| ② lint | `app-zeri/src/app_zeri/cli.py:287-289`（`cap_warning()` 逐条）+ `:301`（`cap_applied_ids` 机器可读行）；预计算 `core-rule/src/core_rule/loader.py:63-68`（`RuleSet.cap_applied_ids`，`__post_init__` 派生） |
+| ③ 报告 | `app-zeri/src/app_zeri/report.py:247-250`（"声明/生效严重度差异"行）；关联渲染：`:201`（demo_veto 首行标注）、`:242`（存疑命中提示）、`:312`（未激活合并块） |
 
 **load 期预计算**：`RuleSet.cap_applied_ids`（`loader.py` `__post_init__` 派生，
 dc_replace 自动重算）；cap 警告按 run 聚合，不进 per-candidate 循环。
@@ -79,7 +79,12 @@ PUB-SANSHA-002, PUB-SIJUE-001, PUB-SILI-001, PUB-SUIPO-001, PUB-WUHUANG-001, PUB
 
 - `Judgment` 新增 `source_status: verified|controversial|unverified|definitional`、
   `doubt: bool`、`declared_severity: str|None`——**全部带默认值**（旧构造点/旧 JSON 兼容，
-  序列化测试断言）；与 `EvaluationItem` 的关系：同一对象增字段，非替换。
+  序列化测试断言）。
+  **与"EvaluationItem"的关系（评审问询的澄清）**：代码库中不存在独立的 EvaluationItem 类——
+  评审所指的报告/JSON 条目对象即 `Judgment`（JSON 条目 = `Judgment.to_dict()` 输出），
+  本变更为**同一对象增字段，非替换**；全仓 `Judgment(` 构造点仅 2 处
+  （`engine.py::_make_judgment` + `tests/unit/test_v2_features.py:194` fixture），
+  关键字默认值保证两处均无需改动。
 - participation 保持稳定 token `"判定"`，存疑由 `doubt: true` 表达（"判定（存疑）"只是渲染括注）。
 - cap warning 文本只是 `source_status` 的渲染；T6/T7 全部结构化断言，禁中文子串匹配。
 - 双向验证：T6 同时断言渲染层正确生成文案（禁子串匹配不禁渲染回归）。
@@ -123,6 +128,7 @@ PUB-SANSHA-002, PUB-SIJUE-001, PUB-SILI-001, PUB-SUIPO-001, PUB-WUHUANG-001, PUB
 | C17 ✅ | publishable 不变式测试 | T7/T12 合流实现 |
 | T6–T17 ✅ | 13 个新测试 + 旧演示语义测试迁移（+demo_veto=True 保留原意图） | tests/ |
 | S2 ✅ | gen 冒烟归因 diff（见下） | out/ |
+| C18 ⬜ | **Q-012 前置工程项（进 C 系列依赖顺序，不散落 Q-012——评审第九轮要求）**：向首侧 fact 产出（`facts.taisui.hit_facing` 或等价）→ 解锁合并案/TAISUI-002 满足准入条件 4 → 进必需集 → Q-012 联动表执行。依赖顺序：**fact 补齐 → 合并案落地 → 联动表勾选生效**；fact 补齐前必需集维持 8（已登记于 required_rules.yaml 注释） | `core-symbol`（fact 产出）、`core-rule/rules/public/`（新规则） |
 
 ## 施工验收（2026-11-01 实测）
 
