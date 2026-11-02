@@ -1,0 +1,16 @@
+# verdict_type 迁移棘轮基线（C 第二批推进抓手）
+#
+# 纪律：全仓 `verdict_type: null` 的规则数**只许减少，不许增加**。
+#   - 当前数 < baseline_count → 测试失败并提示下调基线（迁移有进展，该更新本文件）；
+#   - 当前数 > baseline_count → 测试失败（出现回退，未归类清单变长了）。
+# 更新本文件时必须同步 `docs/c2-migration-checklist.md` 的勾选状态。
+generated: 2026-11-03
+unlabeled_count: 75
+per_school:
+  donggong: 5
+  doushou: 6
+  public: 47
+  sanhe: 4
+  tianxing: 4
+  xuankong_dagua: 4
+  zhengwuxing: 5

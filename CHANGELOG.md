@@ -2,6 +2,56 @@
 
 遵循 [Keep a Changelog](https://keepachangelog.com/)；版本号遵循语义化版本。
 
+## [Unreleased] 评审回路（四）：分片独立验证 + grep 根因修正 + 防腐化补锁（2026-11-03）
+
+### 分片验证：每个提交单独检出全绿（bisect 安全性不再是推理，是执行结论）
+
+历史经一次受控重写（原链打 tag `backup/pre-rewrite-2026-11-03`，双 bundle 备份），
+原因是片1 携带的仓库级断言 `TestRepoIsClean` 依赖引擎修复，**单独检出必然红**。
+处置：该断言拆到 `tests/integration/test_c20_repo_clean.py`（随引擎修复落地），
+工具片只保留 fixture 反证。每个 SHA 在独立 worktree 用 junitxml 验证
+（pytest 汇总行在本沙箱不可见——见下节——junitxml 是权威数字来源）：
+
+| SHA | 内容 | tests | failures/errors | rules lint |
+|---|---|---|---|---|
+| `8f2217f` | 片1 工具/门禁 | 865 | 0 / 0 | 通过 |
+| `2b3229b` | 片2+3 代码 | 1142 | 0 / 0 | 通过 |
+| `504de49` | 片4 文档 | 1142 | 0 / 0 | 通过 |
+| `8e79f43` | 补丁应用（tip） | 1146 | 0 / 0 | 通过 |
+
+### grep 假阴性根因修正：不是"判二进制"，是 toybox BRE 不支持 `\|`
+
+字节级复查：全仓 .py **0 个 NUL、0 个非 UTF-8**——原诊断（"文件被判二进制"）是错的。
+真根因：本沙箱 `grep --version` = **toybox 0.8.13**，BRE 的 `\|` 被当字面量 →
+**静默零匹配**。对照实验（A/B/C/D/E，可 `tools/verify_claims.py --demo` 复跑）：
+`grep -a "A\|B"` → 0 命中；`grep -aE "A|B"` → 16 命中。
+Q-020/Q-021 的"宣称与树不一致"疑云就此解除：**两条宣称均属实**
+（TestSanshaScope 4 例、TestJianxiangCaliber 5 例、jianxiang.yaml 两口径，全过）。
+`docs/research/concurrent-write-forensics-2026-11-02.md` §6.6 已改写（保留误诊史）；
+AGENTS 约束新增第 9 条（交替必须 `-E` 或 Python；跨环境异常空输出先打 `--version`）。
+
+### 新增工具与门禁
+
+- `tools/verify_claims.py`：宣称核对器，四列输出（宣称 → 实际路径 → 用例名 → 结果），
+  Q-020/Q-021 归档见 `docs/research/q020-q021-verification.md`；退出码 0 = 全部核实。
+- `dead_rule_scan.assert_buckets_exist`：REQUIRED_BUCKETS 五桶（vetoes/cautions/
+  positives/demo_hits/reference）必须存在，引擎删桶/改名时**响亮失败**——
+  补回 getattr 兜底换掉的硬失败（评审第二节）。真仓库零假设测试直接对照
+  SchoolResult 的 dataclass 字段。
+- `lint_static.check_demo_veto_wiring`（rules lint 第 e 项）：封死联调开关的三条
+  腐化通路——`os.getenv("DEMO_VETO")` / `os.environ.get(...)` / `os.environ[...]`，
+  及配置 YAML 携带 `demo_veto` 键。报告横幅（🚧 含演示否决）已存在，位置测试锁定。
+- `tests/unit/test_verdict_baseline.py` + `core-rule/config/verdict_baseline.yaml`：
+  verdict_type 迁移**棘轮**——全仓未标注数（当前 75/86）只减不增；减少也要求
+  显式下调基线并勾选清单。清单落盘 `docs/c2-migration-checklist.md`。
+- 报告「未归类规则」节：14 条**全部列出不截断**，每条附规则文件路径。
+- demo 隔离 golden 快照：`tests/golden/demo_consensus_snapshot.json`
+  （4 派 demo-only + 1 派沉默 + 1 派闸门 → 0/0，计票语义漂移会直接进 review diff）。
+- `_total_rank` 锁补正向边界用例：单派内按 rank_score 排序**不**触发本锁（防误删锁）。
+- `tools/new_question.py` 纪律：已归档编号永不复用；并发以提交时间为准、后到顺延，
+  不做 --reserve 占位（空壳 Q 号比撞号更难清理）。
+- Q-015 期限改**绝对日期**（2026-12-31 / 2027-02-28 / 不设期限）。
+
 ## [Unreleased] 共识度整数比 + C20 禁聚合门禁（ADR-0015，2026-11-02 深夜）
 
 主题：**把"不要加权求和"从文档里的原则，变成 CI 会拦住你的门禁。**

@@ -382,21 +382,20 @@ def check_demo_veto_wiring(repo_root: Path) -> list[str]:
         if not root.exists():
             continue
         for path in root.rglob("*.py"):
+            rel_path = path.relative_to(repo_root)
             try:
                 tree = _ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
             except (SyntaxError, UnicodeDecodeError):
                 continue
-            rel_path = path.relative_to(repo_root)
-
             def _is_environ(node: _ast.AST) -> bool:
                 """os.environ / environ（含 os.environ.get 的 value 链）。"""
                 if isinstance(node, _ast.Attribute):
                     return node.attr == "environ" or _is_environ(node.value)
                 return isinstance(node, _ast.Name) and node.id == "environ"
 
-            def _flag(lineno: int, form: str) -> None:
+            def _flag(lineno: int, form: str, rel: str) -> None:
                 problems.append(
-                    f"{rel_path}:{lineno}: 禁止从环境变量读取 demo_veto（{form}）"
+                    f"{rel}:{lineno}: 禁止从环境变量读取 demo_veto（{form}）"
                     "（只允许 CLI 传参 / 测试显式构造 EvalConfig）"
                 )
 
@@ -413,15 +412,22 @@ def check_demo_veto_wiring(repo_root: Path) -> list[str]:
                     if fname == "getenv" or is_environ_get:
                         for arg in (*node.args, *node.keywords):
                             val = arg.value if isinstance(arg, _ast.keyword) else arg
-                            if isinstance(val, _ast.Constant) and isinstance(val.value, str):
-                                if "demo_veto" in val.value.lower().replace("-", "_"):
-                                    _flag(node.lineno, fname if fname == "getenv" else "environ.get")
+                            if (
+                                isinstance(val, _ast.Constant)
+                                and isinstance(val.value, str)
+                                and "demo_veto" in val.value.lower().replace("-", "_")
+                            ):
+                                _flag(
+                                        node.lineno,
+                                        "getenv" if fname == "getenv" else "environ.get",
+                                        rel_path,
+                                    )
                 elif isinstance(node, _ast.Subscript):
                     # 形态③ os.environ["DEMO_VETO"]
                     if _is_environ(node.value) and isinstance(node.slice, _ast.Constant):
                         val = node.slice.value
                         if isinstance(val, str) and "demo_veto" in val.lower().replace("-", "_"):
-                            _flag(node.lineno, "environ[...]")
+                            _flag(node.lineno, "environ[...]", rel_path)
     # 2) 配置 YAML 不得出现 demo_veto 键
     for rel in ("core-rule/config", "app-zeri"):
         root = repo_root / rel

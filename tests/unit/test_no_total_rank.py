@@ -34,7 +34,6 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-
 from core_eval.ranker import sort_key
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -75,6 +74,24 @@ class TestSourceLock:
         """注释里保留历史说明是有意的：后人要知道这里删过什么、为什么删。"""
         text = ENGINE.read_text(encoding="utf-8")
         assert "_total_rank" in text, "engine.py 应保留删除说明（否则下一个人会重新发明它）"
+
+    def test_legal_single_school_rank_sort_does_not_trip_lock(self, tmp_path: Path) -> None:
+        """正向边界（评审要求）：单派分区内按 rank_score 排序**不**触发本锁。
+
+        ADR-0015 保留「rank_score 是域内相对值」的合法用途。若将来在单派
+        分区内引入按 rank_score 排序，本锁不得挡路——否则下一个开发者会被
+        自己的锁卡住，然后顺手把锁删掉，那才是真正的损失。
+        判据：合法实现不引入 BANNED 符号，_names_in 结果为空集交集。
+        """
+        legal = tmp_path / "legal_single_school.py"
+        legal.write_text(
+            "def order_within_school(items):\n"
+            "    # 单派内部排序：rank_score 只在本派条目间比较，不跨派累加\n"
+            "    return sorted(items, key=lambda j: j.rank_score)\n",
+            encoding="utf-8",
+        )
+        names = _names_in(legal)
+        assert not (names & set(BANNED)), "合法的单派排序不应引入跨派聚合符号"
 
     def test_no_aggregate_lint_tool_exists(self) -> None:
         """配套的静态门禁必须在盘上，否则 AST 锁只是孤证。"""

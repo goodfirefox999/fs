@@ -1,0 +1,56 @@
+{
+  "_meta": {
+    "purpose": "demo 隔离黄金样本：4 派仅演示命中 + 1 派沉默 + 1 派闸门 → 共识比 0/0",
+    "candidate": "2027-07-11T14:00+08:00 乾山(320°) 修造 strict",
+    "note": "固化这一样本的意义：它是「演示票不算票」语义的最小完整形态。改动计票语义时此文件必须显式更新（diff 会进 review）。"
+  },
+  "consensus_detail": {
+    "consensus": "neutral",
+    "consensus_ratio": "0/0",
+    "votes": {
+      "favorable": [],
+      "unfavorable": []
+    },
+    "voters": [],
+    "non_voters": [
+      {
+        "school": "public",
+        "layer": "reject",
+        "reason": "layer_reject"
+      },
+      {
+        "school": "zhengwuxing",
+        "layer": "scoring",
+        "reason": "demo_only_not_voting"
+      },
+      {
+        "school": "sanhe",
+        "layer": "scoring",
+        "reason": "demo_only_not_voting"
+      },
+      {
+        "school": "donggong",
+        "layer": "scoring",
+        "reason": "demo_only_not_voting"
+      },
+      {
+        "school": "xuankong_dagua",
+        "layer": "scoring",
+        "reason": "demo_only_not_voting"
+      },
+      {
+        "school": "tianxing",
+        "layer": "scoring",
+        "reason": "no_verdict"
+      }
+    ],
+    "gate_veto_schools": [],
+    "threshold": {
+      "min_agree_num": 3,
+      "min_agree_den": 5,
+      "description": "五派全部表态时，等价于旧口径\"三派及以上 favorable\"。"
+    },
+    "task_kind": "修造",
+    "convention": "favorable/voters >= min_agree_num/min_agree_den（整数交叉相乘）；闸门层与参考层不计票，沉默派不进分母"
+  }
+}

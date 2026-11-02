@@ -123,3 +123,44 @@ class TestExplicitDemoVetoException:
         assert zero_voter_notice(_eval(demo_veto=True)), (
             "demo_veto 下若出现'有票'假象而未提示，等于用联调开关伪造共识"
         )
+
+
+class TestGoldenSnapshot:
+    """金标准候选的共识分账快照（tests/golden/demo_consensus_snapshot.json）。
+
+    为什么固化成 golden file（评审要求）而不只靠内联断言：
+    这是「演示票不算票」语义的最小完整形态——4 派仅演示命中、1 派沉默、
+    1 派闸门、ratio 0/0。计票语义一旦漂移，diff 会直接进 review，
+    而不是藏在某条断言的夹角里。
+    """
+
+    def _detail(self) -> dict:
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+
+        from app_zeri.schemas import CourseSpec, PersonSpec, SiteSpec, TaskSpec, build_context
+        from core_eval import EvalConfig, evaluate
+        from core_rule import default_registry
+        from core_time import CalendarConfig
+
+        tz = ZoneInfo("Asia/Shanghai")
+        ctx = build_context(
+            course=CourseSpec(dt=datetime(2027, 7, 11, 14, 0, tzinfo=tz)),
+            site=SiteSpec(azimuth_deg=320.0, lat=23.13, lon=113.26),
+            task=TaskSpec(kind="修造", nodes=("修造",), strictness="strict"),
+            person=PersonSpec(), cal=CalendarConfig(),
+        )
+        ev = evaluate(ctx, default_registry(), EvalConfig(
+            task_kind="修造", strictness="strict", allow_unverified=True, demo_veto=False))
+        return ev.manifest["five_school_output"]["_consensus_detail"]
+
+    def test_matches_golden_snapshot(self) -> None:
+        import json
+        from pathlib import Path as _Path
+
+        golden = _Path(__file__).resolve().parents[1] / "golden" / "demo_consensus_snapshot.json"
+        expected = json.loads(golden.read_text(encoding="utf-8"))["consensus_detail"]
+        assert self._detail() == expected, (
+            "共识分账语义漂移：与 golden 快照不一致。"
+            "若是有意变更，请用生成脚本更新快照并在 commit message 里写明动机。"
+        )

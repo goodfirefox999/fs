@@ -10,7 +10,9 @@
 
 from __future__ import annotations
 
+import functools
 import json
+import re
 from datetime import datetime
 from typing import Any
 
@@ -297,6 +299,30 @@ def _consensus_block(fso: dict[str, Any]) -> list[str]:
         "分母只数实际表态的派，沉默派与闸门/参考层不进分母。"
     )
     return lines
+
+
+# C19-exempt：零参数缓存（键恒为 ()，无复合可变参数风险）；纯静态映射，
+# 规则文件在进程生命周期内视为不变（与 load_ruleset 同一假设）。
+@functools.lru_cache(maxsize=1)
+def _rule_id_to_path() -> dict[str, str]:
+    """rule_id → 规则文件相对路径（一次扫描缓存）。供「未归类」节展示归属。"""
+    from pathlib import Path as _P
+
+    # report.py 位于 <repo>/app-zeri/src/app_zeri/：parents[0]=app_zeri,
+    # [1]=src, [2]=app-zeri, [3]=仓库根（src layout 多一层，别数错）
+    root = _P(__file__).resolve().parents[3] / "core-rule" / "rules"
+    if not root.exists():  # 打包/异构布局时静默降级为无路径
+        return {}
+    mapping: dict[str, str] = {}
+    for yml in root.rglob("*.yaml"):
+        try:
+            text = yml.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        m = re.search(r"^rule_id:\s*([\w-]+)", text, flags=re.M)
+        if m:
+            mapping.setdefault(m.group(1), str(yml.relative_to(root.parents[1])))
+    return mapping
 
 
 def zero_voter_notice(ev: Evaluation) -> list[str]:
@@ -630,13 +656,18 @@ def render_markdown(result: VerifyResult, *, registry: RuleRegistry | None = Non
             f"## 未归类规则（本次评估涉及 {len(unlabeled)} 条；`verdict_type` 未标注，按 severity 路由）"
         )
         lines.append("")
-        shown = "、".join(f"`{r}`" for r in unlabeled[:12])
-        more = "…" if len(unlabeled) > 12 else ""
-        lines.append(f"共 {len(unlabeled)} 条：{shown}{more}")
+        id_to_path = _rule_id_to_path()
+        lines.append(f"共 {len(unlabeled)} 条（全部列出，不截断）：")
+        lines.append("")
+        for rid in unlabeled:
+            path = id_to_path.get(rid)
+            lines.append(f"- `{rid}`" + (f"（`{path}`）" if path else ""))
         lines.append("")
         lines.append(
             "> 未归类 ≠ 投票。这些规则当前按 `severity`/`hard_veto` 走既有路由，"
-            "行为与标注前一致；C 第二批迁移时逐条定为 gate / vote / reference。"
+            "行为与标注前一致；C 第二批迁移时逐条定为 gate / vote / reference"
+            "（清单见 `docs/c2-migration-checklist.md`，进度由 "
+            "`core-rule/config/verdict_baseline.yaml` 棘轮锁定）。"
         )
         lines.append("")
 
@@ -705,7 +736,7 @@ def render_markdown(result: VerifyResult, *, registry: RuleRegistry | None = Non
             )
         lines.append("")
         # 对比式提示：未裁定口径列出全部备选
-        for set_name, chosen in selection.items():
+        for set_name in selection:
             set_info = caliber_info.get("sets", {}).get(set_name, {})
             calibers = set_info.get("calibers", {})
             undecided = [n for n, sp in calibers.items() if sp.get("status") != "已考证"]

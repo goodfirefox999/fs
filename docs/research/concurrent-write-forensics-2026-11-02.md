@@ -115,7 +115,12 @@
 - 真正的并发损伤发生在**文档/编号层**，已修复并加门禁。
 - `ps`/`lsof` 仍不可得；身份无法确认，只能以 mtime + 符号共存性作为间接证据。
 
-### 6.6 只读核对 Q-020 / Q-021：一次险些误报的 "grep 假阴性"
+### 6.6 只读核对 Q-020 / Q-021：一次险些误报的 "grep 假阴性"（**2026-11-03 根因修正**）
+
+> ⚠️ **本节最初的根因诊断是错的，现予更正。** 原诊断称"部分 .py 含让 GNU grep
+> 判为二进制的字节，grep 静默跳过该文件"。2026-11-03 用字节级扫描复查：
+> **全仓 .py 含 NUL 字节 0 个、非 UTF-8 0 个**——文件本身没有任何编码问题。
+> 真正的根因见下。保留错误诊断的历史是因为它演示了"第一解释 ≠ 正确解释"。
 
 按要求核对"另一会话宣称已落地"的两项。第一遍用 shell：
 
@@ -124,16 +129,41 @@ grep -rn "TestSanshaScope\|jianxiang\|jian_caliber" tests/ core-rule/ app-zeri/
 # 输出：空
 ```
 
-差一点据此写"宣称与树不一致"。改用 Python 遍历后，结果相反：
+差一点据此写"宣称与树不一致"。改用 Python 遍历后，结果相反（**结论不变，以下为最终版**，
+由 `tools/verify_claims.py` 可复跑，归档见 `docs/research/q020-q021-verification.md`）：
 
 | 宣称 | 实际 | 结论 |
 |---|---|---|
-| Q-020「已上锁」 | `tests/unit/test_paipan_fixed.py::TestSanshaScope` 4 例（含 `test_ren_mountain_is_not_sansha_hit`、`test_sansha_has_no_palace_field`），全通过 | **属实** |
+| Q-020「已上锁」 | `tests/unit/test_paipan_fixed.py::TestSanshaScope` 4 例（含 `test_ren_mountain_is_not_sansha_hit`），全通过 | **属实** |
 | Q-021「已解耦为数值口径」 | `core-rule/config/calibers/jianxiang.yaml`（两口径 + `threshold_deg` 参数）+ `TestJianxiangCaliber` 5 例，全通过 | **属实** |
 
-**根因**：本仓库部分 `.py` 含让 GNU grep 判为二进制的字节，`grep` 会**静默跳过该文件**
-（不报错、不提示）。所以在这棵树上，「grep 无输出」**不是**「不存在」的证据。
+**真正根因（2026-11-03 对照实验坐实）**：本沙箱的 `grep` 是 **toybox 0.8.13**
+（`grep --version` → `toybox 0.8.13 (is not GNU grep 9.0)`）。toybox 的 BRE
+**不支持 `\|` 交替**——模式 `A\|B` 被当作字面量 "A|B" 去匹配，于是**静默零匹配**：
+不报错、不提示，看起来就像"不存在"。
 
-**纪律**：本仓库内做"存在性/引用面"核对，一律用 Python 遍历文件内容；
-shell `grep` 只用于 `-a` 强制文本模式，且结果为空时必须二次确认。
-（本次若直接采信 grep，就会制造一起"指控他人虚报"的假事故。）
+对照实验（`tools/verify_claims.py --demo` 可复跑）：
+
+| 实验 | 模式 | 结果 |
+|---|---|---|
+| A | `grep -ac "HIT_BUCKETS" tools/dead_rule_scan.py`（BRE 单模式） | 5 次命中 ✓ |
+| B | `grep -ac "def \|HIT_BUCKETS" …`（BRE `\|`） | **0**（假阴性） |
+| C | `grep -acE "def \|HIT_BUCKETS" …`（`-E`） | 16 次命中 ✓ |
+| D | `grep -rla "TestSanshaScope\|jianxiang" tests/`（复现 Q-020 假阴性） | 空（复现） |
+| E | 同 D 换 `-E "TestSanshaScope\|jianxiang"` | 命中 `test_paipan_fixed.py` ✓ |
+
+> 附带修正：此前某轮 `grep -ac "" core-eval/src/core_eval/engine.py` 输出空、
+> `file` 把它判成 "data"，曾导向"engine.py 被当作二进制"的猜想。那也是 toybox
+> 的怪癖（空模式计数），文件本身正常。**所有"输出异常 → 判定文件损坏"的推理链
+> 都应当先排除工具实现差异。**
+
+**纪律（取代本节最初的版本）**：
+
+1. 交替模式**必须** `grep -E "A|B"`（或 Python 遍历）；`\|` 只在 GNU grep 可用，
+   toybox/BSD grep 下静默零匹配。已写入 `AGENTS.md` 约束第 9 条。
+2. "grep 无输出"仍然**不是**"不存在"的证据——只是理由从"判二进制"改为
+   "正则方言 + 工具实现差异"。存在性核对的首选永远是 Python（`verify_claims.py`
+   是模板）。
+3. `git log`/`grep`/`sed` 等外部命令在沙箱与真机可能不同实现；跨环境复现
+   "异常空输出"时，先打 `--version`。
+   （本次若直接采信 grep，就会制造一起"指控他人虚报"的假事故。）
