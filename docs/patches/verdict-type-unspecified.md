@@ -1,6 +1,10 @@
 # 待应用补丁：`verdict_type: null` → `"unspecified"`（2026-11-03）
 
-> **状态：未应用。** 原因：`core-rule/src/core_rule/models.py`、`loader.py`、`app-zeri/.../report.py`
+> **状态：已于 2026-11-03 应用（commit 见 git log `未归类不再兜底`）。**
+> 归属前提已满足：`models.py`/`loader.py`/`report.py` 的改动已由 2b3229b 固化，
+> 工作区当时为干净状态（`git status` 空），不存在并发写入歧义。
+>
+> 原记录（保留）：应用前 `core-rule/src/core_rule/models.py`、`loader.py`、`app-zeri/.../report.py`
 > 是三个会话都动过的热文件；本轮已完成取证（见 `concurrent-write-forensics-2026-11-02.md`），
 > 但**逐行归属仍不可证**。按"单写者 + 热文件先确认"原则，本补丁先落成文档，
 > 等热文件归属确认后一次性应用。
