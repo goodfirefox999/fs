@@ -26,9 +26,17 @@ import yaml
 
 from core_rule import default_registry
 from core_rule.loader import load_ruleset
+from core_symbol.registry import FACT_REGISTRY
 from core_time import CalendarConfig
 
 from .generator import generate
+from .lint_static import (
+    build_index,
+    check_coverage_gaps,
+    check_question_numbering,
+    dead_derive_functions,
+    unimported_modules,
+)
 from .report import render_generation_markdown, render_json, render_markdown
 from .schemas import PersonSpec, SiteSpec, TaskSpec
 from .verifier import verify
@@ -149,6 +157,7 @@ def cmd_verify(args: argparse.Namespace) -> int:
     site = _site_from_args(args)
     person = _person_from_args(args)
     task = TaskSpec(kind=args.task, nodes=(args.node,) if args.node else (), strictness=args.strictness)
+    registry = _registry_with_calibers(args)
     result = verify(
         dt=_parse_dt(args.course, cal.timezone),
         site=site,
@@ -156,12 +165,13 @@ def cmd_verify(args: argparse.Namespace) -> int:
         person=person,
         node=args.node,
         cal=cal,
-        registry=_registry_with_calibers(args),
+        registry=registry,
         schools=_schools(args),
         allow_unverified=args.allow_unverified,
         demo_veto=args.demo_veto,
     )
-    text = render_json(result) if args.json else render_markdown(result)
+    # 必须传 registry：否则报告无法统计必需集已考证条数，会退化为「? 条已考证」。
+    text = render_json(result) if args.json else render_markdown(result, registry=registry)
     if args.out:
         Path(args.out).write_text(text, encoding="utf-8")
         print(f"已写入 {args.out}", file=sys.stderr)
@@ -269,12 +279,35 @@ def cmd_rules_lint(args: argparse.Namespace) -> int:
         if rule.status != "定义级" and rule.severity == "记录":
             problems.append(f"{rule.rule_id}: severity=「记录」仅限定义级")
 
+    # 8b) C 第一批（2026-11-02）：判定类型 / 参考层 / 是否进结论强度
+    #     三条不变式：
+    #     ① layer=reference 必须 engine_eligible=false（"参考层"若还能计分就是自欺）；
+    #     ② engine_eligible=false 的规则**不得进必需集**（否则 publishable 永久 false）；
+    #     ③ verdict_type 未标注只计数（迁移期），不阻断。
+    required_ids = set(reg.required_rules.all_rule_ids())
+    for rule in rs.rules:
+        if rule.layer == "reference" and rule.engine_eligible:
+            problems.append(
+                f"{rule.rule_id}: layer=reference 但 engine_eligible=true"
+                "（参考层不得进入结论强度）"
+            )
+        if not rule.engine_eligible and rule.rule_id in required_ids:
+            problems.append(
+                f"{rule.rule_id}: engine_eligible=false 却进了必需集（publishable 将永久为 false）"
+            )
+
     # 9) 非阻断提示（warning，不影响返回码，ADR-0013）
     warnings: list[str] = []
     for rid in sorted(reg.required_rules.all_rule_ids()):
         wrule = rs.by_id.get(rid)
         if wrule is not None and wrule.status == "待考证":
             warnings.append(f"{rid} 待考证：补原文并签名后可解锁 publishable 进度")
+    unlabeled = [r.rule_id for r in rs.rules if r.verdict_type is None]
+    if unlabeled:
+        warnings.append(
+            f"verdict_type 未标注 {len(unlabeled)} 条（迁移期允许；"
+            "C 第二批批量迁移时逐条定 gate/vote/reference）"
+        )
     for rule in rs.rules:
         if rule.status != "定义级" and rule.citation.has_quote and not rule.citation.verified_by:
             warnings.append(
@@ -292,6 +325,11 @@ def cmd_rules_lint(args: argparse.Namespace) -> int:
 
     # 11) 状态跃迁提权（ADR-0014）：已考证必须有人类签名（loader 之外的 lint 纵深）
     problems.extend(_check_signatures(reg))
+
+    # 11b) 口径默认显式化 + 条件禁浮点（A 路线，2026-11-02）
+    #      两条都是"顺序/精度依赖"的入口，属确定性红线在静态层的落点。
+    problems.extend(_check_calibers())
+    problems.extend(_check_no_float_literals(reg))
 
     # 12) C21 静态层（warn 不 error——评审第十二轮约束 2；动态层见 tools/dead_rule_scan.py）
     warnings.extend(_c21_static_warnings(reg))  # QUESTIONS 路径用默认（真文件）
@@ -313,6 +351,25 @@ def cmd_rules_lint(args: argparse.Namespace) -> int:
     # 13) VERIFICATION_GUIDE 三·三联动重审的 lint 不变式（评审第十二/十三轮）：
     #     已考证规则引用 非authentic 书目 → 当轮重审清单（机器发现，不靠人记）
     groups["book_authenticity_review"] = _book_authenticity_review(reg)
+
+    # 14) 静态一致性（2026-11-02 死模块事故的制度化回应）：
+    #     a. core-symbol 下每个 derive_* 必须有定义文件之外的调用点；
+    #     b. 每个符号层模块必须被至少一个非测试文件 import；
+    #     c. coverage_gaps.yaml 的 implementation 声明必须与代码事实一致。
+    #     三类都不执行引擎，纯 AST + FACT_REGISTRY 比对，毫秒级。
+    repo_root = Path(__file__).resolve().parents[3]
+    index = build_index(repo_root)
+    problems.extend(dead_derive_functions(index))
+    problems.extend(unimported_modules(index))
+    problems.extend(
+        check_coverage_gaps(
+            Path("core-rule/config/coverage_gaps.yaml"),
+            fact_registry=[(s.name, s.provider) for s in FACT_REGISTRY],
+            index=index,
+        )
+    )
+    # d. 裁定记录编号唯一且连续（审计链）：并发追加会让同一 Q 号出现两份互斥裁定
+    problems.extend(check_question_numbering(Path("docs/QUESTIONS.md")))
     print(f"cap_applied: {json.dumps(groups['cap_applied'], ensure_ascii=False)}")
     print(f"unverified_progress: {json.dumps(groups['unverified_progress'], ensure_ascii=False)}")
     print(f"quote_unsigned: {json.dumps(groups['quote_unsigned'], ensure_ascii=False)}")
@@ -471,6 +528,68 @@ def _c21_static_warnings(reg, questions_path: Path | None = None) -> list[str]:
                 f"{rule.rule_id}: condition 仅引用用户输入（site/person），"
                 f"无候选派生因子（facts/time/course）——C21 静态层{suffix}"
             )
+    return out
+
+
+def _check_calibers(directory=None) -> list[str]:
+    """口径文件的「显式默认」不变式（A 路线，2026-11-02）。
+
+    为什么挡这个：``load_caliber_sets`` 在缺 ``default`` 时会退化成
+    ``next(iter(calibers))`` —— 取"YAML 里第一个写的"。这在当前文件上恰好正确，
+    但它让**书写顺序**变成语义，是典型的顺序依赖温床（改动键序、合并文件、
+    重排 YAML 都可能悄悄换掉默认口径，而报告只在回显里变一行）。
+    因此要求每个口径文件必须显式声明 ``default``；缺了就报错，不许靠"第一个"。
+
+    反证测试：``tests/unit/test_lint_invariants.py::test_caliber_default_required``。
+    """
+    from core_rule.calibers import DEFAULT_CALIBERS_DIR
+
+    root = Path(directory) if directory else DEFAULT_CALIBERS_DIR
+    out: list[str] = []
+    if not root.exists():
+        return out
+    for path in sorted(root.glob("*.yaml")):
+        import yaml as _yaml
+
+        data = _yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        if not isinstance(data, dict):
+            out.append(f"{path.name}: 顶层必须是映射")
+            continue
+        if "default" not in data or not data.get("default"):
+            out.append(
+                f"{path.name}: 口径组 {data.get('caliber_set', '?')} 未显式声明 default"
+                "（禁止依赖 YAML 首个键作为默认值——那是顺序依赖）"
+            )
+    return out
+
+
+def _check_no_float_literals(reg) -> list[str]:
+    """规则条件里禁止浮点字面量（A 路线：数值一律整数或整数比）。
+
+    理由不是"浮点不准"，而是**浮点让判定结果依赖求值顺序与累加路径**：
+    0.1+0.2 != 0.3 这类误差一旦进入 ``gte/between`` 边界，同一份输入换个
+    求值顺序就可能翻面。择日判定本质是"过线/不过线"，用整数或整数比
+    （如 3:2、60/40）表达比分值更稳，也更容易被人复核。
+
+    反证测试：``tests/unit/test_lint_invariants.py::test_float_literal_in_condition_rejected``。
+    """
+    out: list[str] = []
+
+    def walk(node: object, rule_id: str, path: str) -> None:
+        if isinstance(node, dict):
+            for key, value in node.items():
+                walk(value, rule_id, f"{path}/{key}")
+        elif isinstance(node, list):
+            for idx, value in enumerate(node):
+                walk(value, rule_id, f"{path}[{idx}]")
+        elif isinstance(node, float):
+            out.append(
+                f"{rule_id}: 条件中出现浮点字面量 {node!r}（{path}）——"
+                "数值比较请用整数或整数比"
+            )
+
+    for rule in reg.ruleset.rules:
+        walk(rule.condition, rule.rule_id, "condition")
     return out
 
 

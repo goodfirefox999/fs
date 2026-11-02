@@ -20,6 +20,7 @@ from .ganzhi import ZHI
 
 __all__ = [
     "MOUNTAINS_24",
+    "ZHI_MOUNTAIN_INDEX",
     "Mountain",
     "normalize_azimuth",
     "mountain_of_azimuth",
@@ -27,6 +28,7 @@ __all__ = [
     "facing_of",
     "FenJin",
     "fenjin_of_azimuth",
+    "jian_xiang",
     "angular_distance",
 ]
 
@@ -137,8 +139,17 @@ def fenjin_of_azimuth(az: float) -> FenJin:
 def jian_xiang(mountain: Mountain, threshold_deg: float = 3.0) -> str | None:
     """判断是否"兼"相邻山。
 
-    返回 ``None``（正针不兼）或相邻山名。罗盘惯例：每山 15°，正中 9° 为正针，
-    两侧各 3° 为兼，故默认阈值 3.0°。该阈值属争议项，必须由配置给出。
+    ``threshold_deg`` 是**正针带的一半宽度**：山心偏移 ``|offset| <= threshold`` 判正针（不兼），
+    超出则兼相邻山。故默认 3.0° 对应「正针带 6°（±3°）、两侧各 4.5° 为兼」。
+
+    该阈值属争议项，两说并存：
+
+    - 9°/3°/3° 说（正针带 9°、两侧各 3° 兼、余 3° 落空亡）→ 对应 ``threshold=4.5``；
+    - 6°/4.5°/4.5° 说（本条默认）→ ``threshold=3.0``。
+
+    两说在 ``|offset|`` 落在 3°–4.5° 时会给出不同结论（默认判「兼」，另一说判「正针」），
+    而兼向会改变山家地支、进而影响三合扶山等判定。**未裁定前不得改默认值**；
+    调用方（``schemas.build_context``）应按需显式传入，并使报告回显取值。
     """
     off = mountain.offset_deg
     if abs(off) <= threshold_deg:

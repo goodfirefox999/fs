@@ -39,6 +39,15 @@ from .ganzhi import (
     zhi_counts,
     zhi_relations_in,
 )
+from .huangdao import (
+    HEI_DAO_STARS,
+    HUANGDAO_STARS,
+    HUANG_DAO_STARS,
+    QINGLONG_START_ZHI,
+    huangdao_index,
+    huangdao_of,
+)
+from .jianchu import JIANCHU_STARS, jianchu_index, jianchu_of
 from .mountain import (
     MOUNTAINS_24,
     FenJin,
@@ -73,6 +82,7 @@ from .shensha import (
     unverified_fact,
     wuhuang_month,
     wuhuang_year,
+    wuhuang_year_of_date,
     yinfu_candidates,
     yuepo_azimuth,
     zhi_of_azimuth,

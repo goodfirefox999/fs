@@ -19,9 +19,12 @@ __all__ = [
     "SchoolSpec",
     "TaskKindSpec",
     "RequiredRuleSet",
+    "ConsensusSpec",
+    "ConsensusPolicy",
     "load_school_policy",
     "load_task_kinds",
     "load_required_rules",
+    "load_consensus_config",
     "SchoolPolicy.route",
 ]
 
@@ -30,9 +33,12 @@ __all__ = [
 class SchoolSpec:
     """一个派别的策略。
 
-    layer 字段（评审扩展版 spec §1）：
+    layer 字段（评审扩展版 spec §1 + Phase 9）：
     - reject：共享前置大煞层——触达即 rejected_dates，不进五派评分
     - scoring：五派评分层——并列输出，互不覆盖
+    - reference：参考层——**默认不入路由**，仅用户显式勾选时评估；
+      输出与五派并列但明确标注「参考层」，不参与 veto、不改 tier。
+      用于吉凶强度尚未考证的派别（如斗首），避免未考证口径进入发布判据。
     """
 
     name: str
@@ -40,7 +46,7 @@ class SchoolSpec:
     participates_in_veto: bool = True
     weight: float = 1.0
     description: str = ""
-    layer: str = "scoring"  # reject | scoring
+    layer: str = "scoring"  # reject | scoring | reference
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -97,8 +103,10 @@ def load_school_policy(path: Path | str) -> SchoolPolicy:
     for name, spec in (data["schools"] or {}).items():
         spec = spec or {}
         layer = str(spec.get("layer", "scoring"))
-        if layer not in ("reject", "scoring"):
-            raise DSLValidationError(f"{name} 的 layer 非法（reject|scoring）: {layer}")
+        if layer not in ("reject", "scoring", "reference"):
+            raise DSLValidationError(
+                f"{name} 的 layer 非法（reject|scoring|reference）: {layer}"
+            )
         schools[name] = SchoolSpec(
             name=name,
             enabled=bool(spec.get("enabled", True)),
@@ -238,3 +246,89 @@ def load_required_rules(path: Path | str) -> RequiredRuleSet:
         overrides=overrides,
         criteria=dict(data.get("admission_criteria") or {}),
     )
+
+
+@dataclass(frozen=True)
+class ConsensusSpec:
+    """共识阈值：**整数比** ``min_agree_num / min_agree_den``（ADR-0015）。
+
+    为什么是整数比而不是 0.6：
+    浮点阈值一旦出现在门禁路径上，下游就会顺手拿它去乘权重、算"综合分"。
+    整数比只能做交叉相乘比较，从类型上堵死加权求和。
+    """
+
+    min_agree_num: int = 3
+    min_agree_den: int = 5
+    description: str = ""
+
+    def reached(self, favorable: int, voters: int) -> bool:
+        """``favorable/voters >= num/den``，全程整数运算。
+
+        ``voters == 0`` 时返回 False —— 无人表态不构成共识，
+        由调用方输出 ``insufficient`` 语义，不得默认通过。
+        """
+        if voters <= 0 or self.min_agree_den <= 0:
+            return False
+        return favorable * self.min_agree_den >= self.min_agree_num * voters
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "min_agree_num": self.min_agree_num,
+            "min_agree_den": self.min_agree_den,
+            "description": self.description,
+        }
+
+
+@dataclass(frozen=True)
+class ConsensusPolicy:
+    """共识口径：缺省 + 按事项覆写（覆写为空是有意的，见 consensus.yaml 注释）。"""
+
+    default: ConsensusSpec = field(default_factory=ConsensusSpec)
+    overrides: dict[str, ConsensusSpec] = field(default_factory=dict)
+
+    def for_task(self, task_kind: str | None) -> ConsensusSpec:
+        if task_kind and task_kind in self.overrides:
+            return self.overrides[task_kind]
+        return self.default
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "default": self.default.to_dict(),
+            "overrides": {k: v.to_dict() for k, v in self.overrides.items()},
+        }
+
+
+def _load_consensus_spec(raw: dict[str, Any], where: str) -> ConsensusSpec:
+    num = raw.get("min_agree_num", 3)
+    den = raw.get("min_agree_den", 5)
+    # bool 是 int 的子类，必须显式排除，否则 True 会被当成 1
+    for field_name, value in (("min_agree_num", num), ("min_agree_den", den)):
+        if isinstance(value, bool) or not isinstance(value, int):
+            raise DSLValidationError(
+                f"{where} 的 {field_name} 必须是整数（禁止浮点阈值）: {value!r}"
+            )
+    if num <= 0 or den <= 0:
+        raise DSLValidationError(f"{where} 的阈值必须为正: {num}/{den}")
+    if num > den:
+        raise DSLValidationError(f"{where} 的阈值不得大于 1: {num}/{den}")
+    return ConsensusSpec(
+        min_agree_num=num,
+        min_agree_den=den,
+        description=str(raw.get("description", "")),
+    )
+
+
+def load_consensus_config(path: Path | str) -> ConsensusPolicy:
+    """加载 ``consensus.yaml``；文件缺失时退回缺省 3/5（不静默放行，只退回缺省）。"""
+    p = Path(path)
+    if not p.exists():
+        return ConsensusPolicy()
+    data = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
+    if not isinstance(data, dict):
+        raise DSLValidationError(f"{p}: 顶层必须是映射")
+    default = _load_consensus_spec(data.get("default") or {}, f"{p}: default")
+    overrides: dict[str, ConsensusSpec] = {}
+    for task_kind, spec in (data.get("overrides") or {}).items():
+        overrides[task_kind] = _load_consensus_spec(spec or {}, f"{p}: overrides.{task_kind}")
+    return ConsensusPolicy(default=default, overrides=overrides)
+

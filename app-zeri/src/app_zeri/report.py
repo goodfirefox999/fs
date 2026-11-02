@@ -26,6 +26,7 @@ __all__ = [
     "render_generation_markdown",
     "render_json",
     "render_manifest_block",
+    "zero_voter_notice",
 ]
 
 DISCLAIMER = (
@@ -39,8 +40,14 @@ def _fmt_citation(citation: dict[str, Any]) -> str:
     source = citation.get("source") or "（未载出处）"
     quote = citation.get("quote")
     juan = citation.get("juan")
+    pian = citation.get("pian")
     if quote:
-        loc = f"卷{juan}" if juan else "卷次待补"
+        parts = []
+        if juan:
+            parts.append(f"卷{juan}")
+        if pian:
+            parts.append(f"篇{pian}")
+        loc = "·".join(parts) if parts else "卷次待补"
         return f"{source}（{loc}）：「{quote}」"
     return f"{source}（**原文待补**，未参与正式判定）"
 
@@ -64,7 +71,8 @@ def _school_block(res: SchoolResult) -> list[str]:
     lines.append(f"- 三态结论：**{res.state}**")
     lines.append(
         f"- 分层计数：硬伤 {c['hard_fail_count']} / 强忌 {c['strong_avoid_count']} / "
-        f"提示 {c['note_count']} / 正向 {c['positive_count']} / 未知 {c['unknown_count']}"
+        f"提示 {c['note_count']} / 正向 {c['positive_count']} / 未知 {c['unknown_count']} / "
+        f"参考 {c.get('reference_count', 0)}"
     )
     lines.append(f"- 评估规则数：{res.rules_evaluated}")
     if res.rank_score is not None:
@@ -131,6 +139,20 @@ def _school_block(res: SchoolResult) -> list[str]:
             lines.append(f"- `{j.rule_id}`：{j.hit_detail}")
         lines.append("")
 
+    # C 第一批：参考层命中（engine_eligible=false）——评估了、也渲染，但**不进任何强度桶**
+    if res.reference:
+        lines.append(
+            "**参考层（`engine_eligible=false`：口径未裁定/无原典支撑，"
+            "**不进否决、不计分、不影响 tier**）**"
+        )
+        lines.append("")
+        lines.extend(_judgment_rows(res.reference))
+        lines.append("")
+        for j in res.reference:
+            reason = j.ineligible_reason or "未注明"
+            lines.append(f"- `{j.rule_id}`（{reason}）：{j.hit_detail}")
+        lines.append("")
+
     if res.positives:
         lines.append("**正向证据**")
         lines.append("")
@@ -158,6 +180,168 @@ def _school_block(res: SchoolResult) -> list[str]:
             )
         lines.append("")
     return lines
+
+
+def _cosmos_block(facts: dict[str, Any]) -> list[str]:
+    """盘面事实（值宿/紫白/吉神）。**只陈述事实，不下吉凶判断。**
+
+    为什么单独成节：这些量在「无规则命中」时也应当可见（用户查黄历首先看值宿与
+    紫白入中），但它们本身不是结论；把结论与盘面混在一张表里，等于用事实的确定性
+    给未考证的断言背书。
+    """
+    lines: list[str] = []
+    missing = lambda v: "—" if v is None else v  # noqa: E731
+
+    xiu = facts.get("xiu") or {}
+    if xiu.get("day"):
+        check = "通过" if xiu.get("weekday_consistent") else "**不通过（表疑有误）**"
+        lines.append(
+            f"- 值日星宿：**{xiu.get('full_name')}**（七政 {xiu.get('qizheng')}，第 {xiu.get('yuan')} 元；"
+            f"星期恒等式校验：{check}）"
+        )
+    else:
+        lines.append("- 值日星宿：—（缺用事日）")
+
+    zb = facts.get("zibai") or {}
+    centers = []
+    for label, key in (("年", "year"), ("月", "month"), ("日", "day"), ("时", "hour")):
+        plate = zb.get(key) or {}
+        centers.append(f"{label} {missing(plate.get('center'))}")
+    fly = (zb.get("caliber") or {}).get("fly", "—")
+    lines.append(f"- 紫白入中：{' ｜ '.join(centers)}（日/时盘飞布口径：`{fly}`）")
+
+    hits = []
+    for label, key in (("年", "year"), ("月", "month"), ("日", "day"), ("时", "hour")):
+        plate = zb.get(key) or {}
+        hits.append(f"{label} {'是' if plate.get('wuhuang_hit_mountain') else '否'}")
+    lines.append(f"- 五黄到坐山：{' ｜ '.join(hits)}")
+
+    js = facts.get("jishen") or {}
+    td = js.get("tian_de") or {}
+    yd = js.get("yue_de") or {}
+    ts = js.get("tian_she") or {}
+    if td:
+        kind = "干" if td.get("kind") == "gan" else "卦宫"
+        lines.append(
+            f"- 天德：本月在 **{missing(td.get('target'))}**（{kind}）→ 今日"
+            f"{'值' if td.get('hit') else '不值'}"
+            + (f"（卦位口径 `{td.get('caliber')}`，备选见口径回显）" if td.get("kind") == "gong" else "")
+        )
+    if yd:
+        lines.append(
+            f"- 月德：**{missing(yd.get('gan'))}** → 今日{'值' if yd.get('hit') else '不值'}；"
+            f"月德合 **{missing(yd.get('he_gan'))}** → 今日{'值' if yd.get('he_hit') else '不值'}"
+        )
+    if ts:
+        lines.append(
+            f"- 天赦：{missing(ts.get('season'))}季 **{missing(ts.get('day_ganzhi'))}** 日 → 今日"
+            f"{'值' if ts.get('hit') else '不值'}"
+        )
+    lines.append("")
+    lines.append(
+        "> 本节每条都是**事实或算术**（值何宿、何星入中、本月德在何干），不含吉凶。"
+        "「值德是否即吉」「凶宿是否即忌」属断言级规则，见下方派别判定明细；"
+        "结构/盘面确定 ≠ 结论确定。"
+    )
+    return lines
+
+
+def _consensus_block(fso: dict[str, Any]) -> list[str]:
+    """共识度渲染：只给整数比与名单，**不给浮点分值**（ADR-0015）。
+
+    「几成派别同向」是描述统计，不是吉凶概率；分母是**实际表态的派数**，
+    闸门层/参考层/沉默派一律列在未投票名单里并写明原因。
+    """
+    detail = fso.get("_consensus_detail")
+    if not isinstance(detail, dict):
+        return ["- 本次评估未产出共识明细（旧版快照或单派评估）。"]
+    threshold = detail.get("threshold") or {}
+    num = threshold.get("min_agree_num", "?")
+    den = threshold.get("min_agree_den", "?")
+    ratio = detail.get("consensus_ratio", "0/0")
+    votes = detail.get("votes") or {}
+    favorable = votes.get("favorable") or []
+    unfavorable = votes.get("unfavorable") or []
+    voters = detail.get("voters") or []
+    non_voters = detail.get("non_voters") or []
+    gate_veto = detail.get("gate_veto_schools") or []
+
+    lines = [
+        f"**{ratio} 同向**（阈值 {num}/{den}，事项：{detail.get('task_kind') or '未指定'}）",
+        "",
+        f"- 结论态：`{detail.get('consensus')}`",
+        f"- 参与投票（{len(voters)} 派）：{'、'.join(voters) if voters else '无'}",
+        f"- 同向：{'、'.join(favorable) if favorable else '无'}",
+        f"- 反对：{'、'.join(unfavorable) if unfavorable else '无'}",
+    ]
+    if gate_veto:
+        # 闸门否决会与"全票同向"同时出现（否决不参与计票），必须当场说清谁说了算，
+        # 否则读者会看到"4/4 同向却是不可用"而以为程序自相矛盾。
+        lines.insert(
+            2,
+            f"- **闸门否决（{'、'.join(gate_veto)}，不计票，直接否决）**：本候选不可用；"
+            "下列比值仅记录投票派内部倾向，不构成可用性依据",
+        )
+    if non_voters:
+        lines.append("- 未投票：")
+        for nv in non_voters:
+            lines.append(
+                f"  - `{nv.get('school')}`（{nv.get('layer')}）："
+                f"{_non_voter_reason(nv.get('reason'))}"
+            )
+    else:
+        lines.append("- 未投票：无（全部派别均已表态）")
+    lines.append("")
+    lines.append(
+        "> 该比值是「几成派别同向」的描述统计，**不是吉凶概率**；"
+        "分母只数实际表态的派，沉默派与闸门/参考层不进分母。"
+    )
+    return lines
+
+
+def zero_voter_notice(ev: Evaluation) -> list[str]:
+    """共识比无意义时的**强制提示**（渲染在结论第一行之后）。
+
+    为什么必须是"第一行"而不是分节说明
+    ----------------------------------
+    全仓 0 条已考证规则，生产路径的命中全进 ``demo_hits``，于是投票派可能一个都没有
+    （0/0）。这不是 bug，是**内容未考证**的真实状态。但它有个恶性读法：
+    读者看到"4/4 同向"会以为四派都同意，而真实情况可能是"四派都没表态，且闸门已否决"。
+
+    故此处只做一件事：把"本次没有已考证规则投票"这句话放在结论紧后面，
+    先说不构成结论，再说比值为多少、谁否决的。
+    """
+    detail = (ev.manifest.get("five_school_output") or {}).get("_consensus_detail") or {}
+    voters = detail.get("voters") or []
+    ratio = detail.get("consensus_ratio") or "0/0"
+    gate_veto = detail.get("gate_veto_schools") or []
+
+    # 投票派非空也可能全是"演示命中"：必须先排除，否则会误报"有票"。
+    verified_votes = sum(
+        1
+        for res in ev.per_school.values()
+        for j in (*res.vetoes, *res.cautions, *res.positives)
+        if j.participation == "判定"
+    )
+    if voters and verified_votes:
+        return []
+
+    lines = ["", "> ⛔ **本次评估无参与投票的已考证规则，共识比为 "
+             f"{ratio}。以下内容仅为事实层与参考层展示，不构成择日结论。**"]
+    if gate_veto:
+        lines.append(
+            f"> ⛔ 本候选被闸门否决（{'、'.join(gate_veto)}），投票派 0 派参与，比值无意义。"
+        )
+    return lines
+
+
+def _non_voter_reason(reason: str | None) -> str:
+    return {
+        "layer_reject": "闸门层，只否决不计票",
+        "layer_reference": "参考层，不参与仲裁",
+        "no_verdict": "本轮无判定（沉默派，不进分母）",
+        "demo_only_not_voting": "仅有未考证规则的演示命中，不作为票（有判断、无票权）",
+    }.get(reason or "", reason or "未说明")
 
 
 def _reason_label(reason: str | None) -> str:
@@ -235,6 +419,8 @@ def render_markdown(result: VerifyResult, *, registry: RuleRegistry | None = Non
         f"## 结论：{verdict_label}　推荐等级：**{ev.tier}**　"
         f"可发布：**{'是' if ev.publishable else '否'}**"
     )
+    # 0/0 无票提示紧贴结论：先说"不构成结论"，再说比值与闸门否决（顺序不可颠倒）
+    lines.extend(zero_voter_notice(ev))
     lines.append("")
     # GAP-TASKKIND-EMPTY 渲染（评审第十四轮产物四）：无事项专属规则的用户可见提示——
     # 通用规则（task_kinds:[]）恒覆盖一切事项，故判据是"显式含本事项的专属规则数==0"
@@ -409,6 +595,11 @@ def render_markdown(result: VerifyResult, *, registry: RuleRegistry | None = Non
         lines.append("- 无结构判定命中。")
         lines.append("")
 
+    lines.append("## 盘面事实（值宿 / 紫白 / 吉神，**非吉凶**）")
+    lines.append("")
+    lines.extend(_cosmos_block(result.context.get("facts") or {}))
+    lines.append("")
+
     lines.append("## 派别判定明细（并列，不合并分数）")
     lines.append("")
     for res in ev.per_school.values():
@@ -426,6 +617,11 @@ def render_markdown(result: VerifyResult, *, registry: RuleRegistry | None = Non
                 lines.append(f"  - 各派严重度：{json.dumps(c['severities'], ensure_ascii=False)}")
     else:
         lines.append("- 本候选未检测到派别冲突。")
+    lines.append("")
+
+    lines.append("## 共识度（整数比，**非总分**）")
+    lines.append("")
+    lines.extend(_consensus_block(ev.manifest.get("five_school_output") or {}))
     lines.append("")
 
     lines.append("## 未知与证据缺口（按原因分类）")

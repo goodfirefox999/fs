@@ -315,6 +315,21 @@ def _strip_hits(ctx: dict) -> dict:
                 "yuepo": {"hit_mountain": False, "hit_facing": False},
                 "wuhuang": {"year": {"hit_mountain": False, "hit_facing": False}},
                 "sili_sijue": {"has_sili": False, "has_sijue": False, "is_hit": False, "hits": []},
+                # Phase 11 新增事实面：不neutralize 就会在本 fixture 里留下命中，
+                # 使「无命中 → 可用」的断言名不副实（凶宿/strict 会升级为否决）。
+                # 值宿无中立值（28 宿非吉即凶，标签出自《玉匣记》两分），故用哨兵关闭两条规则。
+                "xiu": {"day": "__neutral__"},
+                "zibai": {
+                    "year": {"shan_star": 5, "wuhuang_hit_mountain": False},
+                    "month": {"wuhuang_hit_mountain": False},
+                    "day": {"wuhuang_hit_mountain": False},
+                    "hour": {"wuhuang_hit_mountain": False},
+                },
+                "jishen": {
+                    "tian_de": {"hit": False},
+                    "yue_de": {"hit": False, "he_hit": False},
+                    "tian_she": {"hit": False},
+                },
             }
         },
     )

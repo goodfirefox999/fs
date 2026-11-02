@@ -683,7 +683,15 @@ class TestAdr0014EvidenceCap:
         assert set(groups.get("coverage_gaps", [])) == {
             "GAP-TAISUI-FACING", "GAP-TASKKIND-EMPTY",
             "GAP-QILI-NOTIMPLEMENTED", "GAP-SIGNATURE-PERMISSION",
-        }, "覆盖缺口机器行（4 条：硬禁/零专属事项/起例未实现/签名权限）"
+            # 2026-11-02 按两份择日派别清单逐项对照后新增的流派覆盖差额
+            "GAP-WUTU", "GAP-QIMEN-LIUREN", "GAP-HELUO",
+            # Phase 11：紫白四盘已接入，原「紫白日/时未实现」条目闭环为「日盘起元口径未裁定」；
+            # 另新增值宿时禽与逐事项宜忌的缺口（值日宿已实现，时宿未实现）
+            "GAP-ZIBAI-DAYYUAN", "GAP-XIU-SHISHI",
+        }, (
+            "覆盖缺口机器行（9 条：硬禁/零专属事项/起例未实现/签名权限 + "
+            "乌兔/奇门六壬/河洛 + 紫白日盘起元/值宿时禽）"
+        )
         assert groups.get("book_authenticity_review", []) == [], (
             "已考证×非authentic 书目=0（当前无已考证规则）——出现条目即触发 GUIDE 三·三当轮重审"
         )

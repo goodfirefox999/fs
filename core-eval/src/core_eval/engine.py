@@ -247,6 +247,12 @@ class Judgment:
     doubt: bool = False
     #: ADR-0014 决策 1：声明严重度（severity 字段存生效值；审计链要求声明/生效双显示）
     declared_severity: str | None = None
+    #: C 第一批（2026-11-02）：判定类型 / 层 / 是否允许进结论强度（审计链要能回答
+    #: "这条为什么没影响结论"）
+    verdict_type: str | None = None
+    layer: str | None = None
+    engine_eligible: bool = True
+    ineligible_reason: str | None = None
 
     @property
     def is_demo(self) -> bool:
@@ -296,6 +302,10 @@ class Judgment:
             "source_status": self.source_status,
             "doubt": self.doubt,
             "declared_severity": self.declared_severity,
+            "verdict_type": self.verdict_type,
+            "layer": self.layer,
+            "engine_eligible": self.engine_eligible,
+            "ineligible_reason": self.ineligible_reason,
             "warnings": list(self.warnings),
             "score_weight": self.score_weight,
         }
@@ -318,6 +328,9 @@ class SchoolResult:
     controversial: list[Judgment] = field(default_factory=list)
     #: ADR-0014 决策 3：演示命中（demo_veto=False 时只渲染不计入；True 时按声明严重度路由）
     demo_hits: list[Judgment] = field(default_factory=list)
+    #: C 第一批：参考层命中（engine_eligible=false）——评估但**不进任何强度桶**，
+    #: 与 demo_hits 的区别是"这条规则本身就不该影响结论"，而非"证据不足"。
+    reference: list[Judgment] = field(default_factory=list)
     rank_score: float | None = None
     rules_evaluated: int = 0
     #: 该派看到的输入事实哈希（用于验证"各派 fact 完全一致"）
@@ -341,6 +354,7 @@ class SchoolResult:
             # ADR-0014：存疑/演示命中单列，不入 strong_avoid（决策 0/3）
             "controversial_count": len(self.controversial),
             "demo_hit_count": len(self.demo_hits),
+            "reference_count": len(self.reference),
         }
 
     def to_dict(self) -> dict[str, Any]:
@@ -359,6 +373,7 @@ class SchoolResult:
             "unknowns": [j.to_dict() for j in self.unknowns],
             "controversial": [j.to_dict() for j in self.controversial],
             "demo_hits": [j.to_dict() for j in self.demo_hits],
+            "reference": [j.to_dict() for j in self.reference],
         }
 
 
@@ -573,6 +588,10 @@ def _make_judgment(
         source_status=_SOURCE_STATUS.get(rule.status),
         doubt=doubt,
         declared_severity=declared_severity if declared_severity is not None else rule.severity,
+        verdict_type=rule.verdict_type,
+        layer=rule.layer,
+        engine_eligible=rule.engine_eligible,
+        ineligible_reason=rule.ineligible_reason,
     )
 
 
@@ -600,6 +619,8 @@ def _evaluate_school(
     controversial: list[Judgment] = []
     # ADR-0014 决策 3：demo_veto=False 时演示命中只渲染不计入
     demo_hits: list[Judgment] = []
+    # C 第一批：engine_eligible=false 的命中（只渲染，不进任何强度桶）
+    reference: list[Judgment] = []
     evaluated = 0
 
     strict = cfg.strictness == STRICTNESS_STRICT
@@ -700,6 +721,12 @@ def _evaluate_school(
             controversial.append(judgment)
             continue
 
+        # C 第一批：规则显式声明不进结论强度（如日盘起元未裁定、值宿吉凶只有粗标签）
+        # —— 仍评估、仍渲染，但不进 vetoes/cautions/positives，不影响 state/tier/publishable。
+        if not rule.engine_eligible:
+            reference.append(judgment)
+            continue
+
         # ADR-0014 决策 3（三态）：demo_veto=False 时演示命中只渲染不路由
         if is_demo and not cfg.demo_veto:
             demo_hits.append(judgment)
@@ -751,6 +778,7 @@ def _evaluate_school(
         structural=structural,
         controversial=controversial,
         demo_hits=demo_hits,
+        reference=reference,
         rank_score=rank_score,
         rules_evaluated=evaluated,
         fact_hash=fact_hash,
@@ -1042,7 +1070,11 @@ def evaluate(
         tier = TIER_REJECTED
     elif strong_avoid > 0 or conflict_count > 0 or unknown_count > 0:
         tier = TIER_NEEDS_REVIEW
-    elif positive >= 2 or (positive >= 1 and _total_rank(per_school) >= 1.0):
+    elif positive >= 2:
+        # ADR-0015：原条件是 ``positive >= 2 or (positive >= 1 and _total_rank >= 1.0)``，
+        # 其中 _total_rank 是各派 rank_score 的**跨派均值**。规则权重上限 1.0、
+        # 分母为派数，该分支在 positive>=1 时恒不能单独成立（均值 <= 1/派数 <= 1），
+        # 因此去掉它不改变任何可达分布，只去掉了一个会被误当"综合分"的聚合量。
         tier = TIER_PREFERRED
     else:
         tier = TIER_ACCEPTABLE
@@ -1104,26 +1136,78 @@ def evaluate(
                 tendencies[school_name],
                 conflicts_fso,
             )
-    tendency_list = [
-        (name, d["overall_tendency"]) for name, d in five_school_output.items()
-        if d["overall_tendency"] in ("favorable", "unfavorable")
+    # conflicts_fso 已在上方按 tendencies 成对生成；此处不再重复追加，
+    # 否则 manifest._conflicts / scored_dates.conflicts 会出现同一对派别两次。
+    #
+    # ---- 共识：整数比 + 投票名单（ADR-0015）----
+    # 三条约束，逐条对应 spec §0：
+    #   1. 闸门层（layer=reject）**不计票**，只做否决。它一否决，共识直接 unfavorable，
+    #      不参与"几成同向"的分母——否则会出现"被否决却很共识"的荒谬条目。
+    #   2. 参考层（layer=reference，如斗首）**不计票**，但保留其倾向用于冲突展示。
+    #   3. 沉默派（scoring 层但本轮无任何判定）**不进分母**：让沉默派占分母，
+    #      等于把"没意见"稀释成"反对"；替它补一张中立票同样是伪造。
+    non_voters: list[dict[str, Any]] = []
+    voters: list[str] = []
+    for name in per_school:
+        layer = registry.policy.schools[name].layer
+        if layer != "scoring":
+            non_voters.append(
+                {
+                    "school": name,
+                    "layer": layer,
+                    "reason": "layer_reject" if layer == "reject" else "layer_reference",
+                }
+            )
+            continue
+        res = per_school[name]
+        if not (res.vetoes or res.cautions or res.positives):
+            # 「只有演示命中」与「根本没判定」是两种不同的未投票，不能混成一个 no_verdict：
+            #   - demo_only_not_voting：有规则命中，但全部未考证，不是票（有判断、无票权）；
+            #   - no_verdict：本轮一条规则都没命中（沉默）。
+            # 混同会让报告把"有意见但不够格"说成"没意见"，也会掩盖考证进度。
+            reason = "demo_only_not_voting" if res.demo_hits else "no_verdict"
+            non_voters.append({"school": name, "layer": layer, "reason": reason})
+            continue
+        voters.append(name)
+
+    favorable_schools = [n for n in voters if tendencies[n] == "favorable"]
+    unfavorable_schools = [n for n in voters if tendencies[n] == "unfavorable"]
+    gate_veto_schools = [
+        n
+        for n in per_school
+        if registry.policy.schools[n].layer == "reject" and per_school[n].vetoes
     ]
-    for i, (s1, t1) in enumerate(tendency_list):
-        for s2, t2 in tendency_list[i+1:]:
-            if (t1 == "favorable" and t2 == "unfavorable") or (t1 == "unfavorable" and t2 == "favorable"):
-                conflicts_fso.append({"schools": [s1, s2], "issue": f"{s1}={t1} vs {s2}={t2}"})
-    favorable_count = sum(1 for _, t in tendency_list if t == "favorable")
-    unfavorable_count = sum(1 for _, t in tendency_list if t == "unfavorable")
-    if unfavorable_count > 0:
+    agree_spec = registry.consensus.for_task(cfg.task_kind)
+    voter_count = len(voters)
+    if gate_veto_schools or unfavorable_schools:
         consensus = "unfavorable"
-    elif favorable_count >= 3:
+    elif agree_spec.reached(len(favorable_schools), voter_count):
         consensus = "favorable"
-    elif favorable_count > 0:
+    elif favorable_schools:
         consensus = "mixed"
     else:
         consensus = "neutral"
+
     five_school_output["_consensus"] = consensus
     five_school_output["_conflicts"] = conflicts_fso
+    five_school_output["_consensus_detail"] = {
+        "consensus": consensus,
+        # 整数比字符串是唯一对外形态：不提供浮点字段，避免下游对它加权求平均
+        "consensus_ratio": f"{len(favorable_schools)}/{voter_count}",
+        "votes": {
+            "favorable": favorable_schools,
+            "unfavorable": unfavorable_schools,
+        },
+        "voters": voters,
+        "non_voters": non_voters,
+        "gate_veto_schools": gate_veto_schools,
+        "threshold": agree_spec.to_dict(),
+        "task_kind": cfg.task_kind,
+        "convention": (
+            "favorable/voters >= min_agree_num/min_agree_den（整数交叉相乘）；"
+            "闸门层与参考层不计票，沉默派不进分母"
+        ),
+    }
 
     manifest = {
         "input_hash": input_hash,
@@ -1177,9 +1261,5 @@ def _convention_hash(ctx: dict[str, Any]) -> str:
     )
 
 
-def _total_rank(per_school: dict[str, SchoolResult]) -> float:
-    scores = [r.rank_score for r in per_school.values() if r.rank_score is not None]
-    return sum(scores) / len(scores) if scores else 0.0
-
-
+#: ``SEVERITIES`` 在此模块仅用于导入期校验（保留引用，避免被 lint 判为未使用）
 _ = SEVERITIES

@@ -210,8 +210,9 @@ class TestRuleSetApi:
 
     def test_select_by_school(self, registry) -> None:
         picked = registry.ruleset.select(schools=["doushou"], include_unverified=True)
-        assert len(picked) == 1
-        assert picked[0].school == "doushou"
+        # Phase 9：斗首从 1 条占位扩为 6 条（化气 + 三元/三武/破军/廉贞/得位）
+        assert len(picked) == 6
+        assert all(r.school == "doushou" for r in picked)
 
     def test_select_excludes_deprecated(self, registry) -> None:
         # 当前库无弃用规则，但接口必须存在且可用

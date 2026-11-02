@@ -25,6 +25,7 @@ from typing import Any, Literal
 
 from .ganzhi import GAN, SANHE, ZHI
 from .mountain import MOUNTAINS_24, Mountain, angular_distance
+from .zibai import FLY_ORDER, PALACE_MOUNTAINS, year_center_star, zibai_year_of
 
 __all__ = [
     "FactStatus",
@@ -34,6 +35,7 @@ __all__ = [
     "suipo_azimuth",
     "yuepo_azimuth",
     "wuhuang_year",
+    "wuhuang_year_of_date",
     "wuhuang_month",
     "sili_sijue",
     "yinfu_candidates",
@@ -97,6 +99,25 @@ def sansha_of(zhi: str, basis: str = "year", caliber: str = "direction_group") -
     - ``direction_group``（默认）：只判方位组三山，``by_name`` 为 ``None``，
       状态标 ``有争议``（粗化版不得冒充精确）。
     - ``named_sansha``：给出劫/灾/岁对应，状态标 ``待考证``（需原文确认顺序）。
+
+    **为什么不提供"宫级命中"（不要补这个"遗漏"）**——QUESTION Q-020
+    ------------------------------------------------------------
+    五黄可以按宫判（一宫三山，兑=庚酉辛），三煞**不能**，因为三山并起来不是一个宫：
+
+    ==========  =====================  ==========================
+    三山        各占 15°               说明
+    ==========  =====================  ==========================
+    亥          322.5° – 337.5°
+    （空档）     337.5° – 352.5°       ← 正是**壬山**，不在三山之列
+    子          352.5° – 7.5°
+    丑          22.5°  – 37.5°
+    ==========  =====================  ==========================
+
+    于是两条路都错：按八宫并集（坎+乾+艮）会扩到 9 山，明显过宽；
+    按"三山精确匹配"则壬山不算——与"煞北"的方位直觉不符。**这个不自洽属概念层，
+    不是实现遗漏**。故只按三山判定，不做宫级扩展；若人类裁定三煞覆盖整方（含壬），
+    应按 90° 扇区重判并一并纳入乾、艮两山，而不是给本函数加一个 ``hit_palace``。
+    守护测试：``test_paipan_fixed.py::TestSanshaScope::test_ren_mountain_is_not_sansha_hit``。
     """
     group = _sanhe_group(zhi)
     mountains = _SANSHA_TABLE[group]
@@ -186,47 +207,56 @@ def yuepo_azimuth(month_zhi: str) -> FactValue:
 # --------------------------------------------------------------------------- #
 # 五黄（紫白）
 # --------------------------------------------------------------------------- #
-#: 九宫飞泊顺序（自中宫顺飞）：中、乾、兑、艮、离、坎、坤、震、巽
-_FLY_ORDER: tuple[tuple[str, float | None], ...] = (
-    ("中", None),
-    ("乾", 315.0),
-    ("兑", 270.0),
-    ("艮", 45.0),
-    ("离", 180.0),
-    ("坎", 0.0),
-    ("坤", 225.0),
-    ("震", 90.0),
-    ("巽", 135.0),
-)
+# 九宫飞泊顺序、年入中星、紫白年换年判定**统一取自 ``zibai``**（单一来源）。
+# 曾在此处复制过一份 _FLY_ORDER + _year_center_star，与 zibai.py 各写一遍——
+# 两份实现一旦漂移，同一个盘上的「年紫白」与「年五黄」就会给出互相矛盾的方位，
+# 而五黄到山是择日里最常被引用的断语，方位相反等于结论相反。故此处只做委托。
 
 
-def _year_center_star(year: int) -> int:
-    """年入中星（1-9）。基准：1864 年一白入中，逐年逆行。"""
-    return (1864 - year) % 9 + 1
+def wuhuang_year(zibai_year: int) -> FactValue:
+    """年五黄所临方位。参数为**紫白年**（立春换年），不是公历年。
 
-
-def wuhuang_year(year: int) -> FactValue:
-    """年五黄所临方位。"""
-    center = _year_center_star(year)
+    为什么强调：紫白以立春换年，而立春在 2 月 3-5 日之间。若传公历年，
+    每年 1 月 1 日至立春之间的日课会取到下一年（尚未到）的入中星，
+    五黄方位与 ``facts.zibai.year`` 恰好相差两位五（如 2027-01-15：
+    年紫白仍属 2026 一白入中、五黄在离，而按公历年 2027 九紫入中、五黄在坎——
+    一南一北，结论完全相反）。调用点请用 :func:`wuhuang_year_of_date`。
+    """
+    center = year_center_star(zibai_year)
     offset = (5 - center) % 9
-    palace, az = _FLY_ORDER[offset]
+    palace, az = FLY_ORDER[offset]
     return FactValue(
         name="wuhuang.year",
         value={
+            "zibai_year": zibai_year,
             "center_star": center,
             "palace": palace,
             "azimuth": az,
+            # 宫心所在之地支山（保持既有语义：**山**级精确命中）
             "mountain": None
             if az is None
             else MOUNTAINS_24[int(round(az / 15.0)) % 24],
+            # 五黄到宫：一宫三山，宫级命中才是五黄的本来粒度
+            "palace_mountains": list(PALACE_MOUNTAINS.get(palace, ())),
         },
         status="待考证",
         note=(
-            "年五黄按紫白年飞星入中逆推（1864 一白入中基准）。"
-            "入中基准年、顺飞/逆飞、五黄是否随年支而非公历年切换，均属争议项，需配置化。"
+            "年五黄按紫白年飞星入中逆推（1864 一白入中基准，立春换年）。"
+            "入中基准年、顺飞/逆飞、五黄是否忌向，均属争议项，需配置化。"
+            "命中粒度有二：mountain 级（仅宫心那一山）与 palace 级（一宫三山，见 palace_mountains）。"
         ),
         citation_hint="紫白飞星类公版通书（原文待补）",
     )
+
+
+def wuhuang_year_of_date(local_date: date, year_zhi: str) -> FactValue:
+    """按**日课所在日期 + 年支**取年五黄，自动做立春换年（紫白年）。
+
+    这是唯一推荐的入口：紫白年由 :func:`core_symbol.zibai.zibai_year_of` 判定
+    （传入年支与公历年不符即说明尚未立春），与 ``facts.zibai.year`` 同源。
+    """
+    return wuhuang_year(zibai_year_of(local_date, year_zhi))
+
 
 
 def wuhuang_month(year: int, month_zhi: str) -> FactValue:

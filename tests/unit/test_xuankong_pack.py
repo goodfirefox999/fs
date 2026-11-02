@@ -142,15 +142,15 @@ class TestDayun:
     @pytest.mark.parametrize(
         "year,expected_yun",
         [
-            (1984, 1), (2001, 1),          # 一运 1984-2001（18 年）
-            (2002, 2), (2025, 2),          # 二运 2002-2025（24 年）
-            (2026, 3), (2027, 3), (2049, 3),  # 三运 2026-2049
-            (2050, 4), (2073, 4),          # 四运 2050-2073
-            (2074, 6), (2094, 6),          # 六运 2074-2094（21 年）
-            (2095, 7), (2115, 7),          # 七运 2095-2115
-            (2116, 8), (2136, 8),          # 八运 2116-2136
-            (2137, 9), (2163, 9),          # 九运 2137-2163（27 年）
-            (2164, 1),                     # 新周期 2164-2181
+            (1864, 1), (1881, 1),          # 一运 1864-1881（18 年）
+            (1882, 2), (1905, 2),          # 二运 1882-1905（24 年）
+            (1906, 3), (1929, 3),          # 三运 1906-1929
+            (1930, 4), (1953, 4),          # 四运 1930-1953
+            (1954, 6), (1974, 6),          # 六运 1954-1974（21 年）
+            (1975, 7), (1995, 7),          # 七运 1975-1995
+            (1996, 8), (2016, 8),          # 八运 1996-2016
+            (2017, 9), (2027, 9), (2043, 9),  # 九运 2017-2043（27 年）
+            (2044, 1),                     # 新周期 2044-2061
         ],
     )
     def test_dayun_sequence(self, year: int, expected_yun: int) -> None:
@@ -158,18 +158,19 @@ class TestDayun:
 
         assert current_dayun(year)["yun"] == expected_yun
 
-    def test_dayun_anchor_is_shangyuan_jiazi_not_any_jiazi(self) -> None:
-        """锚定年须为 180 年周期的上元甲子（1984），而非运内甲子（2044）。
+    def test_dayun_anchor_is_1864_cycle_start(self) -> None:
+        """两元八运以 1864 年为上元甲子周期起点，2044 起进入下一周期。
 
-        回归：曾误用 60 年甲子周期取锚，导致 2044 被判为新周期一运。
+        回归：曾以 1984 为锚，把 1984-2001 判成一运（与公开两元八运年表冲突）。
         """
         from core_symbol.xuankong import current_dayun
 
         d = current_dayun(2044)
-        assert d["yun"] == 3, "2044 仍在 1984 锚定的三运（2026-2049）内"
-        assert d["anchor_year"] == 1984
+        assert d["yun"] == 1, "2044 是新 180 年周期的第一年（一运）"
+        assert d["anchor_year"] == 2044
         d2 = current_dayun(2027)
-        assert d2["anchor_year"] == 1984 and d2["start_year"] == 2026 and d2["end_year"] == 2049
+        assert d2["anchor_year"] == 1864 and d2["start_year"] == 2017 and d2["end_year"] == 2043
+        assert current_dayun(1984)["yun"] == 7, "1984 属七运（1975-1995），非一运"
 
     def test_dayun_no_20y_simplification(self) -> None:
         """各运年数不等（18/24/24/24/21/21/21/27）——禁"每运 20 年"简化。"""
@@ -271,7 +272,7 @@ class TestGuaqiRelation:
 
 
 class TestDeriveXuankongFacts:
-    """facts.xuankong 集成：金标准口径（乾山巽向、2027 → 三运离）。"""
+    """facts.xuankong 集成：金标准口径（乾山巽向、2027 → 九运乾）。"""
 
     def _facts(self):
         from datetime import date
@@ -288,23 +289,23 @@ class TestDeriveXuankongFacts:
     def test_golden_case_values(self) -> None:
         fx = self._facts()
         g = fx["guayun_current"]
-        assert g["current_yun"] == 3 and g["current_gua"] == "离"
+        assert g["current_yun"] == 9 and g["current_gua"] == "乾"
         assert g["sitting_gua"] == "否" and g["sitting_guayun"] == 1
-        assert g["matched"] is False, "一运否卦 vs 三运离 → 不当旺"
+        assert g["matched"] is False, "一运否卦 vs 九运乾 → 不当旺"
         assert fx["wangqi"]["daoshan"] is False
         assert fx["wangqi"]["facing_gua"] == "履" and fx["wangqi"]["daoxiang"] is False
         assert fx["guaqi"]["relation"] == "合五", "坐否（运1）向履（运4）→ 1+4 合五"
         cy = fx["chouyao"]
         assert (cy["sitting_gua"], cy["yao_pos"]) == ("否", 1)
         assert cy["changed_gua"] == "无妄" and cy["changed_guayun"] == 8
-        assert cy["matched_dayun"] is False, "无妄八运 vs 三运 → 不当旺"
+        assert cy["matched_dayun"] is False, "无妄八运 vs 九运 → 不当旺"
         # 无妄 内震(8) 外乾(9)：非生成对（1-6/2-7/3-8/4-9）→ 丁 0；和 17 非合十/五/十五 → 财 0
         assert cy["ding_score"] == 0 and cy["cai_score"] == 0
 
     def test_dayun_matched_case(self) -> None:
-        """构造当旺命中：三运卦坐山（离宫八卦内卦离，如丰卦方位）。
+        """构造当旺命中：九运卦坐山（巳山心 → 需卦，内乾九运）。
 
-        离山心 90° → 同人（内离，三运卦）→ matched=True。
+        2027 属九运（2017-2043），需卦卦运 9 → matched=True。
         """
         from datetime import date
 
@@ -312,13 +313,13 @@ class TestDeriveXuankongFacts:
         from core_symbol.xuankong import derive_xuankong_facts
 
         fx = derive_xuankong_facts(
-            mountain=mountain_by_name("卯"),  # 90°
-            facing=mountain_by_name("酉"),
+            mountain=mountain_by_name("巳"),  # 150°
+            facing=mountain_by_name("亥"),
             local_date=date(2027, 7, 11),
         )
         g = fx["guayun_current"]
-        assert g["sitting_gua"] == "同人" and g["sitting_guayun"] == 3
-        assert g["matched"] is True, "同人三运卦 vs 2027 三运 → 当旺"
+        assert g["sitting_gua"] == "需" and g["sitting_guayun"] == 9
+        assert g["matched"] is True, "需卦九运 vs 2027 九运 → 当旺"
         assert fx["wangqi"]["daoshan"] is True
 
     def test_review_flags_and_no_fortune_verdict(self) -> None:

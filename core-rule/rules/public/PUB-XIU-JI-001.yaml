@@ -1,0 +1,70 @@
+# 本文件由 tools/gen_rules_phase11.py 生成，结构统一；规则内容（条件/解释/出处）需人类考证者复核。
+# status: 待考证 = 口诀常见但原文未核，默认不参与正式判定，命中时仅登记为 unknown。
+# citation.quote 为 null 表示「尚未核对原文」，不是缺漏，禁止为填满字段而编造引文。
+api_version: 1
+rule_id: PUB-XIU-JI-001
+version: 1
+school: public
+category: 值日吉宿
+status: 待考证
+hard_veto: false
+severity: 可用
+target: day
+evaluable: true
+verdict_type: reference
+layer: reference
+engine_eligible: false
+ineligible_reason: coarse_label_no_primary_source
+applies_to:
+  task_kinds:
+  - 动土
+  - 修造
+  - 上梁
+  - 安门
+  - 安葬
+  - 破土
+  - 立碑
+  - 修坟
+  - 嫁娶
+  - 入宅
+  - 移徙
+  node_kinds: []
+  strictness_min: normal
+condition:
+  fact: facts.xiu.day
+  op: in
+  value:
+  - 角
+  - 房
+  - 尾
+  - 箕
+  - 斗
+  - 室
+  - 壁
+  - 娄
+  - 胃
+  - 毕
+  - 参
+  - 井
+  - 张
+  - 轸
+score_weight: 0.5
+citation:
+  kind: classic
+  source: 《玉匣记》
+  edition: null
+  juan: null
+  pian: null
+  entry: 二十八宿值日吉凶歌
+  quote_kind: null
+  quote: null
+  url_or_path: null
+  verified_by: null
+  verified_at: null
+  confidence: 低
+tests:
+- RT-PUB-XIU-JI-001-HIT
+- RT-PUB-XIU-JI-001-MISS
+explanation: 用事日值二十八宿之吉宿（{facts.xiu.full_name}），按《玉匣记》系值日吉凶歌记为可用参考。
+supersedes: null
+notes: 待考证：吉宿仍有所忌（如角宿吉而忌葬、房宿吉而忌嫁娶，各本互异），本规则只作正向参考，不作放行依据。

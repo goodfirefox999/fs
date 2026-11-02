@@ -1,0 +1,10 @@
+# 由 tools/gen_rules_phase11.py 生成；overrides 相对金标准基准 ctx 深合并。
+case_id: RT-PUB-XIU-JI-001-MISS
+kind: rule_test
+rule_id: PUB-XIU-JI-001
+expected: miss
+note: 规则级测试向量：仅验证 DSL 求值是否符合预期，不构成择日断言。
+overrides:
+  facts:
+    xiu:
+      day: __not_in_list__

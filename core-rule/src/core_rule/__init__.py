@@ -58,9 +58,12 @@ from .models import (
     Target,
 )
 from .policy import (
+    ConsensusPolicy,
+    ConsensusSpec,
     SchoolPolicy,
     SchoolSpec,
     TaskKindSpec,
+    load_consensus_config,
     load_school_policy,
     load_task_kinds,
 )

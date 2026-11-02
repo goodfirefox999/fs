@@ -1,0 +1,15 @@
+# 影子规则向量：只验证 DSL 求值，不构成择日断言（规则本身 engine_eligible=false）。
+case_id: RT-PUB-WUHUANG-PALACE-001-HIT
+kind: rule_test
+rule_id: PUB-WUHUANG-PALACE-001
+expected: hit
+note: |
+  规则级测试向量：仅验证 DSL 求值是否符合预期，不构成择日断言。
+  本向量代表 Q-018 的核心分歧点——八干山是否计入五黄：坐山落在五黄之宫
+  （整宫三山）但不在宫心那一山，故 hit_palace=true 而 hit_mountain=false。
+overrides:
+  facts:
+    wuhuang:
+      year:
+        hit_mountain: false
+        hit_palace: true

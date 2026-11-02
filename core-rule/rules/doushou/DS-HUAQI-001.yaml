@@ -1,40 +1,46 @@
-# 本文件由 tools/gen_rules.py 生成，结构统一；规则内容（条件/解释/出处）需人类考证者复核。
-# status: 待考证 = 口诀常见但原文未核，默认不参与正式判定，命中时仅登记为 unknown。
-# citation.quote 为 null 表示「尚未核对原文」，不是缺漏，禁止为填满字段而编造引文。
 api_version: 1
 rule_id: DS-HUAQI-001
-version: 1
+version: 2
 school: doushou
 category: 斗首化气
 status: 待考证
 hard_veto: false
 severity: 可用
 target: day
+evaluable: true
 applies_to:
-  task_kinds: []
+  task_kinds: [安葬, 破土, 修造, 动土, 入宅, 立碑]
   node_kinds: []
   strictness_min: normal
 condition:
-  fact: facts.structure.gan_he_pairs
-  op: count_gte
+  fact: facts.doushou.counts.元辰
+  op: gte
   value: 1
 score_weight: null
 citation:
   kind: classic
-  source: 《鳌头通书》
+  source: 《江公择日秘诀全集》
   edition: null
   juan: null
   pian: null
-  entry: null
+  entry: 斗首化气
   quote_kind: null
   quote: null
   url_or_path: null
   verified_by: null
   verified_at: null
+  book_authenticity: 待核
   confidence: 低
 tests:
 - RT-DS-HUAQI-001-HIT
 - RT-DS-HUAQI-001-MISS
-explanation: 日课天干见五合，斗首视角记为化气参考（不参与否决）。
-supersedes: null
-notes: 待考证：斗首化气起例、是否参与否决。默认 participates_in_veto=false。
+explanation: >-
+  坐山斗首五行为「我」，日课天干化气五行与山同者为一重元辰。
+  本课四柱天干见元辰，斗首以元辰为吉星（本派参考层，不参与否决）。
+supersedes: 1
+notes: >-
+  v1 曾以「天干五合」近似斗首化气（facts.structure.gan_he_pairs），是错误建模：
+  五合是干与干之间的关系，斗首化气是「天干 → 五行」的固定映射
+  （甲己土／乙庚金／丙辛水／丁壬木／戊癸火），与是否成合无关。
+  v2 改为查 facts.doushou.counts.元辰（真斗首化气）。
+  吉凶强度：元辰为吉属通说；但「一重元辰即论吉」的力度各本不一，故 severity 取「可用」而非「推荐」。

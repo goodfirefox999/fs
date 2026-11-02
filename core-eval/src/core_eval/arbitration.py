@@ -11,8 +11,11 @@
    不合并任一派原始输出。
 3. **冲突显式呈现**：两派 tendency 相反 → ``conflicts`` 列出双方派名与依据，
    不裁决谁对谁错。
-4. **consensus_dates**：五派中三派及以上 favorable 且未被 reject 的日期标记
-   ``consensus_favorable``；仍保留各派原始输出与分歧（scored_dates 照常收录）。
+4. **consensus_dates**：``favorable / voters >= min_agree_num / min_agree_den``
+   且未被 reject 的日期标记 ``consensus_favorable``；阈值读
+   ``core-rule/config/consensus.yaml``，**整数比不是加权总分**。
+   每条 scored_dates 附 ``consensus_detail``（投票名单 / 未投票名单及原因 / 本次阈值），
+   仍保留各派原始输出与分歧（scored_dates 照常收录）。
 
 本模块只做结构重组，不做任何新的事实计算或吉凶判断。
 """
@@ -66,11 +69,13 @@ def build_spec_output(pairs: Iterable[tuple[Evaluation, dict[str, Any]]]) -> dic
                 "date": ev.candidate,
                 "school_results": school_results,
                 "consensus": fso.get("_consensus"),
+                # 共识度以整数比 + 投票/未投票名单对外，**不提供浮点分值**
+                "consensus_detail": fso.get("_consensus_detail"),
                 "conflicts": list(fso.get("_conflicts") or []),
             }
         )
 
-    # consensus_dates：三派及以上 favorable 且未被 reject（spec §4.5）
+    # consensus_dates：整数比达标且未被 reject（spec §4.5；阈值见 consensus.yaml）
     consensus_dates = [
         {"date": s["date"], "mark": "consensus_favorable"}
         for s in scored_dates

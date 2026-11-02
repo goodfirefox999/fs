@@ -319,6 +319,37 @@ def load_rule(path: Path) -> Rule:
                 "evaluable=false 必须带 blocked_by（阻塞项：Q-xxx/起例实现等）", rule_id=rule_id
             )
 
+    # C 第一批（2026-11-02）：判定类型 / 参考层 / 是否允许进结论强度。
+    # 三条约束都是"防止把未裁定口径写成结论"的机器抓手：
+    #   ① verdict_type 只允许三值；
+    #   ② engine_eligible=false 必须给机器可读理由（否则等于静默降级）；
+    #   ③ engine_eligible=false 不得用于已考证规则（已考证应直面判定，不该躲在参考层）。
+    verdict_type = raw.get("verdict_type")
+    if verdict_type is not None and verdict_type not in ("gate", "vote", "reference"):
+        raise DSLValidationError(
+            f"verdict_type 只允许 gate/vote/reference，得到 {verdict_type}", rule_id=rule_id
+        )
+    layer = raw.get("layer")
+    if layer is not None and not isinstance(layer, str):
+        raise DSLValidationError(f"layer 必须是字符串，得到 {type(layer).__name__}", rule_id=rule_id)
+    engine_eligible = bool(raw.get("engine_eligible", True))
+    ineligible_reason = raw.get("ineligible_reason")
+    if not engine_eligible:
+        if not ineligible_reason:
+            raise DSLValidationError(
+                "engine_eligible=false 必须带 ineligible_reason（机器可读枚举，禁止静默降级）",
+                rule_id=rule_id,
+            )
+        if status in ("已考证", "定义级"):
+            raise DSLValidationError(
+                f"engine_eligible=false 不得用于 {status} 规则（已确定者应直面判定）",
+                rule_id=rule_id,
+            )
+    if engine_eligible and ineligible_reason:
+        raise DSLValidationError(
+            "engine_eligible=true 却给了 ineligible_reason（状态自相矛盾）", rule_id=rule_id
+        )
+
     return Rule(
         rule_id=rule_id,
         version=version,
@@ -341,6 +372,10 @@ def load_rule(path: Path) -> Rule:
         source_path=str(path),
         raw=raw,
         evaluable=evaluable,
+        verdict_type=verdict_type,
+        layer=layer,
+        engine_eligible=engine_eligible,
+        ineligible_reason=ineligible_reason,
     )
 
 
@@ -367,7 +402,12 @@ def load_ruleset(root: Path | str, *, version: str | None = None) -> RuleSet:
     for rule in rules:
         by_school.setdefault(rule.school, []).append(rule)
 
-    lib_version = version or "rl-" + stable_hash([(r.rule_id, r.version) for r in rules])
+    # version 必须覆盖**内容**：只哈希 (rule_id, version) 时，同 id 同 version 改条件/
+    # 严重度不会改变 version，manifest 与缓存都看不见这次变更。指纹与 RuleSet.fingerprint
+    # 同源（raw YAML 全量），内容一改 version 必变。
+    lib_version = version or "rl-" + stable_hash(
+        sorted((r.rule_id, stable_hash(r.raw)) for r in rules)
+    )
     return RuleSet(
         rules=tuple(rules),
         version=lib_version,

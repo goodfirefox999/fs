@@ -14,15 +14,35 @@ from datetime import date, datetime
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from core_rule.calibers import CALIBER_NAYIN, CALIBER_SANSHA, CaliberRegistry, load_caliber_sets
+from core_rule.calibers import (
+    CALIBER_DOUSHO,
+    CALIBER_JIANXIANG,
+    CALIBER_NAYIN,
+    CALIBER_SANSHA,
+    CALIBER_TIANDE_GUA,
+    CALIBER_ZIBAI_FLY,
+    CaliberRegistry,
+    load_caliber_sets,
+)
 from core_symbol.ganzhi import ZHI
 from core_symbol.mountain import Mountain, facing_of, fenjin_of_azimuth, jian_xiang, mountain_of_azimuth
-from core_symbol.registry import derive_facts
+from core_symbol.registry import derive_facts, overlay_hour_facts
 from core_time import CalendarConfig, compute_four_pillars, terms_of_year
 from core_time.hashing import stable_cache_key  # C19：统一缓存键
 
-#: 日级事实缓存：derive_facts 无时辰参数，同日候选共享只读事实 dict。
-#: 超上限整表清空（候选按时间顺序生成，清空只损失一日的复用）。
+#: 日级事实缓存：只存**与时辰无关**的部分（节气/三煞/五黄/玄空/天星/董公/调候…）。
+#:
+#: 历史 bug（2026-11-02 修复，两阶段）：此处曾整包按日缓存，理由是
+#: "derive_facts 无时辰参数"——该前提是错的。``derive_facts`` 收到的 ``gans``/``zhis``
+#: 是四柱（含时柱），``facts.structure``（刑冲害破合/重复计数/三合局）、
+#: ``facts.xunkong.hits``、``facts.tongguan``、``facts.sanhe_ju``、``facts.doushou``
+#: 都随时支变化。整包按日缓存 → 同日子时先算出的事实被其余 11 个时辰复用，
+#: 表现为「14:00 的日课拿到 00:00 的刑害关系」；生成器 tier 按当日首个子时计，
+#: 且暴力对照测试因走同一缓存而"一致通过"（假阴性）。
+#: 第一版修复是整包按候选缓存（键含时柱），正确但把 derive_facts 从 365 次变成
+#: 4380 次（实测 2.7s→5.4s，超 3s 预算）。现改为：日级缓存 + ``overlay_hour_facts``
+#: 逐候选重算时变部分，正确性与预算兼得。
+#: 超上限整表清空（候选按时间顺序生成，清空只损失复用）。
 _FACTS_CACHE: dict[tuple, dict[str, Any]] = {}
 _FACTS_CACHE_MAX = 8192
 
@@ -178,7 +198,11 @@ def build_context(
 
     mountain: Mountain = mountain_of_azimuth(site.azimuth_deg)
     facing: Mountain = facing_of(mountain)
-    jian = jian_xiang(mountain)
+    # 兼向阈值取自数值口径（QUESTION Q-021）：两说并存时改 config 即换口径，
+    # 不改代码、不重跑测试。默认 zheng6_jian45（threshold=3.0），与历史行为一致。
+    _jian_params = creg.params(CALIBER_JIANXIANG)
+    _jian_threshold = float(_jian_params.get("threshold_deg", 3.0))
+    jian = jian_xiang(mountain, threshold_deg=_jian_threshold)
     if jian in ZHI:
         shan_jia_zhi: str | None = jian
     elif mountain.name in ZHI:
@@ -188,21 +212,30 @@ def build_context(
 
     fenjin = fenjin_of_azimuth(site.azimuth_deg)
     term_dates = _term_dates(dt.year, cal.timezone)
+    # 日紫白的三元边界可能落在上一年（1 月的日课要回溯到上年冬至/霜降），
+    # 故一并取上一年节气日期；terms_of_year 自带缓存，跨年不重复计算。
+    term_dates_prev = _term_dates(dt.year - 1, cal.timezone)
 
-    # ---- 日级事实缓存（spec 遗留项「日级事实缓存」；C19 统一键）----
-    # derive_facts 不含时辰参数：同日 12 时辰候选的事实完全一致，共享只读。
-    # 键覆盖全部事实输入（四柱结果/山向/兼山/用事日/口径配置），不同口径必不同键。
-    _facts_key = stable_cache_key(
+    # ---- 两级事实缓存（C19 统一键）----
+    # ① 日级键：**不含时柱**，只缓存与时辰无关的部分（节气/三煞/五黄/玄空/天星/董公…）；
+    # ② 候选级：用 overlay_hour_facts 把 structure/旬空 hits/通关/三合局/斗首 按本时辰重算。
+    # 为什么分两级：整包按候选缓存会把 derive_facts 从 365 次变成 4380 次（实测 2.7s→5.4s，
+    # 超 3s 预算）；只按日缓存又会把首个子时的事实带给其余 11 个时辰（2026-11-02 的 P0）。
+    # 两级拆分同时满足正确性与预算，且时变部分只有一个计算入口（registry 里的同名函数）。
+    _day_key = stable_cache_key(
         "day_facts",
-        pillars.day.name, pillars.year.zhi, pillars.month.zhi,
+        pillars.year.name, pillars.month.name, pillars.day.name,
         mountain.name, facing.name if facing is not None else None,
         shan_jia_zhi, dt.astimezone(tz).date(), include_term_day_itself,
         creg.chosen(CALIBER_SANSHA), creg.chosen(CALIBER_NAYIN),
+        creg.chosen(CALIBER_DOUSHO),
+        creg.chosen(CALIBER_ZIBAI_FLY), creg.chosen(CALIBER_TIANDE_GUA),
+        creg.chosen(CALIBER_JIANXIANG),
         creg.alternatives(CALIBER_NAYIN),
     )
-    facts = _FACTS_CACHE.get(_facts_key)
-    if facts is None:
-        facts = derive_facts(
+    base_facts = _FACTS_CACHE.get(_day_key)
+    if base_facts is None:
+        base_facts = derive_facts(
             year_zhi=pillars.year.zhi,
             month_zhi=pillars.month.zhi,
             day_ganzhi=pillars.day.name,
@@ -213,14 +246,29 @@ def build_context(
             shan_jia_zhi=shan_jia_zhi,
             local_date=dt.astimezone(tz).date(),
             term_dates=term_dates,
+            term_dates_prev=term_dates_prev,
             include_term_day_itself=include_term_day_itself,
             sansha_caliber=creg.chosen(CALIBER_SANSHA),
             nayin_caliber=creg.chosen(CALIBER_NAYIN),
             nayin_alternatives=creg.alternatives(CALIBER_NAYIN),
+            doushou_tu_changsheng=creg.chosen(CALIBER_DOUSHO),
+            zibai_fly=creg.chosen(CALIBER_ZIBAI_FLY),
+            tiande_caliber=creg.chosen(CALIBER_TIANDE_GUA),
         )
         if len(_FACTS_CACHE) >= _FACTS_CACHE_MAX:
             _FACTS_CACHE.clear()
-        _FACTS_CACHE[_facts_key] = facts
+        _FACTS_CACHE[_day_key] = base_facts
+    facts = overlay_hour_facts(
+        base_facts,
+        gans=list(pillars.gans),
+        zhis=list(pillars.zhis),
+        shan_jia_zhi=shan_jia_zhi,
+        day_ganzhi=pillars.day.name,
+        month_zhi=pillars.month.zhi,
+        mountain_name=mountain.name,
+        doushou_tu_changsheng=creg.chosen(CALIBER_DOUSHO),
+        zibai_fly=creg.chosen(CALIBER_ZIBAI_FLY),
+    )
 
     person_ctx: dict[str, Any] = {}
     person_year_zhi = _resolve_person_year_zhi(person, cal)
@@ -249,6 +297,9 @@ def build_context(
             "offset_deg": round(mountain.offset_deg, 4),
             "jian": jian,
             "shan_jia_zhi": shan_jia_zhi,
+            # 兼向阈值口径回显：报告必须能回答"这次用的是 3.0° 还是 4.5°"（Q-021）
+            "jian_caliber": creg.chosen(CALIBER_JIANXIANG),
+            "jian_threshold_deg": _jian_threshold,
             "fenjin": {
                 "slot": fenjin.slot,
                 "center_deg": round(fenjin.center_deg, 4),

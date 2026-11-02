@@ -37,6 +37,7 @@ def disagreement_of(states: Iterable[str]) -> float:
     if len(nums) <= 1:
         return 0.0
     mode_count = Counter(nums).most_common(1)[0][1]
+    # lint-exempt: 分歧度是派别离散程度（众数占比的补），不进排序键与 tier，仅报告展示
     return 1.0 - mode_count / len(nums)
 
 
@@ -47,6 +48,7 @@ def disagreement_of_evaluation(ev: Evaluation) -> float:
 def aggregate_disagreement(evals: Iterable[Evaluation]) -> float:
     """候选集平均分歧度。空集返回 0。"""
     values = [disagreement_of_evaluation(e) for e in evals]
+    # lint-exempt: 候选集的平均分歧度，只用于报告汇总，不参与任何候选排序或分层
     return sum(values) / len(values) if values else 0.0
 
 

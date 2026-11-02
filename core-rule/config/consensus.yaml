@@ -1,0 +1,34 @@
+api_version: 1
+# 共识阈值（ADR-0015：共识度是整数比，不是加权总分）
+#
+# 判据只有一条：favorable / voters >= min_agree_num / min_agree_den
+#   - voters：参与投票的派数——``layer: scoring`` **且**实际产出判定的派
+#   - 全程整数交叉相乘（favorable * den >= num * voters），
+#     禁止浮点阈值、禁止跨派加权、禁止 sum(score)/len(score)
+#   - 闸门层（layer=reject）与参考层（layer=reference）不计票，
+#     它们出现在报告的 non_voters 里，各自带原因
+#
+# 为什么分母不是固定 5：
+#   某派在该事项上无规则命中、或缺少坐山/主命而无法判定时，它是"沉默派"。
+#   让沉默派占分母，等于把"没意见"稀释成"反对"；给它补一张中立票同样是伪造。
+#   分母只数真正表态的派，并把谁没表态、为什么，原样写进 non_voters。
+#
+# 缺省 3/5 在"五派全部表态"时与旧口径 `favorable_count >= 3` 完全等价。
+
+default:
+  min_agree_num: 3
+  min_agree_den: 5
+  description: >-
+    五派全部表态时，等价于旧口径"三派及以上 favorable"。
+
+# 按事项覆写（键 = task_kinds.yaml 中的事项名）
+#
+# 本表为空是**有意**的：不同事项该要求几成同向属术数口径，
+# 须人工裁定后方可填入，不由程序臆定（见 docs/QUESTIONS.md）。
+# 填法示例（未生效，仅示范结构）：
+#
+#   安葬:
+#     min_agree_num: 4
+#     min_agree_den: 5
+#     description: 阴宅重补龙扶山，要求四派同向（示例，待裁定）
+overrides: {}

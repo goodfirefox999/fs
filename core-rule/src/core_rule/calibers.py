@@ -38,10 +38,22 @@ __all__ = [
     "DEFAULT_CALIBERS_DIR",
     "CALIBER_SANSHA",
     "CALIBER_NAYIN",
+    "CALIBER_DOUSHO",
+    "CALIBER_ZIBAI_FLY",
+    "CALIBER_TIANDE_GUA",
+    "CALIBER_JIANXIANG",
 ]
 
 CALIBER_SANSHA = "sansha"
 CALIBER_NAYIN = "nayin"
+#: 斗首得位——土行长生位（土寄坤 / 土寄艮）
+CALIBER_DOUSHO = "doushou_tu_changsheng"
+#: 紫白日/时盘九宫飞布方向（顺飞 / 逆飞）
+CALIBER_ZIBAI_FLY = "zibai_fly"
+#: 天德四维卦位取支（整宫并集 / 渊海单支 / 考原单支）
+CALIBER_TIANDE_GUA = "tiande_guaxiang"
+#: 兼向阈值（正针带半宽）：3.0°（正针 6°）或 4.5°（正针 9°）——数值口径，QUESTION Q-021
+CALIBER_JIANXIANG = "jianxiang"
 
 DEFAULT_CALIBERS_DIR = Path(__file__).resolve().parents[2] / "config" / "calibers"
 
@@ -50,13 +62,19 @@ _CALIBER_STATUSES = ("已考证", "待考证", "有争议")
 
 @dataclass(frozen=True)
 class CaliberSpec:
-    """一个命名口径。"""
+    """一个命名口径。
+
+    ``params`` 承载**数值型**口径（如兼向阈值 3.0°/4.5°）。有了它，
+    "同一个口径、只是常数不同"的分歧不必再写成两个分支，改 config 即换口径——
+    师傅裁定后不用改代码、不用重跑测试（QUESTION Q-021）。
+    """
 
     name: str
     status: str
     description: str
     note: str = ""
     requires: tuple[str, ...] = ()
+    params: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -65,6 +83,7 @@ class CaliberSpec:
             "description": self.description,
             "note": self.note,
             "requires": list(self.requires),
+            "params": dict(self.params),
         }
 
 
@@ -125,6 +144,10 @@ class CaliberRegistry:
     def alternatives(self, set_name: str) -> list[dict[str, Any]]:
         return self.get_set(set_name).alternatives()
 
+    def params(self, set_name: str) -> dict[str, Any]:
+        """当前选用口径的数值参数（未显式选择时用默认值的）。"""
+        return dict(self.get_set(set_name).get(self.chosen(set_name)).params)
+
     def with_selection(self, selection: dict[str, str]) -> "CaliberRegistry":
         merged = {**self.selection, **selection}
         for set_name, caliber in merged.items():
@@ -167,6 +190,7 @@ def load_caliber_sets(directory: Path | str | None = None) -> CaliberRegistry:
                 description=str(spec.get("description", "")),
                 note=str(spec.get("note", "")),
                 requires=tuple(spec.get("requires") or ()),
+                params=dict(spec.get("params") or {}),
             )
         default = data.get("default") or next(iter(calibers))
         if default not in calibers:
