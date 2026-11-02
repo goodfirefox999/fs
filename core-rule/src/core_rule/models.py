@@ -159,12 +159,20 @@ class Rule:
 
     @property
     def effective_verdict_type(self) -> str:
-        """未显式标注时按 severity/hard_veto 推断：硬否定为闸门，其余为投票。"""
+        """生效判定类型；**未标注返回 ``unspecified``，不猜 ``vote``**。
+
+        为什么不再兜底成 vote（2026-11-03）：
+        兜底会让"没人管过"与"明确设计为投票"在报告上无法区分——前者是待办，
+        后者是结论。把未决伪装成已分类，比留空更难发现。
+
+        ``gate`` 的推断保留：``hard_veto=True + severity=禁用`` 在语义上只能是闸门，
+        属定义级推断；而 ``vote`` 不是（可用/推荐/慎用都可能只是暂未归类）。
+        """
         if self.verdict_type:
             return self.verdict_type
         if self.hard_veto and self.severity == "禁用":
             return "gate"
-        return "vote"
+        return "unspecified"
 
     @property
     def is_participating(self) -> bool:

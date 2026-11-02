@@ -325,6 +325,12 @@ def load_rule(path: Path) -> Rule:
     #   ② engine_eligible=false 必须给机器可读理由（否则等于静默降级）；
     #   ③ engine_eligible=false 不得用于已考证规则（已考证应直面判定，不该躲在参考层）。
     verdict_type = raw.get("verdict_type")
+    if verdict_type == "unspecified":
+        raise DSLValidationError(
+            "verdict_type 不接受显式 'unspecified'：未归类请省略该字段，"
+            "由 effective_verdict_type 推断（避免把待办写成结论）",
+            rule_id=rule_id,
+        )
     if verdict_type is not None and verdict_type not in ("gate", "vote", "reference"):
         raise DSLValidationError(
             f"verdict_type 只允许 gate/vote/reference，得到 {verdict_type}", rule_id=rule_id

@@ -68,12 +68,18 @@ class TestLoaderContract:
         assert rule.ineligible_reason is None
 
     def test_effective_verdict_type_inferred(self, tmp_path: Path) -> None:
+        """未标注 → unspecified（**不猜 vote**）；硬否定仍推断为 gate。"""
         rule = _load(tmp_path)
-        assert rule.effective_verdict_type == "vote"
+        assert rule.effective_verdict_type == "unspecified"
         gate = _load(tmp_path, rule_id="PUB-TEST-002", hard_veto=True, severity="禁用")
-        assert gate.effective_verdict_type == "gate"
+        assert gate.effective_verdict_type == "gate", "硬否定按定义只能是闸门，可推断"
         explicit = _load(tmp_path, rule_id="PUB-TEST-003", verdict_type="reference")
         assert explicit.effective_verdict_type == "reference"
+
+    def test_explicit_unspecified_is_rejected(self, tmp_path: Path) -> None:
+        """不许把待办写成结论：显式 'unspecified' 一律拒绝。"""
+        with pytest.raises(DSLValidationError, match="不接受显式"):
+            _load(tmp_path, verdict_type="unspecified")
 
     def test_invalid_verdict_type_rejected(self, tmp_path: Path) -> None:
         with pytest.raises(DSLValidationError, match="verdict_type"):
@@ -199,3 +205,42 @@ class TestReferenceRouting:
             for bucket in ("vetoes", "cautions", "positives", "unknowns", "structural", "demo_hits"):
                 ids = [j.rule_id for j in (getattr(res, bucket) or [])]
                 assert "PUB-XIU-JI-001" not in ids, f"参考层规则泄漏进 {school}.{bucket}"
+
+
+class TestUnlabeledReportSection:
+    """「未归类」必须在报告里可见——它是待办队列，不是内部细节。"""
+
+    def _text(self) -> str:
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+
+        from app_zeri.report import render_markdown
+        from app_zeri.schemas import PersonSpec, SiteSpec, TaskSpec
+        from app_zeri.verifier import verify
+
+        result = verify(
+            dt=datetime(2027, 7, 11, 14, 0, tzinfo=ZoneInfo("Asia/Shanghai")),
+            site=SiteSpec(azimuth_deg=320.0, lat=23.13, lon=113.26),
+            task=TaskSpec(kind="修造", nodes=("修造",), strictness="strict"),
+            person=PersonSpec(),
+            allow_unverified=True,
+        )
+        return render_markdown(result)
+
+    def test_section_present_with_count(self) -> None:
+        text = self._text()
+        assert "## 未归类规则" in text
+        assert "本次评估涉及" in text
+
+    def test_caveat_present(self) -> None:
+        text = self._text()
+        assert "未归类 ≠ 投票" in text
+
+    def test_labeled_rule_not_listed_as_unlabeled(self) -> None:
+        """已标注的规则不得出现在未归类清单里（否则清单会自我矛盾）。"""
+        text = self._text()
+        start = text.find("## 未归类规则")
+        end = text.find("\n## ", start + 5)
+        section = text[start:end if end > 0 else len(text)]
+        for rid in ("PUB-XIU-XIONG-001", "PUB-TIANDE-001", "PUB-ZIBAI-MONTH-001"):
+            assert f"`{rid}`" not in section, f"{rid} 已标注却出现在未归类清单"

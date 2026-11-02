@@ -110,6 +110,9 @@
   以及 5 个**没有恒等式**、只能等原典的模块（日盘起元、值宿吉凶、天德卦位、斗首吉凶、卦运）。
 
 ### 评审回路（二）：热文件取证 + 三条反证测试 + 0/0 前置提示
+- **`verdict_type` 未标注不再兜底为 `vote`**（补丁已应用）：`effective_verdict_type`
+  返回 `unspecified`，`gate` 推断保留（硬否定只能是闸门）；loader 拒绝显式 `"unspecified"`；
+  报告新增「未归类规则」节（本次评估涉及的规则 + 「未归类 ≠ 投票」说明）。
 
 - **取证三个热文件**（`engine.py`/`ranker.py`/`arbitration.py`）：AST 证明
   `_total_rank`/`_mean_rank_score` 已从语法树消失（仅注释留史）；`consensus_ratio`/`non_voters`/

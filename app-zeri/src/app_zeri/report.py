@@ -624,6 +624,22 @@ def render_markdown(result: VerifyResult, *, registry: RuleRegistry | None = Non
     lines.extend(_consensus_block(ev.manifest.get("five_school_output") or {}))
     lines.append("")
 
+    unlabeled = sorted({j.rule_id for j in ev.judgments if j.verdict_type is None})
+    if unlabeled:
+        lines.append(
+            f"## 未归类规则（本次评估涉及 {len(unlabeled)} 条；`verdict_type` 未标注，按 severity 路由）"
+        )
+        lines.append("")
+        shown = "、".join(f"`{r}`" for r in unlabeled[:12])
+        more = "…" if len(unlabeled) > 12 else ""
+        lines.append(f"共 {len(unlabeled)} 条：{shown}{more}")
+        lines.append("")
+        lines.append(
+            "> 未归类 ≠ 投票。这些规则当前按 `severity`/`hard_veto` 走既有路由，"
+            "行为与标注前一致；C 第二批迁移时逐条定为 gate / vote / reference。"
+        )
+        lines.append("")
+
     lines.append("## 未知与证据缺口（按原因分类）")
     lines.append("")
     by_reason = ev.vectors.get("unknown_by_reason", {})
