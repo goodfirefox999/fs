@@ -9,6 +9,10 @@ gaps:
     blocked_by: C18（向首侧 fact 产出）
     owner_question: Q-012
     note: 期间系统不拦向太岁日课；必需集维持 8 条不因裁定增加
+    implementation:
+      status: unimplemented
+      fact_roots: [taisui.facing]
+      derive: []
   - id: GAP-TASKKIND-EMPTY
     gap_type: 产品级信息（非缺陷）——通用规则覆盖是正常事实，登记目的=用户可见提示
     claim: >-
@@ -29,6 +33,10 @@ gaps:
     blocked_by: Q-014（exists 语义）+ 起例实现（逐条）
     owner_question: Q-014 / Q-005（YINFU 同源口径门控另列）
     note: 实现后逐条改回 evaluable=true 走考证流程；本条目随之缩短
+    implementation:
+      status: unimplemented
+      fact_roots: [dutiansha, fubing_dahuo, tianguan_difu, damonthly_jian, yangongji, sang, jiaqu, xiujiu]
+      derive: []
   - id: GAP-SIGNATURE-PERMISSION
     gap_type: 防线缺口（黑名单 fail-open 的完备防线未接）
     claim: >-
@@ -39,4 +47,86 @@ gaps:
     blocked_by: CODEOWNERS 配置（status 已考证行的变更权限约束到人类账号）
     owner_question: 无（工程侧）
     note: 补充方向=verified_by 结构化校验（非空+日期+可联系锚点，fail-closed）
+
+  # ---- 流派覆盖差额（2026-11-02，按两份择日派别清单逐项对照后登记）----
+  - id: GAP-ZIBAI-DAYYUAN
+    gap_type: 实现面差额（已实现但有口径未裁定）
+    claim: >-
+      月/日/时紫白已接入 facts.zibai（Phase 11，含口径 zibai_fly 顺飞/逆飞），
+      但**日盘三元边界**仍取「节气后首个甲子日起元、未到该甲子前属上一元」的连续 60 日读法，
+      与「以符头（甲子/己卯/甲午/己酉）定上中下元」的符头法在节气附近可能给出不同入中星。
+    quote_ref: core-symbol/zibai.py 模块 docstring「已知争议 4」+ GAP 原条目
+    evidence_level: 事实（代码实现 × 口径未裁定）
+    blocked_by: >-
+      符头法的日盘起元需要「三元日紫白」可核抄本；目前只取得两种互相矛盾的转述，
+      按项目铁律不选一个写死，故只实现连续 60 日读法并显式登记。
+    owner_question: 待人类考证者裁定日盘起元（符头法 vs 连续 60 日法）
+    note: 年/月盘不受影响；紫白四盘现已可被规则引用（PUB-ZIBAI-*），不再是死代码
+    implementation:
+      status: implemented
+      fact_roots: [zibai]
+      derive: [derive_zibai_facts]
+
+  - id: GAP-XIU-SHISHI
+    gap_type: 实现面差额（派别存在但未建模）
+    claim: >-
+      二十八宿只实现「值日宿」（facts.xiu，含七政/元/星期恒等式自校验）；
+      **值时宿（时禽）**未实现，值宿吉凶也只取《玉匣记》十四/十四的粗标签，
+      未落到逐事项宜忌歌（造作/埋葬/嫁娶各有细目）。
+    quote_ref: docs/research/2026-11-xiu-jishen-zibai.md 三·二
+    evidence_level: 事实（代码无 shi_xiu 字段；规则只引用 day）
+    blocked_by: >-
+      时禽起例有三套（日虚月鬼火从箕 / 日宿起虚 / 二十八宿配时按七政顺推），
+      转述互相冲突；逐事项宜忌歌各本互异且多为韵文转述，无版本页码可核。
+    owner_question: 待提供可核抄本（时禽起例 + 值宿逐事项宜忌）
+    note: 值宿的算法部分已可复现（锚点 + 星期恒等式），补抄本即可扩到时宿与细目
+    implementation:
+      status: unimplemented
+      fact_roots: [xiu.shi]
+      derive: []
+
+  - id: GAP-WUTU
+    gap_type: 实现面差额（派别存在但未建模）
+    claim: 乌兔太阳择日（起日/起时/到方三诀）未实现
+    quote_ref: 派别清单「乌兔太阳法」条；三诀仅存口诀提要，未见完整排山图
+    evidence_level: 事实（代码无 wutu 模块）
+    blocked_by: >-
+      排山图（土金孛罗日月计木 九曜配九宫）与截法图的具体排布未取得可核抄本，
+      口诀「阳顺阴逆数至月朔日」的起点与步长在转述本中互相矛盾。
+      按本项目铁律「禁止为填满字段而编造引文」，宁可不实现。
+    owner_question: 待提供可核抄本（影印/整理本页码）
+    note: 实现成本低（纯查表），一旦取得抄本可快速补齐
+    implementation:
+      status: unimplemented
+      fact_roots: [wutu]
+      derive: []
+
+  - id: GAP-QIMEN-LIUREN
+    gap_type: 范围外（明确不实现）
+    claim: 奇门遁甲择日、大六壬择日未实现
+    quote_ref: 派别清单「奇门/六壬择日」条
+    evidence_level: 事实
+    blocked_by: >-
+      二者以「用神取法」为核心，同一课不同取用神可得相反结论，且无通书式公共起例表；
+      属占断体系而非可审计的规则判定，超出本项目「可追溯、可复现、可反驳」的定位。
+    owner_question: 无（产品边界，非缺陷）
+    note: 若将来实现，只能做「排盘器」不做「吉凶判定器」，且须标 PARTIAL
+    implementation:
+      status: unimplemented
+      fact_roots: [qimen, liuren]
+      derive: []
+
+  - id: GAP-HELUO
+    gap_type: 实现面差额（派别存在但未建模）
+    claim: 河洛理数择日未实现
+    quote_ref: 派别清单「河洛理数择日」条
+    evidence_level: 事实
+    blocked_by: 先后天卦与命卦的配卦口径、爻位取用未裁定；且与玄空大卦部分重叠
+    owner_question: 待裁定是否与玄空大卦合并建模
+    note: 优先级低于紫白/乌兔
+    implementation:
+      status: unimplemented
+      fact_roots: [heluo]
+      derive: []
+
 

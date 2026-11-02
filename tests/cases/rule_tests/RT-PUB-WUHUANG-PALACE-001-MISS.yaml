@@ -1,0 +1,11 @@
+# 影子规则向量：坐山不在五黄之宫（宫心与八干山皆不命中）。
+case_id: RT-PUB-WUHUANG-PALACE-001-MISS
+kind: rule_test
+rule_id: PUB-WUHUANG-PALACE-001
+expected: miss
+note: 规则级测试向量：仅验证 DSL 求值是否符合预期，不构成择日断言。
+overrides:
+  facts:
+    wuhuang:
+      year:
+        hit_palace: false

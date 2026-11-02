@@ -1,10 +1,16 @@
 """性能测试：365 天 × 12 时辰 = 4380 候选。
 
-预算（docs/DEVELOPMENT.md 第 7 节）：单次一年窗口全量穷举 < 3 s。
+预算（docs/DEVELOPMENT.md 第 7 节）：单次一年窗口全量穷举 < 3.5 s。
 预算沿革：52 规则（无五派 facts）时代为 2.0s；Phase 4–8 纳入调候/通关/三合局/
 禄马贵人/董公/玄空大卦/天星星历（spec 硬性要求的真实计算，含逐日星历）
 后更新为 3.0s。防回归由相对门禁承担（中位数 × 1.5，先记后断）——
 绝对预算只防数量级劣化，不得通过降低候选数或跳过规则来"达标"。
+
+2026-11-02（3.0 → 3.5）：**不是放宽，是补记**。此前的 2.7–2.9s 是建立在
+「事实按日缓存」这个 bug 之上的——同一天 12 个时辰共用首个子时的 structure/
+旬空/通关/三合局，等于少算了 11/12 的结构计算。修掉 P0 后必须逐候选重算
+（实测 +0.35s，其中 overlay 本身 0.14s），3.0s 已不覆盖真实工作量。
+若将来要压回 3.0s，只能优化 structure_facts 的常数开销，**不得**再按日合并。
 """
 
 from __future__ import annotations
@@ -22,7 +28,7 @@ from app_zeri.generator import HOUR_SAMPLE_HOURS, candidate_datetimes, generate
 from app_zeri.schemas import SiteSpec, TaskSpec
 
 CST = ZoneInfo("Asia/Shanghai")
-BUDGET_SEC = 3.0
+BUDGET_SEC = 3.5
 HISTORY = Path(__file__).resolve().parent / "bench_history.jsonl"
 REGRESSION_FACTOR = 1.5
 
@@ -135,7 +141,8 @@ def test_verified_rules_performance() -> None:
     if elapsed >= BUDGET_SEC:  # 突发负载防护：同上，复测取小值，两次入历史
         started = time.perf_counter()
         elapsed = min(elapsed, measure())
-    # 容量目标：70 条规则 × 4380 候选 < 3s（52 规则时代为 2s，随库规模更新）
+    # 容量目标：75 条规则 × 4380 候选 < 3.5s（52 规则时代为 2.0s，随库规模与
+    # 逐候选时柱叠加更新；沿革见文件头 docstring）
     _record_and_check(elapsed, pareto_size=_pareto_holder.get("size"))
     assert elapsed < BUDGET_SEC, f"已考证模拟耗时 {elapsed:.2f}s，超出容量目标 {BUDGET_SEC}s"
 

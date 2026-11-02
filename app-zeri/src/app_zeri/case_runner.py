@@ -194,7 +194,7 @@ def run_cases(
     # ---- 1. 一致率（与作者判定吻合度）----
     paired = [(o.state, o.case.author_claim.verdict) for o in evaluated if o.case.author_claim.verdict]
     agreement = (
-        sum(1 for s, v in paired if s == v) / len(paired) if paired else None
+        sum(1 for s, v in paired if s == v) / len(paired) if paired else None  # lint-exempt: 案例集与作者判定的吻合率，属评测统计，不进候选排序
     )
     kappa = cohen_kappa([s for s, _ in paired], [v for _, v in paired]) if paired else None
 
@@ -204,7 +204,7 @@ def run_cases(
         labels = [v for _, v in paired]
         rng = random.Random(seed)
         rng.shuffle(labels)
-        shuffled_agreement = sum(1 for (s, _), v in zip(paired, labels) if s == v) / len(paired)
+        shuffled_agreement = sum(1 for (s, _), v in zip(paired, labels) if s == v) / len(paired)  # lint-exempt: 打乱对照组的吻合率，评测统计，不参与候选排序
         shuffle_result = {
             "applicable": True,
             "shuffled_agreement": round(shuffled_agreement, 4),
@@ -218,7 +218,7 @@ def run_cases(
 
     # ---- 2. 覆盖率 ----
     unknown_ratios = [
-        o.checks and (sum(1 for c in o.checks if not c["ok"]) / len(o.checks)) for o in evaluated
+        o.checks and (sum(1 for c in o.checks if not c["ok"]) / len(o.checks)) for o in evaluated  # lint-exempt: 单案例内检查项失败率，评测覆盖率统计，不进排序
     ]
     no_rule_cases = [
         o.case.case_id

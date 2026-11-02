@@ -146,6 +146,17 @@ class TestFacts:
         assert f["sansha"]["year"]["direction"] == "西"
         assert f["sansha"]["year"]["hit_mountain"] is False
 
+    def test_tiaohou_uses_day_gan(self) -> None:
+        """调候按日干（gans[2]=辛），不是年干（gans[0]=丁）。"""
+        f = self._facts()
+        assert f["tiaohou"]["day_gan"] == "辛"
+
+    def test_lumaguiren_uses_day_gan(self) -> None:
+        """禄神按日干取：辛日禄在酉；若误用年干丁则禄在午。"""
+        f = self._facts(shan_jia_zhi="酉")
+        assert f["lumaguiren"]["lu"] == "酉"
+        assert f["lumaguiren"]["lu_to_shan"] is True
+
     def test_sanhe_with_mountain(self) -> None:
         f = self._facts()
         assert len(f["structure"]["sanhe_with_mountain"]) == 1

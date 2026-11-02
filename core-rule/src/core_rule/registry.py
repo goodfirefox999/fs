@@ -10,9 +10,11 @@ from .calibers import CaliberRegistry, load_caliber_sets
 from .loader import RuleSet, load_ruleset
 from .models import Rule
 from .policy import (
+    ConsensusPolicy,
     RequiredRuleSet,
     SchoolPolicy,
     TaskKindSpec,
+    load_consensus_config,
     load_required_rules,
     load_school_policy,
     load_task_kinds,
@@ -34,6 +36,7 @@ class RuleRegistry:
     task_kinds: dict[str, TaskKindSpec]
     calibers: CaliberRegistry = field(default_factory=CaliberRegistry)
     required_rules: RequiredRuleSet = field(default_factory=RequiredRuleSet)
+    consensus: ConsensusPolicy = field(default_factory=ConsensusPolicy)
 
     def rules_for(
         self,
@@ -93,4 +96,5 @@ def default_registry(
         task_kinds=load_task_kinds(config_path / "task_kinds.yaml"),
         calibers=load_caliber_sets(config_path / "calibers"),
         required_rules=load_required_rules(config_path / "required_rules.yaml"),
+        consensus=load_consensus_config(config_path / "consensus.yaml"),
     )

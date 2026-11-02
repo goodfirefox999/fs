@@ -61,13 +61,22 @@ schools:
       规则前缀 TX。须真实星历（Swiss Ephemeris/skyfield），四余不可用时标 PARTIAL。
       Phase 8 交付。
 
-  # ---- 遗留（不在五派 spec 内，保留兼容） ----
+  # ---- 参考层（Phase 9 新增：斗首五行）----
+  # 为什么 enabled=true 却**不进 routing**：
+  #   1. spec §5 的「五派规则包输出必须完整保留」是逐字契约（agent.py 断言其原文），
+  #      默认路由若变成六派，报告与 Agent prompt 的输出契约同时被改写；
+  #   2. 斗首的吉凶强度（贪狼/廉贞各本不一）尚未考证，让其 慎用 规则直接改 tier
+  #      等于把未考证口径塞进发布判据。
+  # 因此斗首定位为**可选参考派别**：用户显式勾选（schools=("doushou",)）才评估，
+  # 默认五派输出不变。评估时 participates_in_veto=false，不产生否决。
   doushou:
-    enabled: false
+    enabled: true
     participates_in_veto: false
     weight: 0.5
-    layer: scoring
-    description: 斗首（旧体系保留，不在五派 spec 内）
+    layer: reference
+    description: >-
+      斗首五行规则包：二十四山斗首五行（≠正五行）/十干化气/五星定位/番化/三元三武格/得位。
+      规则前缀 DS。默认不入路由（可选参考派），详见上方注释。
 
 # 事件类型 → 默认主权重流派排序（评审扩展版 spec §4）
 # 权重排序=数据，仲裁层读取此表决定各派 score_delta 的展示排序

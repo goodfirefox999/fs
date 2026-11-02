@@ -1,0 +1,45 @@
+api_version: 1
+rule_id: DS-DEWEI-001
+version: 1
+school: doushou
+category: 斗首得位
+status: 待考证
+hard_veto: false
+severity: 可用
+target: day
+evaluable: true
+applies_to:
+  task_kinds: [安葬, 破土, 修造, 动土, 立碑]
+  node_kinds: []
+  strictness_min: normal
+condition:
+  fact: facts.doushou.shan.dewei
+  op: eq
+  value: true
+score_weight: null
+citation:
+  kind: classic
+  source: 《江公择日秘诀全集》
+  edition: null
+  juan: null
+  pian: null
+  entry: 得位
+  quote_kind: null
+  quote: null
+  url_or_path: null
+  verified_by: null
+  verified_at: null
+  book_authenticity: 待核
+  confidence: 低
+tests:
+- RT-DS-DEWEI-001-HIT
+- RT-DS-DEWEI-001-MISS
+explanation: >-
+  坐山斗首五行于月令逢长生／冠带／临官／帝旺，斗首称「山家得位」，主旺相。
+  本课山家得位（参考层，不参与否决）。
+supersedes: null
+notes: >-
+  得位的**土行口径**未裁定：土寄坤（长生在申）与土寄艮（长生在寅）两说，
+  由 caliber ``doushou_tu_changsheng`` 控制，默认 shen，报告强制回显。
+  山家五行非土时两说结论相同；为土时两说可给出相反结论，此时规则输出仍为
+  「参考命中」，报告须并列两口径结论。

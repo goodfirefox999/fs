@@ -1,0 +1,33 @@
+api_version: 1
+caliber_set: jianxiang
+description: |
+  兼向阈值口径。决定「山心偏移多少度算兼相邻山」。
+  「每山 15°」是共识，怎么切这 15° 不是：两说并存，故做成数值口径。
+default: zheng6_jian45
+
+calibers:
+  zheng6_jian45:
+    status: 待考证
+    description: 正针带 6°（±3°）、两侧各 4.5° 为兼
+    note: |
+      当前默认。`jian_xiang(threshold_deg=3.0)`：|偏移| ≤ 3° 判正针。
+      与「正针 6° + 兼 4.5°×2 = 15°」自洽。
+    requires: []
+    params:
+      threshold_deg: 3.0
+      zhengzhen_band_deg: 6.0
+      jian_band_deg: 4.5
+
+  zheng9_jian3:
+    status: 待考证
+    description: 正针带 9°（±4.5°）、两侧各 3° 为兼（余 3° 落空亡）
+    note: |
+      另一通行说。`jian_xiang(threshold_deg=4.5)`：|偏移| ≤ 4.5° 判正针。
+      两说只在 |偏移| ∈ (3.0°, 4.5°] 上给出不同结论——而这一段会改变
+      `site.jian` / `site.shan_jia_zhi`，进而影响三合扶山、禄马贵人到山等判定。
+      金标准案例（乾山兼亥，偏移 5°）两说结论一致，故当前未暴露。
+    requires: []
+    params:
+      threshold_deg: 4.5
+      zhengzhen_band_deg: 9.0
+      jian_band_deg: 3.0

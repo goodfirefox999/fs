@@ -1,0 +1,44 @@
+api_version: 1
+rule_id: DS-SANWU-001
+version: 1
+school: doushou
+category: 斗首格局
+status: 待考证
+hard_veto: false
+severity: 推荐
+target: day
+evaluable: true
+applies_to:
+  task_kinds: [安葬, 破土, 修造, 动土, 立碑]
+  node_kinds: []
+  strictness_min: normal
+condition:
+  fact: facts.doushou.sanwu
+  op: eq
+  value: true
+score_weight: null
+citation:
+  kind: classic
+  source: 《江公择日秘诀全集》
+  edition: null
+  juan: null
+  pian: null
+  entry: 三武格
+  quote_kind: null
+  quote: null
+  url_or_path: null
+  verified_by: null
+  verified_at: null
+  book_authenticity: 待核
+  confidence: 低
+tests:
+- RT-DS-SANWU-001-HIT
+- RT-DS-SANWU-001-MISS
+explanation: >-
+  四柱天干化气为「我克」者三见，斗首称「三武格」（武财三见），主财禄。
+  本课命中三武格（参考层，不参与否决）。
+supersedes: null
+notes: >-
+  三武格的计数口径与三元格同源（是否计月干），未裁定前只报参考命中。
+  另：武财为「我克」之神，古籍有「财多身弱」之戒——三元/三武并见时以元辰为主，
+  该取舍属流派分歧，本系统不做加权，两格分别登记。

@@ -33,15 +33,30 @@ window:
   allow_unverified: true
   enabled_schools_only: true
 statistic: 命中候选数/参与评估候选数，按（规则×年份）分组；判据=适用域内零命中
-denominator: 47
+denominator: 53
 suspected_ratchet: 0
 rationale: 可达性归因（docs/research/reachability-2026-11.md）：12 条未验证（unknown 门控：命主3/口径未定1/起例未实现8）、1
   条可疑（XIUJIU exists 语义待裁定 Q-014）；verified_exempt（已验证非死规则）=0，豁免基线为空——'豁免'仅限已验证（评审第十四轮）
-recorded_at: '2026-11-02T03:56:02'
+recorded_at: '2026-11-02T21:34:37'
 entries:
-- rule_id: DG-JIANCHU-001
-  classification: unverified_unknown_gated
-  blocked_by: 起例未实现（FACT_REGISTRY 本系统不提供）
+- rule_id: DS-DEWEI-001
+  classification: reference_layer_not_routed
+  blocked_by: 斗首为参考层，默认不入路由（需显式 schools=("doushou",)）
+- rule_id: DS-HUAQI-001
+  classification: reference_layer_not_routed
+  blocked_by: 斗首为参考层，默认不入路由（需显式 schools=("doushou",)）
+- rule_id: DS-LIANZHEN-001
+  classification: reference_layer_not_routed
+  blocked_by: 斗首为参考层，默认不入路由（需显式 schools=("doushou",)）
+- rule_id: DS-POJUN-001
+  classification: reference_layer_not_routed
+  blocked_by: 斗首为参考层，默认不入路由（需显式 schools=("doushou",)）
+- rule_id: DS-SANWU-001
+  classification: reference_layer_not_routed
+  blocked_by: 斗首为参考层，默认不入路由（需显式 schools=("doushou",)）
+- rule_id: DS-SANYUAN-001
+  classification: reference_layer_not_routed
+  blocked_by: 斗首为参考层，默认不入路由（需显式 schools=("doushou",)）
 - rule_id: PUB-CHONGMING-002
   classification: unverified_unknown_gated
   blocked_by: 起例未实现（FACT_REGISTRY 本系统不提供）
@@ -78,27 +93,24 @@ entries:
 - rule_id: SH-LIUHE-001
   classification: unverified_unknown_gated
   blocked_by: 起例未实现（FACT_REGISTRY 本系统不提供）
-- rule_id: TX-JIAFU-001
-  classification: unverified_unknown_gated
-  blocked_by: 起例未实现（FACT_REGISTRY 本系统不提供）
-- rule_id: TX-MOONDAO-001
-  classification: unverified_unknown_gated
-  blocked_by: 起例未实现（FACT_REGISTRY 本系统不提供）
-- rule_id: TX-SANHEGONG-001
-  classification: unverified_unknown_gated
-  blocked_by: 起例未实现（FACT_REGISTRY 本系统不提供）
-- rule_id: TX-SUNDAO-001
-  classification: unverified_unknown_gated
-  blocked_by: 起例未实现（FACT_REGISTRY 本系统不提供）
-- rule_id: XK-CHOUYAO-001
-  classification: unverified_unknown_gated
-  blocked_by: 起例未实现（FACT_REGISTRY 本系统不提供）
-- rule_id: XK-GUAQI-001
-  classification: unverified_unknown_gated
-  blocked_by: 起例未实现（FACT_REGISTRY 本系统不提供）
-- rule_id: XK-GUAYUN-001
-  classification: unverified_unknown_gated
-  blocked_by: 起例未实现（FACT_REGISTRY 本系统不提供）
-- rule_id: XK-WANGQI-001
-  classification: unverified_unknown_gated
-  blocked_by: 起例未实现（FACT_REGISTRY 本系统不提供）
+# 2026-11-02：engine_eligible=false 的参考层规则——零命中是**设计结果**，不是死规则。
+# 与斗首 6 条同类（reference_layer_not_routed）。加基线时逐条写明阻塞源，
+# 不用 --update-baseline 一把刷（那会把它们误标成 unverified_unknown_gated）。
+- rule_id: PUB-WUHUANG-PALACE-001
+  classification: reference_layer_not_routed
+  blocked_by: Q-018（五黄命中粒度：山级 vs 宫级；影子观察期）
+- rule_id: PUB-XIU-JI-001
+  classification: reference_layer_not_routed
+  blocked_by: Q-016（值宿逐事项宜忌无抄本；当前只有粗标签）
+- rule_id: PUB-XIU-XIONG-001
+  classification: reference_layer_not_routed
+  blocked_by: Q-016（值宿逐事项宜忌无抄本；当前只有粗标签）
+- rule_id: PUB-ZIBAI-DAY-001
+  classification: reference_layer_not_routed
+  blocked_by: Q-015（日紫白起元口径未裁定）
+- rule_id: PUB-ZIBAI-HOUR-001
+  classification: reference_layer_not_routed
+  blocked_by: Q-015（日紫白起元口径未裁定）
+- rule_id: PUB-ZIBAI-JI-001
+  classification: reference_layer_not_routed
+  blocked_by: 缺原文（四吉到山无公版原文）；与 Q-018 同源

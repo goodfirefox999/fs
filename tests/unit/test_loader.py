@@ -177,6 +177,21 @@ def test_missing_dir_raises() -> None:
         load_ruleset("/nonexistent/zeri/rules")
 
 
+def test_ruleset_version_tracks_content_change(tmp_path: Path) -> None:
+    """同 rule_id 同 version 改内容时，库版本必须变化（否则 manifest 无法复现）。"""
+    d1 = tmp_path / "a"
+    d2 = tmp_path / "b"
+    d1.mkdir()
+    d2.mkdir()
+    _write(d1)
+    _write(d2, explanation="改过的解释（version 不变）")
+    v1 = load_ruleset(d1).version
+    v2 = load_ruleset(d2).version
+    assert v1 != v2
+    # 内容不变时版本稳定（同一目录重复加载）。
+    assert load_ruleset(d1).version == v1
+
+
 def test_ruleset_select_filters() -> None:
     """ADR-0014 C12：有争议规则默认参与评估（随已考证放行），待考证仍需 include_unverified。"""
     from core_rule import default_registry

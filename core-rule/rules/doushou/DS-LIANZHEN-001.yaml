@@ -1,0 +1,43 @@
+api_version: 1
+rule_id: DS-LIANZHEN-001
+version: 1
+school: doushou
+category: 斗首五星
+status: 待考证
+hard_veto: false
+severity: 慎用
+target: day
+evaluable: true
+applies_to:
+  task_kinds: [安葬, 破土, 修造, 动土, 入宅, 立碑]
+  node_kinds: []
+  strictness_min: normal
+condition:
+  fact: facts.doushou.counts.廉贞
+  op: gte
+  value: 2
+score_weight: null
+citation:
+  kind: classic
+  source: 《江公择日秘诀全集》
+  edition: null
+  juan: null
+  pian: null
+  entry: 廉贞
+  quote_kind: null
+  quote: null
+  url_or_path: null
+  verified_by: null
+  verified_at: null
+  book_authenticity: 待核
+  confidence: 低
+tests:
+- RT-DS-LIANZHEN-001-HIT
+- RT-DS-LIANZHEN-001-MISS
+explanation: >-
+  我生者为廉贞（廉子），斗首以为泄气。本课四柱天干化气泄山者重见，
+  按斗首视角为山家泄弱之课（参考层，不参与否决）。
+supersedes: null
+notes: >-
+  廉贞的吉凶分歧大于破军：多数抄本以「我生为泄、为凶」，亦有以「廉子主子孙繁衍」
+  作吉论者。本规则取慎用（不取禁用），并在报告理由里显式标注该分歧。

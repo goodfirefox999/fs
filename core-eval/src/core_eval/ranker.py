@@ -4,10 +4,18 @@
 
 排序键（字典序，全部"越小越好"）
 ------------------------------
-``(tier_rank, hard_fail_count, strong_avoid_count, conflict_count, unknown_count, -mean_rank_score, candidate)``
+``(tier_rank, hard_fail_count, strong_avoid_count, conflict_count, unknown_count, -positive_count, candidate)``
 
 - ``tier_rank``：REJECTED > NEEDS_REVIEW > ACCEPTABLE > PREFERRED（REJECTED 排最后）
-- ``mean_rank_score`` 仅在"可用"集内有意义，且**不得**被表述为吉凶概率
+- ``positive_count`` 是**整数计数**（正向命中条数），不是分值。
+
+为什么末位是计数而不是分均（ADR-0015）
+--------------------------------------
+本键第六位曾是 ``-mean_rank_score``（各派 ``rank_score`` 的跨派均值）。它有两处硬伤：
+1. **跨派求均 = 把不可比的量当可比**：正五行的 0.5 与斗首的 0.5 背后是不同加权项；
+2. **它会污染排序主键**：一旦有均值，下游就会顺手拿它当"综合吉凶分"展示。
+现改为整数计数：计"命中了多少条正向规则"，不做任何加权与平均。
+派内 ``rank_score`` 仍保留在 ``explain_sort`` 里供复核，但**不跨派聚合**。
 
 Pareto 前沿：在 (hard_fail, strong_avoid, conflict, unknown) 四维上做非支配筛选，
 ``positive`` 与 ``feasibility`` 作为正向维度取"越大越好"。
@@ -36,11 +44,6 @@ TIER_RANK: dict[str, int] = {
 }
 
 
-def _mean_rank_score(ev: Evaluation) -> float:
-    scores = [r.rank_score for r in ev.per_school.values() if r.rank_score is not None]
-    return sum(scores) / len(scores) if scores else 0.0
-
-
 def sort_key(ev: Evaluation) -> tuple:
     v = ev.vectors
     return (
@@ -49,7 +52,8 @@ def sort_key(ev: Evaluation) -> tuple:
         v.get("strong_avoid_count", 0),
         v.get("conflict_count", 0),
         v.get("unknown_count", 0),
-        -_mean_rank_score(ev),
+        # 整数计数：正向命中条数。**不是**分值的聚合（ADR-0015 / 禁聚合总分 lint）
+        -v.get("positive_count", 0),
         ev.candidate,
     )
 
@@ -129,7 +133,11 @@ def pareto_front(evals: Iterable[Evaluation]) -> list[Evaluation]:
 
 
 def explain_sort(ev: Evaluation) -> dict[str, object]:
-    """返回排序依据的显式分解，供报告回显（避免"黑箱排序"）。"""
+    """返回排序依据的显式分解，供报告回显（避免"黑箱排序"）。
+
+    ``school_rank_scores`` 原样给各派自己的 ``rank_score``，**不做跨派平均**：
+    报告要能让师傅看见"哪派给了多少"，而不是看见一个被平均出来的数。
+    """
     v = ev.vectors
     return {
         "candidate": ev.candidate,
@@ -139,6 +147,9 @@ def explain_sort(ev: Evaluation) -> dict[str, object]:
         "strong_avoid_count": v.get("strong_avoid_count", 0),
         "conflict_count": v.get("conflict_count", 0),
         "unknown_count": v.get("unknown_count", 0),
-        "mean_rank_score": round(_mean_rank_score(ev), 4),
-        "note": "mean_rank_score 仅为同派内可比的正向权重均值，非吉凶概率",
+        "positive_count": v.get("positive_count", 0),
+        "school_rank_scores": {
+            name: res.rank_score for name, res in ev.per_school.items()
+        },
+        "note": "排序末位是正向命中条数（整数计数）；各派 rank_score 仅并列展示，不跨派聚合",
     }

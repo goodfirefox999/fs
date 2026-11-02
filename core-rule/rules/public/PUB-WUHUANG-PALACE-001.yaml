@@ -1,0 +1,68 @@
+# 影子规则（shadow）：只出观察值，不进任何强度桶。裁定前不得升为投票。
+#
+# 为什么单独成条而不是改 PUB-WUHUANG-001：
+#   五黄到宫是"一宫三山"（兑=庚酉辛），而 PUB-WUHUANG-001 用的是
+#   facts.wuhuang.year.hit_mountain（只认宫心那一山，2024 年仅酉命中）。
+#   把原规则改成 hit_palace = 扩大命中面 = 改变行为分布，属 QUESTION Q-018 待裁项。
+#   正确路径（AGENTS.md 硬禁止第 8/9 条）：先以 engine_eligible=false 观察一版，
+#   比对人审通过后再决定升 vote 还是 hard_gate。
+api_version: 1
+rule_id: PUB-WUHUANG-PALACE-001
+version: 1
+school: public
+category: 五黄到宫（影子观察）
+status: 待考证
+hard_veto: false
+severity: 慎用
+verdict_type: gate
+engine_eligible: false
+ineligible_reason: hit_range_pending_human
+target: mountain
+applies_to:
+  task_kinds:
+  - 动土
+  - 修造
+  - 上梁
+  - 竖柱
+  - 安门
+  - 安灶
+  - 入宅
+  - 安葬
+  - 破土
+  - 立碑
+  - 修坟
+  - 修祠
+  - 安龛
+  - 升座
+  node_kinds: []
+  strictness_min: normal
+condition:
+  fact: facts.wuhuang.year.hit_palace
+  op: eq
+  value: true
+score_weight: null
+citation:
+  kind: classic
+  source: 《鳌头通书》
+  edition: null
+  juan: null
+  pian: null
+  entry: null
+  quote_kind: null
+  quote: null
+  url_or_path: null
+  verified_by: null
+  verified_at: null
+  confidence: 低
+tests:
+- RT-PUB-WUHUANG-PALACE-001-HIT
+- RT-PUB-WUHUANG-PALACE-001-MISS
+explanation: 坐山{site.mountain}所属之宫落于年五黄（一宫三山同受）。本规则当前只作观察，不参与判定。
+supersedes: null
+notes: |
+  影子规则。与 PUB-WUHUANG-001 的唯一差别是命中粒度：
+  原规则 hit_mountain（宫心一山）保守，本规则 hit_palace（整宫三山）完整。
+  两者差值 = 八干山（庚辛壬癸甲乙丙丁）是否计入五黄，这是 Q-018 的核心争议，
+  不可由 Agent 裁定。观察方式：报告「参考层命中」节会出现本规则，
+  vectors 与 tier 不受影响（engine_eligible=false）。
+  升格条件：连续一个版本周期的命中率统计 + 人类师傅比对无异议。

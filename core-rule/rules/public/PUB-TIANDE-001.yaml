@@ -1,0 +1,42 @@
+# 本文件由 tools/gen_rules_phase11.py 生成，结构统一；规则内容（条件/解释/出处）需人类考证者复核。
+# status: 待考证 = 口诀常见但原文未核，默认不参与正式判定，命中时仅登记为 unknown。
+# citation.quote 为 null 表示「尚未核对原文」，不是缺漏，禁止为填满字段而编造引文。
+api_version: 1
+rule_id: PUB-TIANDE-001
+version: 1
+school: public
+category: 天德日
+status: 待考证
+hard_veto: false
+severity: 推荐
+target: day
+evaluable: true
+verdict_type: vote
+applies_to:
+  task_kinds: []
+  node_kinds: []
+  strictness_min: normal
+condition:
+  fact: facts.jishen.tian_de.hit
+  op: eq
+  value: true
+score_weight: 1.0
+citation:
+  kind: classic
+  source: 《协纪辨方书》
+  edition: null
+  juan: null
+  pian: null
+  entry: 义例·天德
+  quote_kind: null
+  quote: null
+  url_or_path: null
+  verified_by: null
+  verified_at: null
+  confidence: 低
+tests:
+- RT-PUB-TIANDE-001-HIT
+- RT-PUB-TIANDE-001-MISS
+explanation: 用事日值天德（本月天德在{facts.jishen.tian_de.target}），按本规则记为正向证据。
+supersedes: null
+notes: 待考证：天德能否解三煞/岁破诸凶，各派强度不一（《协纪辨方书》有「虽吉星不能解」之文，专指岁破），故本规则不进否决层、不抵扣硬伤；四维卦月（卯/午/酉/子）取支有口径 tiande_guaxiang 两说，报告须回显。

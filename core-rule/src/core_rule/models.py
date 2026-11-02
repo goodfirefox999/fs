@@ -120,6 +120,17 @@ class Rule:
     # 避免 (provided=True, value=None) 事实经 exists 算子渲染成"确定无此禁忌"的假阴性
     # （Q-014；评审第十三/十四轮）。裁定+起例实现后改回 true 走正常考证流程。
     evaluable: bool = True
+    #: C 第一批（2026-11-02）：判定类型。
+    #: ``gate`` = 闸门（否决/过滤，不参与打分）；``vote`` = 投票（正负证据，进分层向量）；
+    #: ``reference`` = 只展示不判定。``None`` = 尚未标注（迁移期允许，lint 计数不阻断）。
+    verdict_type: str | None = None
+    #: 所属层；``reference`` 表示参考层（与 school_policy.layer 同义，规则级覆盖）
+    layer: str | None = None
+    #: 是否允许进入结论强度（state/tier/positives）。False = 只渲染，不进任何强度桶。
+    #: 与 ``evaluable=False`` 的区别：evaluable 是"不评估"，本项是"评估但不计分"。
+    engine_eligible: bool = True
+    #: engine_eligible=False 的理由（机器可读枚举，如 ``day_yuan_undecided``）
+    ineligible_reason: str | None = None
     supersedes: str | None = None
     api_version: int = 1
     notes: str | None = None
@@ -145,6 +156,15 @@ class Rule:
         定义级规则参与正式判定，但其结论只描述"结构是什么"，不描述"好不好"。
         """
         return self.status == "定义级"
+
+    @property
+    def effective_verdict_type(self) -> str:
+        """未显式标注时按 severity/hard_veto 推断：硬否定为闸门，其余为投票。"""
+        if self.verdict_type:
+            return self.verdict_type
+        if self.hard_veto and self.severity == "禁用":
+            return "gate"
+        return "vote"
 
     @property
     def is_participating(self) -> bool:
@@ -188,4 +208,8 @@ class Rule:
             "supersedes": self.supersedes,
             "notes": self.notes,
             "severity_overrides": dict(self.severity_overrides),
+            "verdict_type": self.verdict_type,
+            "layer": self.layer,
+            "engine_eligible": self.engine_eligible,
+            "ineligible_reason": self.ineligible_reason,
         }
