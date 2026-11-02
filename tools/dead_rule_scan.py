@@ -8,7 +8,7 @@
   每月 5 天保证日支多样性——v1 固定单日把月破/岁破/日冲类命中率人为压没，已修正）；
   坐向 = 180/330/90/0 度；strictness=normal；allow_unverified=True。
 - 扫描域 = 当前启用派别（ZWX/DS/XK 默认关闭 → 不参与死规则判据）。
-- 命中定义 = 任一命中桶出现判定（vetoes/cautions/controversial/demo_hits/
+- 命中定义 = 任一命中桶出现判定（vetoes/cautions/controversial/demo_hits/reference/
   positives/notes/structural；演示与仅登记均算——v1 用 matched 过滤把演示命中全数漏计，已修正）。
 - 统计量：命中候选数/参与评估候选数，按（规则 × 年份）分组分别统计——
   年支类规则天然只在特定年命中，"全年零命中"不是死规则判据。
@@ -22,7 +22,12 @@
 
 from __future__ import annotations
 
+import contextlib
+import hashlib
+import io
+import json
 import sys
+import time
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
@@ -49,8 +54,16 @@ TASK_KINDS = ("修造", "嫁娶", "安葬", "纳采", "修坟")
 DAYS = (1, 8, 15, 22, 25)
 AZIMUTHS = (180.0, 330.0, 90.0, 0.0, 150.0, 270.0, 30.0, 315.0, 225.0, 45.0, 135.0)
 YEARS = (2025, 2026, 2027)
-HIT_BUCKETS = ("vetoes", "cautions", "controversial", "demo_hits", "positives", "notes", "structural")
+HIT_BUCKETS = (
+    "vetoes", "cautions", "controversial", "demo_hits", "positives", "notes",
+    "structural",
+    # C 第一批（2026-11-02）：参考层命中同样是"规则可达"的证据。漏掉这个桶，
+    # 所有 engine_eligible=false 的规则会被误判成零命中（本轮 5 条）。
+    "reference",
+)
 BASELINE = ROOT / "core-rule/config/dead_rule_baseline.yaml"
+#: 结果缓存目录（``out/`` 已在 .gitignore 中，不入库）
+CACHE_DIR = ROOT / "out" / ".cache" / "dead_rule_scan"
 
 
 PERSON_FIXTURES = (
@@ -174,7 +187,10 @@ def run_scan():
         evaluated += 1
         for res in ev.per_school.values():
             for bucket in HIT_BUCKETS:
-                for j in getattr(res, bucket):
+                # 用默认值：桶是「引擎能力」而非本工具的常量。若只回滚/检出本片
+                # （引擎尚无 reference 桶），扫描应退化为"该桶无命中"，而不是 AttributeError——
+                # 否则分片提交就无法独立检出。
+                for j in getattr(res, bucket, ()):
                     stats[j.rule_id][year] += 1
 
     out = {}
@@ -210,6 +226,117 @@ def run_scan():
 
 
 def main() -> int:
+    """入口：带内容指纹缓存（2026-11-03）。
+
+    为什么要缓存：本扫描的窗口是 task_kind×person×年×月×日×坐向 ≈ 1 万次
+    ``build_context`` + 每次 86 条规则求值，单次 120 s 以上。CI 里它的超时给到 600 s，
+    余量太薄——一旦机器上有第二个大进程（另一个 pytest、另一个 agent），就会撞超时，
+    而 pytest 输出里 TIMEOUT 与断言失败都显示为 ``FAILED``，极易被误读成"产品不确定"。
+    缓存把"评估成本"降到目录指纹计算（毫秒级），重复运行不再吃满 CPU。
+
+    安全性（为什么缓存不会掩盖真问题）：
+    键 = 工具自身 + **全部规则 YAML** + 基线 + manifest + school_policy +
+        各包 ``src/**/*.py`` 的 (路径, 大小, mtime_ns) + 窗口常量 + Python 版本。
+    其中任何一项变化都会换键，因此"改了代码/规则/窗口却读到旧结果"不可能发生。
+    ``--update-baseline`` 与 ``--no-cache`` 直接绕过缓存。
+    """
+    if "--update-baseline" in sys.argv or "--no-cache" in sys.argv:
+        return _run()
+    fp = _fingerprint()
+    cached = _cache_read(fp)
+    if cached is not None:
+        sys.stdout.write(cached["stdout"])
+        sys.stdout.flush()
+        print(
+            f"[cache] 命中 {fp[:12]}（首次评估 {cached['elapsed']:.1f}s，本次跳过重复扫描）",
+            file=sys.stderr,
+        )
+        return int(cached["rc"])
+
+    buf = io.StringIO()
+    t0 = time.perf_counter()
+    with contextlib.redirect_stdout(buf):
+        rc = _run()
+    elapsed = time.perf_counter() - t0
+    text = buf.getvalue()
+    sys.stdout.write(text)
+    sys.stdout.flush()
+    _cache_write(fp, {"rc": rc, "stdout": text, "elapsed": round(elapsed, 3)})
+    print(f"[scan] 实际评估 {elapsed:.1f}s（已写入缓存 {fp[:12]}）", file=sys.stderr)
+    return rc
+
+
+def _fingerprint() -> str:
+    """目录指纹：任何影响结果的输入变化都会换键。"""
+    h = hashlib.sha256()
+    h.update(f"py={sys.version_info[:3]}".encode())
+    h.update(
+        repr(
+            (
+                tuple(TASK_KINDS),
+                tuple(YEARS),
+                tuple(DAYS),
+                tuple(AZIMUTHS),
+                tuple((p.year_zhi if p else None) for p in PERSON_FIXTURES),
+            )
+        ).encode()
+    )
+    targets: list[Path] = [Path(__file__)]
+    targets += sorted(BASELINE.parent.glob("*.yaml"))  # baseline + manifest + school_policy
+    targets += sorted((ROOT / "core-rule").glob("rules/**/*.yaml"))
+    targets += sorted((ROOT / "core-rule").glob("config/**/*.yaml"))
+    for pkg in ("core-time", "core-symbol", "core-rule", "core-eval", "app-zeri"):
+        targets += sorted((ROOT / pkg / "src").glob("**/*.py"))
+    for path in targets:
+        try:
+            st = path.stat()
+        except FileNotFoundError:
+            h.update(f"missing:{path}".encode())
+            continue
+        h.update(f"{_rel(path)}|{st.st_size}|{st.st_mtime_ns}|".encode())
+    return h.hexdigest()
+
+
+def _rel(path: Path) -> str:
+    """尽量用相对路径（缩短键、便于人读）；不在 ROOT 下时退回绝对路径。
+
+    为什么要容错：工具文件本身、以及符号链接到仓库外的文件，都可能不在 ROOT 下；
+    早期版本用裸 ``relative_to`` 会直接抛 ValueError，缓存键反而成了崩溃点。
+    """
+    try:
+        return str(path.relative_to(ROOT))
+    except ValueError:
+        return str(path)
+
+
+def _cache_path(fp: str) -> Path:
+    return CACHE_DIR / f"{fp}.json"
+
+
+def _cache_read(fp: str) -> dict | None:
+    path = _cache_path(fp)
+    if not path.exists():
+        return None
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return None  # 损坏的缓存当作未命中，绝不因为缓存坏了而改变结论
+    if not isinstance(data, dict) or "stdout" not in data or "rc" not in data:
+        return None
+    return data
+
+
+def _cache_write(fp: str, payload: dict) -> None:
+    try:
+        CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = _cache_path(fp).with_suffix(".tmp")
+        tmp.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+        tmp.replace(_cache_path(fp))  # 原子替换：避免并发读到半个文件
+    except OSError:
+        pass  # 缓存失败不影响正确性，只是慢
+
+
+def _run() -> int:
     if "--coverage" in sys.argv:
         ctxs = [(k, dt) for k, year, dt in []]  # 占位：真实统计在下方
     meta = []

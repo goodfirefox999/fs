@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 export PYTHONPATH := core-time/src:core-symbol/src:core-rule/src:core-eval/src:app-zeri/src:.
 
-.PHONY: help test test-fast cov lint gate golden rules cases clean report mutation
+.PHONY: help test test-fast cov lint gate golden rules cases clean report mutation determinism
 
 help:
 	@echo "make test       全量测试（含性能）"
@@ -43,9 +43,16 @@ report:
 mutation:
 	python3 tools/mutation_check.py
 
+# 确定性门禁（2026-11-03）：多 PYTHONHASHSEED 比对指纹。
+# 退出码 1 = PRODUCT_FAIL（产品不确定）；2 = ENV_SUSPECT（机器忙，不是产品问题）。
+determinism:
+	python3 tools/determinism_probe.py --gate
+
 gate: test-fast lint
 	python3 tools/no_network_scan.py
 	python3 tools/check_status_signature.py --offline
+	python3 tools/check_no_aggregate_score.py
+	python3 tools/determinism_probe.py --gate
 	python3 -m coverage report --fail-under=80 || true
 	@echo "✅ gate 完成"
 
