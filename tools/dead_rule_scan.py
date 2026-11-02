@@ -61,6 +61,24 @@ HIT_BUCKETS = (
     # 所有 engine_eligible=false 的规则会被误判成零命中（本轮 5 条）。
     "reference",
 )
+
+#: 引擎结果对象**必须存在**的桶（扫描口径依赖）。与 HIT_BUCKETS 的分工：
+#: HIT_BUCKETS 是"去哪些桶找命中"（用 getattr 兜底，保证分片提交可独立检出）；
+#: REQUIRED_BUCKETS 是"这些桶必须存在"——引擎重构改名/删桶时**必须响亮失败**，
+#: 否则扫描会静默当成"该桶无命中"，与 grep 二进制静默跳过是同一类事故
+#: （2026-11-03 评审第二节：getattr 把硬失败换成了静默空，这里补回硬失败）。
+REQUIRED_BUCKETS = ("vetoes", "cautions", "positives", "demo_hits", "reference")
+
+
+def assert_buckets_exist(res: object) -> None:
+    """校验结果对象携带全部必需桶；缺失即抛错（宁可吵，不可漏）。"""
+    missing = [b for b in REQUIRED_BUCKETS if not hasattr(res, b)]
+    if missing:
+        raise RuntimeError(
+            f"SchoolResult 桶结构变化：缺少 {missing}——扫描口径已失效，"
+            "请同步 tools/dead_rule_scan.py 的 HIT_BUCKETS/REQUIRED_BUCKETS，"
+            "而不是让本工具静默输出假阴性"
+        )
 BASELINE = ROOT / "core-rule/config/dead_rule_baseline.yaml"
 #: 结果缓存目录（``out/`` 已在 .gitignore 中，不入库）
 CACHE_DIR = ROOT / "out" / ".cache" / "dead_rule_scan"
@@ -186,6 +204,7 @@ def run_scan():
         ev = evaluate(ctx, reg, EvalConfig(task_kind=kind, allow_unverified=True))
         evaluated += 1
         for res in ev.per_school.values():
+            assert_buckets_exist(res)  # 桶消失 = 口径失效，必须响亮失败
             for bucket in HIT_BUCKETS:
                 # 用默认值：桶是「引擎能力」而非本工具的常量。若只回滚/检出本片
                 # （引擎尚无 reference 桶），扫描应退化为"该桶无命中"，而不是 AttributeError——

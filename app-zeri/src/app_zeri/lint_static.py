@@ -37,6 +37,7 @@ __all__ = [
     "unimported_modules",
     "check_coverage_gaps",
     "check_question_numbering",
+    "check_demo_veto_wiring",
 ]
 
 #: 参与扫描的源码根（相对仓库根）。测试与工具脚本**不**算调用点。
@@ -349,4 +350,91 @@ def check_question_numbering(questions_path: Path) -> list[str]:
     missing = [f"Q-{i:03d}" for i in range(lo, hi + 1) if i not in set(numbers)]
     if missing:
         problems.append(f"QUESTIONS: 区间断号 {missing}——条目被删或跳号，审计链不完整")
+    return problems
+
+
+def check_demo_veto_wiring(repo_root: Path) -> list[str]:
+    """联调开关 ``demo_veto`` 只允许两条通路：CLI 显式传参、测试显式构造 ``EvalConfig``。
+
+    为什么是门禁而不是约定
+    ----------------------
+    ``demo_veto=True`` 会让未考证规则的演示命中恢复"有票权"（ADR-0014 决策 3 的
+    显式联调例外）。这个开关一旦腐化——有人为了"让报告好看"加一个环境变量、
+    或把 true 写进配置默认值——生产路径就会静默带演示票，而报告顶部的横幅
+    反而会让人以为"有横幅=已被告知=没问题"。
+
+    两条硬禁止（2026-11-03 评审第四节）：
+
+    1. 源码里**不得**从环境变量读它（``os.environ`` / ``os.getenv`` 出现
+       ``DEMO_VETO`` 字样）——环境变量是最容易无意设置的通路；
+    2. ``core-rule/config/`` 与 ``app-zeri`` 的配置 YAML **不得**出现
+       ``demo_veto`` 键——开关只存在于 CLI 参数与测试代码，配置层不认识它。
+
+    违反任意一条即 fail（阻断，不是警告）。
+    """
+    import ast as _ast
+
+    problems: list[str] = []
+
+    src_roots = ("core-eval/src", "app-zeri/src", "core-rule/src")
+    for rel in src_roots:
+        root = repo_root / rel
+        if not root.exists():
+            continue
+        for path in root.rglob("*.py"):
+            try:
+                tree = _ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+            except (SyntaxError, UnicodeDecodeError):
+                continue
+            rel_path = path.relative_to(repo_root)
+
+            def _is_environ(node: _ast.AST) -> bool:
+                """os.environ / environ（含 os.environ.get 的 value 链）。"""
+                if isinstance(node, _ast.Attribute):
+                    return node.attr == "environ" or _is_environ(node.value)
+                return isinstance(node, _ast.Name) and node.id == "environ"
+
+            def _flag(lineno: int, form: str) -> None:
+                problems.append(
+                    f"{rel_path}:{lineno}: 禁止从环境变量读取 demo_veto（{form}）"
+                    "（只允许 CLI 传参 / 测试显式构造 EvalConfig）"
+                )
+
+            for node in _ast.walk(tree):
+                if isinstance(node, _ast.Call):
+                    fn = node.func
+                    fname = getattr(fn, "attr", None) or getattr(fn, "id", "")
+                    # 形态① os.getenv("DEMO_VETO")；形态② os.environ.get("DEMO_VETO")
+                    is_environ_get = (
+                        fname == "get"
+                        and isinstance(fn, _ast.Attribute)
+                        and _is_environ(fn.value)
+                    )
+                    if fname == "getenv" or is_environ_get:
+                        for arg in (*node.args, *node.keywords):
+                            val = arg.value if isinstance(arg, _ast.keyword) else arg
+                            if isinstance(val, _ast.Constant) and isinstance(val.value, str):
+                                if "demo_veto" in val.value.lower().replace("-", "_"):
+                                    _flag(node.lineno, fname if fname == "getenv" else "environ.get")
+                elif isinstance(node, _ast.Subscript):
+                    # 形态③ os.environ["DEMO_VETO"]
+                    if _is_environ(node.value) and isinstance(node.slice, _ast.Constant):
+                        val = node.slice.value
+                        if isinstance(val, str) and "demo_veto" in val.lower().replace("-", "_"):
+                            _flag(node.lineno, "environ[...]")
+    # 2) 配置 YAML 不得出现 demo_veto 键
+    for rel in ("core-rule/config", "app-zeri"):
+        root = repo_root / rel
+        if not root.exists():
+            continue
+        for path in root.rglob("*.yaml"):
+            text = path.read_text(encoding="utf-8", errors="replace")
+            for i, line in enumerate(text.splitlines(), 1):
+                stripped = line.split("#", 1)[0]
+                if "demo_veto" in stripped and ":" in stripped:
+                    rel_path = path.relative_to(repo_root)
+                    problems.append(
+                        f"{rel_path}:{i}: 配置文件不得携带 demo_veto 键"
+                        "（开关只在 CLI 参数与测试代码里）"
+                    )
     return problems

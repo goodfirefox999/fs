@@ -33,6 +33,7 @@ from .generator import generate
 from .lint_static import (
     build_index,
     check_coverage_gaps,
+    check_demo_veto_wiring,
     check_question_numbering,
     dead_derive_functions,
     unimported_modules,
@@ -370,6 +371,8 @@ def cmd_rules_lint(args: argparse.Namespace) -> int:
     )
     # d. 裁定记录编号唯一且连续（审计链）：并发追加会让同一 Q 号出现两份互斥裁定
     problems.extend(check_question_numbering(Path("docs/QUESTIONS.md")))
+    # e. 联调开关接线（2026-11-03 评审第四节）：demo_veto 只允许 CLI/测试两条通路
+    problems.extend(check_demo_veto_wiring(Path(".")))
     print(f"cap_applied: {json.dumps(groups['cap_applied'], ensure_ascii=False)}")
     print(f"unverified_progress: {json.dumps(groups['unverified_progress'], ensure_ascii=False)}")
     print(f"quote_unsigned: {json.dumps(groups['quote_unsigned'], ensure_ascii=False)}")
