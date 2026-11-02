@@ -52,11 +52,20 @@ export PYTHONPATH=core-time/src:core-symbol/src:core-rule/src:core-eval/src:app-
 | 项 | 状态 |
 |---|---|
 | 历法内核（节气/四柱/农历/闰月/真太阳时） | ✅ 节气误差 ~15 s；1900-2100 回归面 + 边界交叉已测 |
-| 规则库 | 52 条 = **10 条定义级**（结构判定，`severity=记录`，不影响 tier）+ **42 条待考证**（断言级） |
+| 规则库 | 86 条 = **10 条定义级**（结构判定，`severity=记录`，不影响 tier）+ **2 条有争议** + **74 条待考证**（断言级） |
+| 派别 | 五派并列（正五行/三合/董公/玄空大卦/天星）+ **斗首（参考层，默认不入路由）** |
+| 紫白四盘 | ✅ 年/月/日/时入中星 + 九宫飞布 + 五黄到山；飞布方向口径 `zibai_fly`（顺/逆）；年五黄按立春换年（与年紫白同源） |
+| 建除 / 黄黑道 | ✅ 日家 + 时家；建除两条恒等式（建日=月建日、破日=月破日）逐月自校；十二神与既有勾陈表 12/12 交叉吻合 |
+| 二十八宿值日 | ✅ 七元起宿 + 星期恒等式自校验（1900-2100 零违例）+ 三站黄历对算；**值宿吉凶标签为粗化** |
+| 吉神表 | ✅ 天德（卦位口径 `tiande_guaxiang` 三选一）/ 月德 / 月德合 / 天赦 |
+| 确定性门禁 | ✅ `tools/determinism_probe.py` 多 seed 指纹一致（20/20）；条件禁浮点、口径必须显式 `default`（`rules lint` 两条不变式 + 反证测试） |
+| 死代码门禁 | ✅ `rules lint` 第 14 项：`derive_*` 必须有定义文件外的调用点（传递闭包）、符号层模块必须被 import；`coverage_gaps.yaml` 的 `implementation` 声明与代码事实双向核对 |
+| 判定类型（C 第一批） | ✅ `verdict_type`(gate/vote/reference) + `engine_eligible` + 理由编码；参考层命中可见但不进 state/tier/publishable（当前 10 条已标，75 条待批量迁移） |
+| 影子规则 | ✅ 1 条（`PUB-WUHUANG-PALACE-001`，`engine_eligible: false` 只观察不计分）；"观察不投票"有语义测试 |
 | 三态判定 / 分层向量 / 派别并列 / 四类冲突 | ✅ 已实现，金标准案例通过 |
-| 复核器 / 生成器 / 报告 / manifest | ✅ 4380 候选 1.86 s（预算 2 s，余量 7%） |
+| 复核器 / 生成器 / 报告 / manifest | ✅ 4380 候选 ≈3.2 s（预算 3.5 s；逐候选叠加时柱后上调，见 CHANGELOG 0.5.0） |
 | 稳健集 / 敏感集 | ✅ `--robustness`（坐向 ±uncertainty + 口径开关扰动矩阵） |
-| 口径注册表 | ✅ 三煞（2 口径）/ 纳音（4 口径），报告回显 + 对比式提示 |
+| 口径注册表 | ✅ 三煞（2 口径）/ 纳音（4 口径）/ 斗首土长生（2 口径）/ 紫白飞布（2 口径）/ 天德卦位（3 口径） |
 | 案例库 | ⚠️ 仅 1 条 A 级金标准案例；论坛案例（511 条）尚未结构化入库 |
 | 变异测试抽查 | ✅ 8/8 变异被抓住（`make mutation`） |
 | 服务化（FastAPI/PWA） | ❌ 未实现（M10） |
@@ -68,21 +77,22 @@ export PYTHONPATH=core-time/src:core-symbol/src:core-rule/src:core-eval/src:app-
   报告标为 **「演示性不可用」，明确"不作为排除依据"**（不再写"确定排除"）
 - ❌ **可发布的吉凶结论**：`publishable` 取决于**该事项的必需规则集**是否全部可判定
 
-**验收信号（v0.3 新增）**：修造的必需集共 10 条，**已可判定 9 条**，只差 `ASSERT-REPEAT-001`
-一条原文 —— 补齐它，`publishable` 第一次为 true。这就是 P0 考证的完成定义，
-不再需要"把 42 条全考证完"。
+**验收信号**：修造的必需集共 **8 条**（ADR-0012 拆分后），当前**已可判定 0 条** ——
+不是实现缺失，而是 8 条全部 `待考证`、`quote` 为空，按 ADR-0014「未考证的必需规则即使
+求值为 False 也算阻塞」一律计入阻塞。**补齐这 8 条的原文与签名，`publishable` 第一次为 true。**
+这就是 P0 考证的完成定义，不需要"把所有待考证规则都考证完"。
 
 ## 目录结构
 
 ```
 core-time/     事实层：节气、真太阳时、四柱、农历（禁止吉凶字段）
-core-symbol/   符号层：干支关系、纳音、旬空、二十四山、派生事实（神煞方位）
+core-symbol/   符号层：干支关系、纳音、旬空、二十四山、紫白四盘、二十八宿、吉神表、派生事实
 core-rule/     规则层：DSL 解析/求值、生命周期、provenance、派别路由、规则库 YAML
 core-eval/     判定层：三态、分层向量、分歧度、敏感性、排序、结构检测器
 app-zeri/      应用层：CLI、复核器、生成器、报告、案例运行器
 cases/         案例库：schema + 分级案例 + 原文快照
 tests/         单元/属性/金标准/契约/性能
-docs/          DEVELOPMENT.md + ADR + QUESTIONS.md
+docs/          DEVELOPMENT.md + ADR + QUESTIONS.md + research/（调研记录与证据等级）
 tools/         规则生成器、CI 门禁脚本
 ```
 
@@ -90,7 +100,8 @@ tools/         规则生成器、CI 门禁脚本
 
 - [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) —— 完整规格（架构、DSL、算法、测试策略、红线）
 - [`AGENTS.md`](AGENTS.md) —— AI Agent 工作指令（角色边界、硬禁止、提交规范）
-- [`docs/QUESTIONS.md`](docs/QUESTIONS.md) —— **必须由人类裁定的问题清单**（当前 11 项）
+- [`docs/QUESTIONS.md`](docs/QUESTIONS.md) —— **必须由人类裁定的问题清单**（当前 17 项）
+- [`docs/research/2026-11-xiu-jishen-zibai.md`](docs/research/2026-11-xiu-jishen-zibai.md) —— 紫白/值宿/吉神的检索式、来源等级与机器自校验方式
 - [`docs/adr/`](docs/adr) —— 11 份架构决策记录（0009 定义级 severity 白名单 / 0010 必需集发布 / 0011 时间基准两轴）
 - [`CHANGELOG.md`](CHANGELOG.md) —— 变更与踩坑记录
 
