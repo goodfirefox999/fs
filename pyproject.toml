@@ -11,7 +11,9 @@ dependencies = ["pyyaml>=6.0"]
 [project.optional-dependencies]
 # 天星派真实星历（Moshier，无需数据文件）为可选依赖：未安装时相关 facts 降级 unknown。
 astro = ["pyswisseph>=2.10"]
-dev = ["pytest>=8", "pytest-cov>=5", "hypothesis>=6", "ruff>=0.5", "mypy>=1.10"]
+# coverage 锁死：ratchet 地板取 floor(实测)，coverage 版本漂移会改变分支计数。
+# 7.17.0 是本地与 CI 共同验证的版本；升级需同时重跑 10 次 make cov 对比。
+dev = ["pytest>=8", "pytest-cov>=5", "coverage==7.17.0", "hypothesis>=6", "ruff>=0.5", "mypy>=1.10"]
 
 [project.scripts]
 zeri = "app_zeri.cli:main"

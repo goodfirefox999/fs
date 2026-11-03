@@ -10,6 +10,7 @@ publishable 的 false→true 验收信号，不依赖真实考证进度。
 
 from __future__ import annotations
 
+import os
 from dataclasses import replace as dc_replace
 from datetime import datetime
 from pathlib import Path
@@ -35,6 +36,24 @@ from core_rule.registry import RuleRegistry
 from core_time import CalendarConfig
 
 CST = ZoneInfo("Asia/Shanghai")
+
+
+def _coverage_active() -> bool:
+    """当前是否在 coverage 插桩下运行。计时断言在插桩下无效，必须换地方执行。"""
+    try:
+        import coverage
+    except ImportError:  # pragma: no cover - 开发环境必有 pytest-cov
+        return False
+    return coverage.Coverage.current() is not None
+
+
+def _single_month_budget_sec() -> float:
+    """单月冒烟预算：本地 2.0s，CI 放宽到 3.0s。
+
+    CI runner 比本地慢 2–3×（2026-11-03 实测：同一测试在 CI 覆盖模式下 2.07s 与
+    2.62s）。O(n²) 回归的实测值是 ~9s，3.0s 仍能抓住，不是「把门禁调到永不失败」。
+    """
+    return 3.0 if os.environ.get("CI") or os.environ.get("GITHUB_ACTIONS") else 2.0
 
 
 def _strip_all_hits(ctx: dict) -> dict:
@@ -913,8 +932,12 @@ class TestAdr0014EvidenceCap:
         assert tp._is_ci() is True
 
     def test_single_month_budget_smoke(self, registry) -> None:
-        """评审第十四轮：缩放版预算冒烟（not-slow 可见）——单月 372 候选 < 0.6s。
-        O(n²) 类回归（如 pareto）在单月尺度即暴露，不必等 CI 的全年 slow 测试。"""
+        """缩放版预算冒烟（not-slow 可见）：单月 372 候选，本地 < 2.0s、CI < 3.0s。
+
+        O(n²) 类回归（如 pareto）在单月尺度即暴露，不必等全年 slow 测试。
+        **不在 coverage 插桩下计时**：CI 实测同一测试被插桩放大到 2.07–2.62s，
+        计时不可比；插桩下只校验候选数，计时交给无插桩的 `pytest tests/golden` 步骤。
+        """
         import time
         from datetime import date as _date
 
@@ -928,7 +951,16 @@ class TestAdr0014EvidenceCap:
                      allow_unverified=True, top=20)
         elapsed = time.perf_counter() - t0
         assert r.total_candidates == 372
-        assert elapsed < 2.0, f"单月穷举 {elapsed:.2f}s 超 2.0s 冒烟阈（O(n²) 类回归嫌疑）"
+        if _coverage_active():
+            pytest.skip(
+                "覆盖率插桩放大耗时（CI 实测 2.07–2.62s），计时不可比；"
+                "计时断言在无插桩的 `pytest tests/golden` 步骤或 make cov 的独立冒烟进程执行；"
+                "直接 pytest --cov 不会补跑，不要把它当作性能已验"
+            )
+        budget = _single_month_budget_sec()
+        assert elapsed < budget, (
+            f"单月穷举 {elapsed:.2f}s 超 {budget:.1f}s 冒烟阈（O(n²) 类回归嫌疑）"
+        )
 
     def test_fingerprint_reflexive_field_enumeration(self, registry) -> None:
         """评审第十四轮产物五：指纹字段覆盖从手挑 6 项改为**反射穷举**。

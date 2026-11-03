@@ -1,5 +1,9 @@
 # 变异测试报告
 
+> 本文件是**归档副本**。`make mutation` 默认写 `out/mutation-report.md`（运行产物，
+> 不进 git，避免每次运行时间戳产生 diff）；需要归档某次结果时显式运行
+> `python tools/mutation_check.py --report docs/mutation-report.md`。
+
 - 运行时间：2026-11-03T11:02:59+08:00
 - 级别：`full`（core = PR 门禁子集，full = nightly 全量）
 - 变异点数：28　存活：0

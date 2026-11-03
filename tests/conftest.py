@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import copy
+import os
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -37,6 +38,49 @@ def deep_merge(base: dict[str, Any], overrides: dict[str, Any]) -> dict[str, Any
 @pytest.fixture(scope="session")
 def tz() -> ZoneInfo:
     return ZoneInfo("Asia/Shanghai")
+
+
+def _coverage_instrumented(config=None) -> bool:
+    """本次运行是否在 coverage 插桩下。
+
+    优先看 pytest 的 ``--cov`` 参数（terminal summary 阶段 coverage session 已停，
+    ``Coverage.current()`` 会返回 None，不能只靠它判断）。
+    """
+    if config is not None:
+        for option in ("cov_source", "cov"):
+            try:
+                value = config.getoption(option)
+            except ValueError:
+                continue
+            if value:
+                return True
+        # 有 config 就以它为准：不再回退到全局 Coverage.current()——收尾阶段
+        # 全局状态可能残留，会让「没有 --cov」被误判成「有插桩」。
+        return False
+    try:
+        import coverage
+    except ImportError:  # pragma: no cover - dev 环境必有 pytest-cov
+        return False
+    return coverage.Coverage.current() is not None
+
+
+def pytest_terminal_summary(terminalreporter, exitstatus, config):
+    """直接 `pytest --cov` 时把「性能冒烟没有被补跑」喊出来（评审十回路）。
+
+    事故形态：`make cov` 会在无插桩进程里补跑性能冒烟，但开发者习惯直接
+    `pytest --cov`——此时冒烟被 skip，且**没有任何独立进程补跑**，本地性能门禁
+    静默消失，看到的是「全绿」。这里不阻断，只在收尾打一行醒目的提示，
+    让「跳过」区别于「通过」。
+    """
+    if not _coverage_instrumented(config):
+        return
+    if os.environ.get("ZERI_PERF_SMOKE_STANDALONE"):
+        return
+    terminalreporter.write_line(
+        "⚠️ 本次在 coverage 插桩下运行：性能冒烟已 skip，且没有独立进程补跑。"
+        "性能未验证——请用 `make cov` / `make gate`（内含无插桩独立冒烟）。",
+        yellow=True,
+    )
 
 
 @pytest.fixture(scope="session")

@@ -11,3 +11,4 @@ build/
 out/
 .hypothesis/
 bench_history.ci.jsonl
+tests/bench/bench_history.jsonl

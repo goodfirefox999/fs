@@ -24,7 +24,7 @@ check-python:
 help:
 	@echo "make test       全量测试（含性能）"
 	@echo "make test-fast  跳过 slow 标记"
-	@echo "make cov        覆盖率报告（新鲜采集，门禁：整体 >=80%）"
+	@echo "make cov        覆盖率报告（新鲜采集，门禁：整体 >=80% + 包级/文件级 ratchet）"
 	@echo "make lint       规则库 lint"
 	@echo "make check-yaml 校验 .github/workflows/*.yml 语法"
 	@echo "make gate       全部 CI 门禁（check-yaml + cov + lint + ...）"
@@ -53,11 +53,20 @@ test-fast: check-python
 # 注意：cov 必须由 pytest --cov 新鲜采集 .coverage，再交给 coverage report。
 # 2026-11-03 事故：gate 不跑 cov，只读上一次遗留的 .coverage，报出 75%
 # （fresh 实测 84%）；再配 `|| true`，覆盖率门禁名存实亡。禁止改回读旧数据。
+# 整体 >=80% 之外再跑包级 + 文件级 ratchet（tools/coverage_ratchet.yaml）：
+# 整体 84% 掩盖 app-zeri 68%，包级 68% 又掩盖 cli.py 34%；两层地板才堵住。
+# 末尾再用无插桩进程跑一次性能冒烟：计时断言在 coverage 下不可比（见该测试注释）。
+# 三项判定（覆盖率/性能/ratchet）全部跑完再汇总退出码，避免前者失败让后者静默消失。
 cov: check-python
 	@mkdir -p out
 	$(PYTHON) -m pytest -m "not slow" --cov --cov-report=term --cov-report=html --junitxml=out/junit-cov.xml
-	$(PYTHON) -m coverage report --fail-under=80
-	@$(PYTHON) tools/summarize_junit.py out/junit-cov.xml
+	@rc=0; \
+	$(PYTHON) -m coverage report --fail-under=80 || rc=1; \
+	$(PYTHON) -m pytest tests/golden/test_required_and_negative.py::TestAdr0014EvidenceCap::test_single_month_budget_smoke --junitxml=out/junit-perf-smoke.xml || rc=1; \
+	$(PYTHON) tools/summarize_junit.py out/junit-perf-smoke.xml --perf || rc=1; \
+	$(PYTHON) tools/coverage_ratchet.py || rc=1; \
+	$(PYTHON) tools/summarize_junit.py out/junit-cov.xml; \
+	exit $$rc
 
 lint:
 	$(PYTHON) -m app_zeri.cli rules lint

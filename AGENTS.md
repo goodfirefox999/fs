@@ -125,17 +125,28 @@
     | `1` | `PRODUCT_FAIL`：决策面漂 | **阻断**，必须停 |
     | `2` | `ENV_SUSPECT`：机器忙/进程争抢 | **阻断并重跑**，不得写成产品问题 |
     | `3` | `OUTPUT_FAIL`：决策一致但报告文本漂 | **带警告通过**：`make gate` 经 `tools/determinism_gate.py` 映射为 0，同时写 `out/output-fail.flag`（JSON，含 seed 指纹与 stderr）；CI 必须读取该文件并发 `::warning`/写入 job summary，**不得静默** |
+    | `64` | `EX_USAGE`：调用方式错误（CI 中直接调 `make determinism` / 原始探针，绕过适配层） | **入口用错，不是产品失败**：改用 `make gate`（第 17 条）；不要按 `sysexits.h` 去查产品/环境原因 |
 
     `make determinism` 保留原始退出码（3 仍是 3），供人工复核；**只有 `make gate`
     做降级，且只降级 3**。1/2 若被降级，等于把「产品坏」或「机器忙」伪装成
-    「带警告发布」——这正是把判据做成装饰的典型方式。
+    「带警告发布」——这正是把判据做成装饰的典型方式。`64` 不是确定性判定，
+    而是「入口走错了」，与 0/1/2/3 不是同一维度。
 
 16. **覆盖率门禁必须读新鲜数据，且不得 `|| true`。** `make gate` 依赖 `cov`：
     由 `pytest --cov` 重新采集 `.coverage`，再由 `coverage report --fail-under=80`
     阻断。禁止只读上一次遗留的 `.coverage`，禁止用 `|| true` 吞掉失败。
+    **整体 80% 之外还有包级 + 文件级 ratchet**：`tools/coverage_ratchet.py` 按
+    `tools/coverage_ratchet.yaml` 设两层地板——包级 `min`（app-zeri 68%、core-* 92–96）
+    与文件级 `min`（cli.py 34%、case_runner.py 44%、report.py 76% 等）。
+    低于任一层即失败；包内低于 `target` 的文件**没有文件级地板也算失败**——
+    否则包级 68% 会继续替 cli.py 34% 背书。提覆盖率后按 `--update` 的建议上调
+    （只升不降，不自动写文件）；**不得手工下调地板来换绿色**，确需下调须在
+    提交信息说明理由。基线过松（实测 - 地板 > 2pp）会告警但不阻断。
     > 2026-11-03 实测：旧 `.coverage` 报 75%，fresh `make cov` 报 84%——旧数据
     > 让「覆盖率下降」和「覆盖率通过」在日志里长得一模一样。测试锚点：
-    > `tests/unit/test_gate_wiring.py`。
+    > `tests/unit/test_gate_wiring.py`、`tests/unit/test_coverage_ratchet.py`。
+    > CI 与本地 venv 统一为 Python 3.14；版本分叉会让分支计数漂移，被迫留
+    > 1pp 余量，地板就失去「只许升」的意义。
 
 17. **CI 的确定性门禁只能走适配层。** CI 中 `make determinism` 以 64 拒绝；
     直接调 `determinism_probe.py --gate` 在 `CI=true` 且没有适配层 token 时
@@ -237,7 +248,9 @@
     正常**；`--junitxml` 恒可见。因此：报数的唯一权威来源是 junitxml
     （`make test/test-fast/golden` 已默认落 `out/junit-*.xml` 并用
     `tools/summarize_junit.py` 收尾打印标准行）；对外的「N passed」必须能给出
-    XML 路径，给不出即视为未验证。历史重写链的逐 SHA 验证用
+    XML 路径，给不出即视为未验证。**`passed = tests - failures - errors - skipped`**：
+    junit 的 `tests` 是总数，直接当 passed 会把跳过报成通过；skipped 的用例名与
+    原因也会随汇总行打印，不允许「只看到一个 skip 数字」。历史重写链的逐 SHA 验证用
     `tools/verify_rewrite_chain.py`。
 11. **归因「环境问题」前必须先做调用方式对照实验**（2026-11-03，`-q` 根因反转的制度化）：
     任何"本沙箱不行 / 环境不支持 / 输出异常"的判断，在写进报告前必须至少各变一次

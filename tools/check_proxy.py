@@ -19,7 +19,7 @@
 输出固定三行，避免「预检说 200，push 却走了另一条路失败」::
 
     env_proxy: 有（https_proxy=...）  git_config_proxy: 无
-    direct: 200  via_proxy: 200
+    direct: 200 (https://github.com)  via_proxy: 200
     push_route: 当前将走 proxy（环境变量 https_proxy）
 
 用法::
@@ -122,6 +122,8 @@ def check(url: str, *, timeout: int = 10) -> int:
 
     # 直连永远探一次，作为对照；代理配置则再探一次。两条路都留下证据，
     # 避免「预检说 200，push 却走了另一条路失败」时无法定位。
+    # 输出必须带 URL：200 只证明「这个 URL 可达」。探 example.com 的 200
+    # 不能当作 github 可达的证据，更不能当作 push（git-receive-pack）可达。
     direct_ok, direct_evidence = probe(url, timeout=timeout)
     if env_value or git_value:
         proxy_value = env_value or git_value
@@ -129,7 +131,7 @@ def check(url: str, *, timeout: int = 10) -> int:
     else:
         proxy_value = None
         via_ok, via_evidence = False, "未配置"
-    print(f"direct: {direct_evidence}  via_proxy: {via_evidence}")
+    print(f"direct: {direct_evidence} ({url})  via_proxy: {via_evidence}")
 
     # push 实际会走哪条：环境变量优先（git 子进程默认继承），否则 git config，最后直连。
     if env_value:

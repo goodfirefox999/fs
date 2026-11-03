@@ -73,7 +73,7 @@ class TestCheck:
         out = capsys.readouterr().out
         assert "env_proxy: 有（https_proxy=http://127.0.0.1:1）" in out
         assert "git_config_proxy: 无" in out
-        assert "direct: 200  via_proxy: 200" in out
+        assert "direct: 200 (https://github.com)  via_proxy: 200" in out
         assert "push_route: 当前将走 proxy（环境变量 https_proxy）" in out
         assert "✅" in out
         assert calls == [None, "http://127.0.0.1:1"], "直连与代理都要留下证据"
@@ -89,7 +89,7 @@ class TestCheck:
         monkeypatch.setattr(proxy, "probe", fake_probe)
         assert proxy.check("https://github.com") == 1
         out = capsys.readouterr().out
-        assert "direct: 200  via_proxy: 502" in out
+        assert "direct: 200 (https://github.com)  via_proxy: 502" in out
         assert "push_route: 当前将走 proxy（环境变量 https_proxy）" in out
         assert "问题在代理/环境变量，不是上游" in out
         assert calls == [None, "http://127.0.0.1:1"], "先探直连做对照，再探代理"
@@ -99,7 +99,7 @@ class TestCheck:
         monkeypatch.setattr(proxy, "probe", lambda url, **kw: (False, "curl 超时"))
         assert proxy.check("https://github.com") == 1
         out = capsys.readouterr().out
-        assert "direct: curl 超时  via_proxy: curl 超时" in out
+        assert "direct: curl 超时 (https://github.com)  via_proxy: curl 超时" in out
         assert "上游/网络故障" in out
 
     def test_missing_env_but_direct_up_warns(self, monkeypatch, no_git_proxy, capsys) -> None:
@@ -108,10 +108,18 @@ class TestCheck:
         assert proxy.check("https://github.com") == 0
         out = capsys.readouterr().out
         assert "env_proxy: 无  git_config_proxy: 无" in out
-        assert "direct: 200  via_proxy: 未配置" in out
+        assert "direct: 200 (https://github.com)  via_proxy: 未配置" in out
         assert "push_route: 当前将走 direct" in out
         assert "未配置代理" in out
         assert "静默直连" in out
+
+    def test_output_names_the_probed_url(self, monkeypatch, no_git_proxy, capsys) -> None:
+        """200 只证明「这个 URL」可达；URL 必须出现在证据行里，不能靠默认值猜。"""
+        monkeypatch.setattr(proxy, "env_proxy", lambda: (None, None))
+        monkeypatch.setattr(proxy, "probe", lambda url, **kw: (True, "200"))
+        assert proxy.check("https://example.com/owner/repo.git") == 0
+        out = capsys.readouterr().out
+        assert "direct: 200 (https://example.com/owner/repo.git)" in out
 
     def test_missing_env_and_direct_down_fails(self, monkeypatch, no_git_proxy, capsys) -> None:
         monkeypatch.setattr(proxy, "env_proxy", lambda: (None, None))

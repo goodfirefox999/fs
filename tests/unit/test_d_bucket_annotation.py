@@ -192,6 +192,12 @@ def test_before_after_decision_and_output_are_identical(tmp_path: Path, name, dt
 
     # rule_lib_version 必须变：规则 YAML 内容变了，内容哈希应与之一致地变化。
     # 若这里相等，说明版本没有覆盖规则内容，归一化就会掩盖一个真实缺陷。
+    #
+    # **前提（2026-11-03 评审确认）**：`rule_lib_version` 来自
+    # `loader.load_ruleset()` 对每条规则 raw YAML 做 `stable_hash` 后的库级哈希
+    # （见 `lib_version = "rl-" + stable_hash(...)`）。本断言依赖「内容哈希」这一
+    # 语义；若未来改成手动递增版本号，此断言需同步调整——否则会从
+    # 「内容变了版本必变」退化成「有人记得改版本号」。
     version_before = _rule_lib_version(report_before)
     version_after = _rule_lib_version(report_after)
     assert version_before and version_after, f"{name}: 报告缺少 rule_lib_version"

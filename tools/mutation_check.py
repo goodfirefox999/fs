@@ -321,7 +321,11 @@ def main(argv: list[str] | None = None) -> int:
         help="core = PR 门禁子集（10 个）；full = 全量（26 个，nightly）",
     )
     parser.add_argument("--dry-run", action="store_true")
-    parser.add_argument("--report", default=None, help="把存活列表写入指定文件（默认 docs/mutation-report.md）")
+    parser.add_argument(
+        "--report",
+        default=None,
+        help="报告路径（默认 out/mutation-report.md，运行产物不进 git；归档时显式传 docs/mutation-report.md）",
+    )
     args = parser.parse_args(argv)
 
     selected = [m for m in MUTATIONS if not args.key or args.key in m.key]
@@ -340,7 +344,9 @@ def main(argv: list[str] | None = None) -> int:
             survived.append(m)
 
     print()
-    report_path = Path(args.report) if args.report else ROOT / "docs" / "mutation-report.md"
+    # 默认写 out/：每次跑都变的运行时间戳不应污染 docs/ 的提交历史。
+    # 需要把某次结果作为审计证据归档时，显式 --report docs/mutation-report.md。
+    report_path = Path(args.report) if args.report else ROOT / "out" / "mutation-report.md"
     _write_report(report_path, selected, survived, level=args.level)
 
     if survived:

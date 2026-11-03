@@ -1,0 +1,73 @@
+# 覆盖率 ratchet 基线（包级 + 文件级，只许升不许降）。
+#
+# 为什么需要：整体 84% 过门禁时，app-zeri 68% 不会阻断任何东西；只看包级
+# 68% 时，cli.py 34% 也不会阻断任何东西（case_runner 涨回去就能把包级拉平）。
+# 所以两层都设地板：包级 min + 包内低覆盖文件的单文件 min。
+#
+# 语义（别把三者混为一谈）：
+#   min    = 地板。实测低于它即失败；**只许升不许降**。
+#   target = 目标。包内低于 target 的文件必须在 files 下登记单文件地板；
+#            min 可以高于 target（表示已经超过目标，但不许掉回来）。
+#   实测值 = 每次 make cov 的新鲜测量，允许在地板之上波动；掉破地板才失败。
+#
+# 取值口径（2026-11-03 fresh make cov，Python 3.14 本地 = CI 统一版本）：
+#   core-time   96.19% -> 96    core-symbol 94.33% -> 94
+#   core-rule   92.00% -> 92    core-eval   92.79% -> 92
+#   app-zeri    68.06% -> 68
+# 取 floor(实测) 而不是再留 1pp：CI 已统一到 3.14，版本差异这个根因消除。
+# 若未来 CI 与本地版本再次分叉，收紧条件写死为：
+#   连续 10 次 CI 与本地差值 < 0.3pp，才允许把 min 设为 floor(实测值)；
+#   否则保留 1pp 余量，并在 CHANGELOG 记录「已知宽松」。
+#
+# 新增包（会触发 test_coverage_ratchet 的 source 不变式）：
+#   1. pyproject.toml 的 [tool.coverage.run].source 加包路径；
+#   2. make cov 得到实测值；
+#   3. 在下面 modules 加 name/path/min/target（min=floor(实测)）；
+#   4. 该包内低于 target 的文件在 files 下逐个登记 min=floor(实测)；
+#   5. make gate 确认绿。缺登记会直接失败，不允许 skip。
+modules:
+  core-time:
+    path: core-time/src/core_time
+    min: 96
+    target: 90
+  core-symbol:
+    path: core-symbol/src/core_symbol
+    min: 94
+    target: 90
+  core-rule:
+    path: core-rule/src/core_rule
+    min: 92
+    target: 90
+  core-eval:
+    path: core-eval/src/core_eval
+    min: 92
+    target: 90
+  app-zeri:
+    path: app-zeri/src/app_zeri
+    min: 68
+    target: 80
+
+# 只登记「当前低于包目标」的文件：cli.py 34% 是用户入口，case_runner.py 44%
+# 与 report.py 77% 是真实缺口；其余低于 90% 的文件同理。高于目标后可以保留
+# 地板（只许升），不要为了让表变短而删除。
+#
+# 高于 target 的文件默认不设地板：超过目标后允许在 target 以上波动（例如 95%
+# 掉到 81% 不会红）。关键路径（如 cli.py 未来涨到 85%）建议手动加地板，取
+# floor(实测) - 2pp 作为容忍带——「没设地板」不等于「不用管」。
+files:
+  app-zeri/src/app_zeri/case_runner.py:
+    min: 44
+  app-zeri/src/app_zeri/cli.py:
+    min: 34
+  app-zeri/src/app_zeri/report.py:
+    min: 76
+  core-eval/src/core_eval/disagreement.py:
+    min: 86
+  core-eval/src/core_eval/ranker.py:
+    min: 84
+  core-rule/src/core_rule/calibers.py:
+    min: 87
+  core-rule/src/core_rule/severity_cap.py:
+    min: 85
+  core-symbol/src/core_symbol/jishen.py:
+    min: 87

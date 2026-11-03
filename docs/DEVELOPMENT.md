@@ -510,20 +510,59 @@ C（残缺/来源不明）→ 不统计。
 
 **覆盖率现状（`make cov` 实测）：**
 
-| 包 | 覆盖率（2026-11-03 fresh） | 门禁 |
-|---|---|---|
-| core-time | 96% | ✅ ≥90% |
-| core-symbol | 94% | ✅ ≥90% |
-| core-rule | 92% | ✅ ≥90% |
-| core-eval | 93%（engine 92%、ranker 84%、disagreement 87%） | ✅ 目标 90% |
-| app-zeri | 68%（cli 34%、case_runner 44%、report 77%；已计入 source） | ⚠️ 目标 80%，未达 |
-| **整体** | **84%**（1204 个非 slow 测试；`make cov` 新鲜采集） | ✅ ≥80% |
+| 包 | 覆盖率（2026-11-03 fresh） | 包级地板 | 目标 |
+|---|---|---|---|
+| core-time | 96.2% | 96% | 90% |
+| core-symbol | 94.3% | 94% | 90% |
+| core-rule | 92.0% | 92% | 90% |
+| core-eval | 92.8%（engine 92%、ranker 84.5%、disagreement 87%） | 92% | 90% |
+| app-zeri | 68.1%（cli 34.1%、case_runner 44.4%、report 76.8%） | 68% | 80% |
+| **整体** | **84%**（1226 个非 slow 测试；`make cov` 新鲜采集） | — | ≥80% |
+
+**文件级地板（包内低于目标的文件必须单列）：**
+
+| 文件 | 覆盖率 | 地板 | 目标 |
+|---|---|---|---|
+| `app-zeri/cli.py` | 34.1% | 34% | 80% |
+| `app-zeri/case_runner.py` | 44.4% | 44% | 80% |
+| `app-zeri/report.py` | 76.8% | 76% | 80% |
+| `core-rule/severity_cap.py` | 85.2% | 85% | 90% |
+| `core-rule/calibers.py` | 87.4% | 87% | 90% |
+| `core-eval/ranker.py` | 84.5% | 84% | 90% |
+| `core-eval/disagreement.py` | 87.0% | 86% | 90% |
+| `core-symbol/jishen.py` | 87.9% | 87% | 90% |
 
 > **门禁口径（2026-11-03 修正）**：`make gate` 必须先经 `make cov` 用
 > `pytest --cov` 重新写 `.coverage`，再 `coverage report --fail-under=80`；
 > 不得只读上一次遗留的 `.coverage`，不得跟 `|| true`。事故实证：旧数据报
 > 75%，fresh 实测 84%——旧数据会让「下降」和「通过」不可区分。
 > 测试锚点 `tests/unit/test_gate_wiring.py`。
+>
+> **两层 ratchet（2026-11-03 评审十/十一回路）**：整体 84% 过线时 `app-zeri`
+> 68% 不会阻断；只看包级 68% 时 `cli.py` 34% 也不会阻断（case_runner 涨回去
+> 就能把包级拉平）。`tools/coverage_ratchet.py` 因此设两层地板：包级 `min`
+> 与文件级 `min`，低于任一层即失败；包内低于 `target` 的文件**没有文件级地板
+> 也算失败**。`make cov` 每次打印两张表。
+>
+> **min / target 语义**：`min` 是地板（只许升不许降），`target` 是目标；
+> `min` 可以高于 target（core-time 96 > 90，表示已超过目标但不许掉回来）。
+> 覆盖率提升后按 `python tools/coverage_ratchet.py --update` 的建议上调地板
+> （不自动写文件，避免覆盖取值理由）；手工下调须在提交信息说明理由。
+> 实测 - 地板 > 2pp 会告警「基线过松」，但不阻断。
+> 测试锚点 `tests/unit/test_coverage_ratchet.py`。
+>
+> **版本与收紧条件**：CI 与本地 venv 已统一到 Python 3.14.2（此前 3.12/3.14
+> 的分支计数差异迫使留 1pp 余量）。本轮地板取 `floor(实测)`；若未来版本再次
+> 分叉，收紧条件为**连续 10 次 CI 与本地差值 < 0.3pp**，否则保留 1pp 余量并在
+> CHANGELOG 记「已知宽松」。`app-zeri` 68% 与 `cli.py` 34% 仍是真实风险，
+> 缺口见 Q-008，不以降地板掩盖。
+>
+> **性能冒烟不在 coverage 插桩下计时**：单月 372 候选的 2.0s 断言跑在
+> `pytest --cov` 里会被插桩放大（CI 实测 2.07–2.62s），不是 O(n²)。`make cov`
+> 末尾用独立无插桩进程补跑一次（`out/junit-perf-smoke.xml`）；本地预算 2.0s、
+> CI 3.0s，O(n²) 回归实测 ~9s 仍会被抓住。`cov` 把覆盖率阈值、性能冒烟、ratchet
+> 三项都跑完再汇总退出码——前者失败不会让后者静默消失。CI 覆盖率步骤直接
+> `make cov PYTHON=python`，避免与本地接线漂移。
 
 **变异测试抽查（`make mutation`）**：**28 处**定点变异，覆盖算子边界（in/gte/between/count_gte/
 same_group kind）、三态转换、tier 分支、冲突检测、unknown 分类、定义级白名单、
@@ -534,8 +573,9 @@ publishable 必需集、演示标记、节气黄经、置闰、五虎遁/五鼠�
 > unknown 分类串味、same_group kind 被忽略、二十四山只抽查首尾、TIER_RANK 顺序、演示标记无断言），
 > 均已补测。**变异存活 = 测试没真正验证行为，要补测试而不是改变异点。**
 
-**未达标项如实登记**：`core-eval/engine.py`（86%）、`ranker.py`（85%）、`disagreement.py`（87%）
-的剩余分支主要是异常/空集保护路径；`app-zeri` 的 CLI 参数解析分支未纳入统计。
+**未达标项如实登记**：`app-zeri/cli.py`（34%）、`case_runner.py`（44%）、
+`report.py`（77%）是当前主要缺口；`core-eval/ranker.py`（84.5%）与
+`disagreement.py`（87%）的剩余分支主要是异常/空集保护路径。
 **不以降低门禁或删除断言的方式"达标"**，缺口见 `docs/QUESTIONS.md` Q-008。
 
 **CI 门禁：** 测试全绿 + 金标准回归通过 + `status` 变更签名检查 + 覆盖率（整体 ≥80%）+

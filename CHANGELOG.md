@@ -2,6 +2,201 @@
 
 遵循 [Keep a Changelog](https://keepachangelog.com/)；版本号遵循语义化版本。
 
+## [Unreleased] 评审回路（十二）：门禁顺序锁死 + skip 可见化 + 性能余量观察（2026-11-03）
+
+### 覆盖率红时性能门禁不再静默消失
+
+`cov` 的三项判定（整体 80% / 独立冒烟 / ratchet）改由同一个 `rc` 汇总：
+`coverage report --fail-under=80` 失败后仍继续跑冒烟与 ratchet，末尾 `exit $rc`。
+顺序上冒烟先于 ratchet——先拿便宜的性能信号，避免 ratchet 红时冒烟被挡。
+
+新增接线锁 `test_cov_runs_smoke_and_ratchet_before_aggregate_exit`：断言三项判定
+同处一个 `rc=0 … exit $rc` 段内，且冒烟 index 早于 ratchet。
+
+### 推验证分支必须真的能触发 CI
+
+`on.push.branches` 原只有 `main/master`——推 `ci/verify-py314` 不会跑任何 workflow，
+「推临时分支实测 3.14.2」这个唯一阻塞项会变成空操作。现已加入 `ci/**` 与
+`workflow_dispatch`，并有 `test_ci_runs_on_verification_branches` 锁定。
+
+### 3.14.2 与 coverage 版本锁死
+
+`pyproject` dev extras 与 CI 安装行都钉 `coverage==7.17.0`，CI 解释器钉
+`3.14.2`（不是 `3.14`，避免补丁版漂移改变分支计数）。`floor(实测)` 零余量
+只在版本完全一致时成立。
+
+### skip 不再看起来像 pass
+
+- `summarize_junit` 遇 skip 额外打 `⚠️ N skipped（非 pass）`，并逐个列出
+  `↳ skipped: <用例> — <原因>`；`passed = tests - failures - errors - skipped`
+  的修正保留。
+- 新增 `--perf`：从 junit 读实业耗时并打 `perf_smoke_seconds: N.NN`。
+- `conftest.pytest_terminal_summary`：检测到 `--cov` 且未设
+  `ZERI_PERF_SMOKE_STANDALONE` 时，收尾黄字提示「性能冒烟已 skip，且没有独立
+  进程补跑」——直接 `pytest --cov` 不再能看起来像性能已验。
+
+### 性能余量提前可见
+
+新增 `tools/perf_smoke_record.py`：每次冒烟追一行 `out/perf-smoke.jsonl`，写进
+`$GITHUB_STEP_SUMMARY`；连续 2 次超 2.5s 时打 `::warning`。**不阻断**——阻断点
+仍只有 3.0s 阈值，这个装置只负责让「余量在收窄」在踩线前可见。
+
+### mutation 报告默认写 out/
+
+`make mutation` 默认 `out/mutation-report.md`（运行产物，不进 git）；需要归档时
+显式 `--report docs/mutation-report.md`。与 `bench_history.jsonl` 同类处理，
+杜绝「每次跑都改时间戳」污染提交历史。
+
+## [Unreleased] 评审回路（十一）：文件级覆盖率地板 + 统一 Python 3.14 + 基线过松告警（2026-11-03）
+
+### 包级 68% 不再替 cli.py 34% 背书
+
+`tools/coverage_ratchet.py` 从包级扩到**包级 + 文件级**两层地板：
+
+- 包级 `min`（core-* 92–96、app-zeri 68）与文件级 `min`（cli.py 34、
+  case_runner.py 44、report.py 76、severity_cap 85、calibers 87、ranker 84、
+  disagreement 86、jishen 87），低于任一层即失败；
+- **包内低于 `target` 的文件没有文件级地板 = 失败**：新增低覆盖文件不能
+  静默漏网，必须先决定「补测试还是登记缺口」；
+- `make cov` 每次打印模块表 + 文件表（实测值与地板并排，不再需要翻
+  coverage 报告）；
+- `--update` 只建议把地板抬到 `floor(实测)`，不自动写文件；低于地板时拒绝
+  update；
+- 基线过松（实测 - 地板 > 2pp）只告警不阻断，防止为了不红而故意写低地板。
+
+### 统一 Python 3.14.2，地板收紧到 floor(实测)
+
+CI 由 3.12 改为 **3.14.2**（锁补丁版，与本地 venv 完全一致），消除分支计数差异
+这个根因；地板从
+「实测 - 1pp」收紧为 `floor(实测)`。若未来版本再次分叉，收紧条件写死为：
+**连续 10 次 CI 与本地差值 < 0.3pp**，否则保留 1pp 余量并在 CHANGELOG 记
+「已知宽松」。`min` 与 `target` 的语义写进 YAML 头注释：min 是地板（只许升）、
+target 是目标（min 可高于 target），实测值允许在地板之上波动。
+
+装包可行性已做外部核对（仍非 runner 实测）：`actions/python-versions` manifest
+包含 3.14.2；`pyswisseph` 最新 2.10.3.2 **没有 cp314 wheel**，会走源码编译——
+本地 3.14.2 已编译出 `swisseph.cpython-314-darwin.so`，CI 在 3.12 也是源码编译
+（同样无 cp312 wheel），说明 Ubuntu 工具链具备；`lunar_python` 只有纯 Python
+sdist。真实 runner 是否绿，仍需推送后确认。
+
+### baseline YAML 的校验窗口确认
+
+`dead_rule_baseline`（`tools/dead_rule_scan.py`）与 `verdict_baseline`
+（`tests/unit/test_verdict_baseline.py`）都没有 `slow` 标记，在
+`-m 'not slow'` 的 `make test-fast` / `make cov` 里都会跑，不存在「只在全量
+测试才校验」的窗口；范围理由已写进 `tools/check_yaml.py` docstring。
+
+### 性能历史改为运行产物
+
+`tests/bench/bench_history.jsonl` 从 git 移除（`git rm --cached`）并加入
+`.gitignore`；CI 样本仍写 `bench_history.ci.jsonl`（已忽略），新增
+`upload-artifact` 步骤归档为 `bench-history-ci`。避免每次跑测试都产生 diff。
+
+### CI 红灯根因：单月冒烟在 coverage 插桩下计时
+
+GitHub Actions run `41570126713`（commit `227e038`）失败在
+`test_single_month_budget_smoke`：单月 372 候选 2.62s > 2.0s；上一轮 run
+`41568963513` 同样是该测试 2.07s。**不是 O(n²) 回归**，而是计时断言跑在
+`pytest --cov` 里：coverage 插桩会放大耗时，CI runner 又比本地慢 2–3×。
+
+修复分三层，不削弱性能门禁：
+
+- 插桩下只断言候选数（372），计时断言 `pytest.skip` 并注明原因；
+- `make cov` 末尾用**独立无插桩进程**跑一次单月冒烟（`out/junit-perf-smoke.xml`），
+  本地 gate 与 CI 都保留性能门禁；CI 的 golden 步骤本来也会无插桩跑它；
+- 预算按环境分档：本地 2.0s、CI 3.0s（O(n²) 回归实测 ~9s，3.0s 仍能抓住）。
+
+同时修了 `tools/summarize_junit.py` 的报数 bug：`tests` 是总数，原实现直接
+当 passed，导致「1220 passed + 1 skipped」被报成「1221 passed / 1 skipped」。
+现在 `passed = tests - failures - errors - skipped`，全跳过也不再算绿。
+
+### 推分支前的接线加固
+
+- **覆盖率/性能/ratchet 全部跑完再汇总退出码**：`cov` 不再在第一个失败处停止。
+  覆盖率红时性能冒烟仍会跑，性能红时 ratchet 仍会跑；避免「修完覆盖率再发现
+  性能也红了」的两轮排查。
+- **coverage 版本锁死 `7.17.0`**（`pyproject.toml` dev 依赖 + CI install）：
+  ratchet 地板取 `floor(实测)`，coverage 版本漂移会改变分支计数。升级需重跑
+  10 次 `make cov` 对比。
+- **skip 可见**：`summarize_junit.py` 现在打印每条 skipped 的用例名与原因
+  （`↳ skipped: ... — ...`）；gate 不再只给一个数字。CI 同时归档
+  `out/junit-perf-smoke.xml`（`perf-smoke` artifact），性能耗时可追溯。
+- **mutation 报告改为运行产物**：`make mutation` 默认写
+  `out/mutation-report.md`；`docs/mutation-report.md` 只作归档副本，避免每次
+  运行时间戳污染提交历史。
+
+### 新增包流程写进测试
+
+`tests/unit/test_coverage_ratchet.py` 文件头写明：`coverage.source` 加包 →
+`make cov` 得实测 → YAML 加 `path/min/target` → 包内低覆盖文件在 `files`
+登记 → `make gate`；第一步之后 source 不变式会立即变红提示补登记。
+
+### 验证
+
+- 新增/相关测试：26 passed（ratchet 15 + junit 汇总 4 + gate wiring 7，
+  `out/junit-ratchet-summary.xml`）；
+- `make gate`：通过；`cov` 1225 passed / 1 skipped（1226 个非 slow；跳过的是
+  coverage 下的计时断言，原因随汇总行打印），性能冒烟独立 1 passed，包级 + 文件级全绿；
+- `make test`：1229 passed（1226 非 slow + 3 slow，无 coverage，故无跳过）；
+- 连续 10 次 `make cov`：`cli.py 34.1%`、`case_runner.py 44.4%`、`TOTAL 84%`
+  与 ratchet 两表逐行一致，`floor(实测)` 的零余量在本地稳定；
+- `make check-proxy`：`direct: 200 (https://github.com)`。
+
+## [Unreleased] 评审回路（十）：分模块覆盖率 ratchet + 退出码 64 + 代理 URL 取证（2026-11-03）
+
+### 整体 84% 不再替 app-zeri 68% 背书
+
+新增 `tools/coverage_ratchet.py` + `tools/coverage_ratchet.yaml`，由 `make cov`
+与 CI 覆盖率步骤调用：
+
+- 五个包各自设地板（core-time 95、core-symbol 93、core-rule 91、
+  core-eval 92、app-zeri 67），低于任一模块即失败；
+- 每次 `make cov` 打印逐模块表，`app-zeri` 的低覆盖不再需要翻 coverage 报告；
+- 基线只许升：`--update` 只建议把基线抬到当前整数地板（不自动写文件，避免
+  覆盖取值理由注释），低于基线的模块会拒绝 update；手工下调须在提交信息说明理由；
+- `tests/unit/test_coverage_ratchet.py` 锁住「`[tool.coverage.run].source` 的每个包
+  都必须有基线」——新增包不能静默漏网。
+
+`app-zeri` 取 67%（实测 68.06%），比评审建议的 65% 更紧；`cli.py` 34% 仍是
+用户入口的真实风险，登记在 Q-008，不以降基线掩盖。基线留 1 个百分点吸收
+CI（3.12）与本地 venv（3.14）的分支计数差异。
+
+### 退出码 64 进 AGENTS 表
+
+AGENTS 第 15 条退出码表补 `64 EX_USAGE` 行：CI 中直接调 `make determinism`
+或原始探针 = 入口用错，不是产品/环境失败，修复方式是改用 `make gate`。
+不再需要去查 `sysexits.h` 或当成 bug。
+
+### 代理预检输出带探测 URL
+
+`tools/check_proxy.py` 的 `direct:` 行改为
+`direct: 200 (https://github.com)  via_proxy: 200`。200 只证明**这个 URL** 可达；
+URL 出现在证据行里，才能区分「网络通」与「github 可达」，也避免
+`git-receive-pack` 特定路径被拦时先去怀疑代理。默认探针仍是
+`https://github.com`，`--url` 可改；新增测试断言自定义 URL 会回显。
+
+### check_yaml 范围确认（不是盲区）
+
+确认 `core-rule/config/*.yaml` 与 `calibers/*.yaml` 均有运行时 loader：
+`school_policy` / `task_kinds` / `required_rules` / `consensus` / `calibers`
+由 `core_rule.default_registry()` 在 `make lint` 中 `safe_load`，
+`rules_manifest` / `coverage_gaps` 由 `rules lint` 读取，
+`dead_rule_baseline` 由 `tools/dead_rule_scan.py`、`verdict_baseline` 由
+`tests/unit/test_verdict_baseline.py` 读取。workflow YAML 是唯一没有 loader 的
+YAML（写坏只会静默不跑），因此 `check_yaml` 只覆盖它；范围理由已写进工具 docstring。
+
+### D 桶测试补字段语义前提
+
+`tests/unit/test_d_bucket_annotation.py` 的 `rule_lib_version` 断言补注释：
+前提是 `loader.load_ruleset()` 对 raw YAML 做内容哈希；若未来改成手动递增
+版本号，该断言需同步调整，否则会退化成「有人记得改版本号」。
+
+### 验证
+
+- 新增/相关测试：34 passed（`out/junit-ratchet.xml`）；
+- `python tools/coverage_ratchet.py`：五模块均不低于基线；
+- `make gate`：见本轮收尾记录（`make cov` 重新采集 + ratchet + lint + 确定性适配层）。
+
 ## [Unreleased] 评审回路（九）：覆盖率门禁修复 + 确定性防绕过 + 代理路径取证（2026-11-03）
 
 ### 覆盖率门禁：75% 是旧 `.coverage`，不是当前欠账
@@ -109,7 +304,7 @@ AGENTS.md 新增确定性门禁第 15 条，把 0/1/2/3 的处置写成表。
 - `make test`：1191 passed（`out/junit-full.xml`）；
 - `make lint` 通过；`make gate` 通过（无 `out/output-fail.flag`）；
 - 20 seed 确定性比对：`decision=83f0cf3a054a42ec output=b3c32e087535335c`；
-- `make mutation`：28/28 存活检查通过（`docs/mutation-report.md`）。
+- `make mutation`：28/28 存活检查通过（`out/mutation-report.md`；归档副本在 `docs/mutation-report.md`）。
 
 ## [Unreleased] 评审回路（七）：两级指纹 + 变异测试 + Q-024（2026-11-03）
 
