@@ -47,7 +47,8 @@ EXPECTED_SUITES: dict[str, str] = {
 }
 
 _LOCAL_GATE_TARGET = "cov"
-_JUNITXML = re.compile(r"--junitxml=out/(junit-[A-Za-z0-9_.-]+\.xml)")
+_JUNITXML_FLAG = re.compile(r"--junitxml(?:=|\s+)(\S+)")
+_JUNITXML_PATH = re.compile(r"out/(junit-[A-Za-z0-9_.-]+\.xml)")
 
 
 def _makefile_recipe(makefile: str, target: str) -> str:
@@ -64,24 +65,57 @@ def _makefile_recipe(makefile: str, target: str) -> str:
     raise ValueError(f"Makefile 缺少 {target} 目标")
 
 
+def _recipe_commands(recipe: str) -> list[str]:
+    """按 shell 语义合并反斜杠续行并去掉注释，注释里的 --junitxml 不算产物。"""
+    commands: list[str] = []
+    buffer = ""
+    for line in recipe.splitlines():
+        text = line.strip()
+        if not buffer and not text:
+            continue
+        buffer += text
+        if buffer.endswith("\\"):
+            buffer = buffer[:-1].rstrip() + " "
+            continue
+        commands.append(buffer)
+        buffer = ""
+    if buffer:
+        commands.append(buffer)
+    return [re.split(r"(?:^|\s)#", command, maxsplit=1)[0] for command in commands]
+
+
 def local_expected(makefile: Path | None = None) -> dict[str, str]:
     """本地宽松模式核对的套件 = ``make cov`` 实际产出的 junit。
 
     从 Makefile 配方解析而不是硬编码「EXPECTED_SUITES 减 bench」：本地生产者
     变了，清单跟着变，不会靠人记得同步。产物必须已登记在 EXPECTED_SUITES，
-    否则直接报错——本地核对不能悄悄漏掉新产物。解析不出任何 out/ 路径同样
-    报错：变量化 ``--junitxml=$(JUNIT_COV)`` 会让空清单伪装成「全部通过」。
+    否则直接报错——本地核对不能悄悄漏掉新产物。**每个 `--junitxml` 都必须
+    解析成字面量 out/ 路径**：变量/条件分支/空值只要出现一处，整体报错；
+    部分解析会让本地核对静默少一个套件，和返回空清单是同一类失效。
     """
     path = makefile or Path(__file__).resolve().parents[1] / "Makefile"
     recipe = _makefile_recipe(path.read_text(encoding="utf-8"), _LOCAL_GATE_TARGET)
-    produced = set(_JUNITXML.findall(recipe))
+    produced: set[str] = set()
+    unparsed: list[str] = []
+    for command in _recipe_commands(recipe):
+        occurrences = command.count("--junitxml")
+        if not occurrences:
+            continue
+        values = _JUNITXML_FLAG.findall(command)
+        for value in values:
+            match = _JUNITXML_PATH.fullmatch(value.strip("'\""))
+            if match:
+                produced.add(match.group(1))
+            else:
+                unparsed.append(value)
+        if len(values) < occurrences:
+            unparsed.extend(["(无法提取路径)"] * (occurrences - len(values)))
+    if unparsed:
+        raise ValueError(
+            f"无法从 make {_LOCAL_GATE_TARGET} 配方解析出全部 junit 路径：{unparsed}"
+            "（变量/条件分支/空值？）；部分解析会让本地核对静默少一个套件"
+        )
     if not produced:
-        if "--junitxml" in recipe:
-            raise ValueError(
-                f"无法从 make {_LOCAL_GATE_TARGET} 配方解析出 out/junit-*.xml："
-                "存在 --junitxml 但路径不是字面量（变量/条件分支？）；"
-                "本地核对不能静默为空"
-            )
         raise ValueError(
             f"make {_LOCAL_GATE_TARGET} 配方没有 --junitxml=out/...；"
             "本地核对不能静默为空"

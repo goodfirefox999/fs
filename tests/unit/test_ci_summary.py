@@ -323,6 +323,32 @@ def test_local_expected_fails_closed_on_unparseable_makefile(tmp_path: Path) -> 
         ci_summary.local_expected(makefile)
 
 
+def test_local_expected_fails_closed_on_partial_unparseable(tmp_path: Path) -> None:
+    """一条字面量 + 一条变量：必须整体报错，不能静默只返回能解析的那个。"""
+    makefile = tmp_path / "Makefile"
+    makefile.write_text(
+        "cov:\n"
+        "\t$(PYTHON) -m pytest --cov --junitxml=out/junit-cov.xml\n"
+        "\t$(PYTHON) -m pytest -m slow --junitxml=$(BENCH_JUNIT)\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match=r"全部 junit 路径.*BENCH_JUNIT"):
+        ci_summary.local_expected(makefile)
+
+
+def test_local_expected_ignores_comments_and_joins_continuations(tmp_path: Path) -> None:
+    """与 workflow 扫描对齐：注释里的 flag 不算，反斜杠续行后的 flag 要能收集。"""
+    makefile = tmp_path / "Makefile"
+    makefile.write_text(
+        "cov:\n"
+        "\t# pytest --junitxml=out/junit-old.xml\n"
+        "\t$(PYTHON) -m pytest --cov \\\n"
+        "\t\t--junitxml=out/junit-cov.xml\n",
+        encoding="utf-8",
+    )
+    assert ci_summary.local_expected(makefile) == {"cov": "junit-cov.xml"}
+
+
 def _logical_lines(text: str) -> Iterator[tuple[int, str]]:
     """把反斜杠续行合并成逻辑行（YAML run 块里一条命令可能跨多行）。"""
     start = 0
