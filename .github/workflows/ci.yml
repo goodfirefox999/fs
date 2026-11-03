@@ -8,6 +8,10 @@ on:
   # 「推临时分支跑 Action 验 Python 补丁版」静默不跑，等于没验。
   workflow_dispatch:
 
+# Actions 运行时（2026-11-03）：Node 20 已弃用并会硬失败。下列是各自最小的
+# Node 24 版本：checkout@v5、setup-python@v6、upload-artifact@v6。
+# 注意 upload-artifact@v5 默认仍跑 Node 20（见其 v6 release notes），
+# 升到 v6 才真正消除警告。宿主 runner 均 ≥2.327.1，满足 node24 最低要求。
 jobs:
   test:
     # 显式钉 OS 版本：ubuntu-latest 已滚到 26.04，而 actions/python-versions 的
@@ -15,11 +19,11 @@ jobs:
     # 钉 24.04 才能拿到与本地一致的 3.14.2；换 OS 等于换编译器，需重测地板。
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0 # 需要 git diff 做 status 签名检查
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           # 与本地开发 venv 完全一致到补丁版（3.14.2）：只写 3.14 会漂到不同
           # 小版本，coverage 的分支计数仍可能差 0.1–0.3pp，零余量地板会假红。
@@ -58,7 +62,7 @@ jobs:
 
       - name: Upload perf smoke result
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: perf-smoke
           path: |
@@ -71,7 +75,7 @@ jobs:
 
       - name: Upload performance history (CI samples)
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: bench-history-ci
           path: tests/bench/bench_history.ci.jsonl
@@ -98,7 +102,7 @@ jobs:
 
       - name: Upload OUTPUT_FAIL flag
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: output-fail-flag
           path: out/output-fail.flag
@@ -139,8 +143,8 @@ jobs:
     runs-on: ubuntu-24.04
     needs: test
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.14.2"
       - run: |
@@ -154,7 +158,7 @@ jobs:
             --course 2027-07-11T14:00 --azimuth 320 \
             --task 修造 --strictness strict --allow-unverified \
             --out out/golden-report.md
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: golden-report
           path: out/golden-report.md
