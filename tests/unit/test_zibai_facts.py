@@ -211,3 +211,46 @@ class TestEdgeCases:
         with pytest.raises(ValueError):
             derive_zibai_hour(day_zhi="辰", hour_zhi="午", yang_dun=False,
                               mountain_name="乾", fly_caliber="sideways")
+
+
+class TestWuhuangGranularity:
+    """Q-018 遗留：五黄命中的**粒度**必须由字段名说清，不能一个名字两种含义。
+
+    历史坑：字段名 ``wuhuang_hit_mountain``，实现却是**宫级**（一宫三山同受），
+    报告按「五黄到坐山」渲染 → 名实不符。现拆成：
+    - ``wuhuang_hit_palace``  宫级（紫白本来粒度，规则用这个）
+    - ``wuhuang_hit_mountain`` 山级（只有宫心那一山，与 facts.wuhuang.year.hit_mountain 同义）
+    """
+
+    def test_palace_level_is_wider_than_mountain_level(self) -> None:
+        from core_symbol.zibai import _plate
+
+        # 一白入中（center=1，顺飞）时九宫为：中1 乾2 兑3 艮4 离5 坎6 坤7 震8 巽9。
+        # 五黄落离宫；离宫三山＝丙午丁，宫心＝午。
+        bing = _plate(1, fly=1, mountain="丙")
+        wu = _plate(1, fly=1, mountain="午")
+        ding = _plate(1, fly=1, mountain="丁")
+        for plate in (bing, wu, ding):
+            assert plate["wuhuang_palace"] == "离"
+            assert plate["wuhuang_hit_palace"] is True
+        # 山级：只有宫心「午」算
+        assert wu["wuhuang_hit_mountain"] is True
+        assert bing["wuhuang_hit_mountain"] is False
+        assert ding["wuhuang_hit_mountain"] is False
+
+    def test_out_of_palace_hits_nothing(self) -> None:
+        from core_symbol.zibai import _plate
+
+        # 一白入中 → 五黄在离；坎宫（壬子癸）应两个字段都 False
+        for m in ("壬", "子", "癸"):
+            plate = _plate(1, fly=1, mountain=m)
+            assert plate["wuhuang_hit_palace"] is False
+            assert plate["wuhuang_hit_mountain"] is False
+
+    def test_field_names_are_distinct(self) -> None:
+        """两个字段必须同时存在：只剩一个就说明又退化成「一名两义」。"""
+        from core_symbol.zibai import _plate
+
+        plate = _plate(5, fly=1, mountain="子")
+        assert "wuhuang_hit_palace" in plate
+        assert "wuhuang_hit_mountain" in plate

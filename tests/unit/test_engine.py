@@ -320,10 +320,10 @@ def _strip_hits(ctx: dict) -> dict:
                 # 值宿无中立值（28 宿非吉即凶，标签出自《玉匣记》两分），故用哨兵关闭两条规则。
                 "xiu": {"day": "__neutral__"},
                 "zibai": {
-                    "year": {"shan_star": 5, "wuhuang_hit_mountain": False},
-                    "month": {"wuhuang_hit_mountain": False},
-                    "day": {"wuhuang_hit_mountain": False},
-                    "hour": {"wuhuang_hit_mountain": False},
+                    "year": {"shan_star": 5, "wuhuang_hit_palace": False},
+                    "month": {"wuhuang_hit_palace": False},
+                    "day": {"wuhuang_hit_palace": False},
+                    "hour": {"wuhuang_hit_palace": False},
                 },
                 "jishen": {
                     "tian_de": {"hit": False},

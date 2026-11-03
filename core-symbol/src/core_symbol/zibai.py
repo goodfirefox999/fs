@@ -215,19 +215,43 @@ def hour_center_star(day_zhi: str, hour_zhi: str, *, yang_dun: bool) -> int:
     return _wrap9(start + idx if yang_dun else start - idx)
 
 
+#: 八宫中心山（用于「山级」命中：只有宫心那一山算，与 facts.wuhuang.year.hit_mountain 同义）
+PALACE_CENTER_MOUNTAIN: dict[str, str] = {
+    "坎": "子", "艮": "艮", "震": "卯", "巽": "巽",
+    "离": "午", "坤": "坤", "兑": "酉", "乾": "乾",
+}
+
+
 def _plate(center: int, *, fly: int, mountain: str) -> dict[str, Any]:
+    """一盘九宫 + 坐山所得星。
+
+    **两个命中字段的粒度必须分开命名**（Q-018 遗留，2026-11-03 修正）：
+    - ``wuhuang_hit_palace``：宫级——一宫三山同受（紫白的本来粒度）；
+    - ``wuhuang_hit_mountain``：山级——只有宫心那一山算，与
+      ``facts.wuhuang.year.hit_mountain`` 同义。
+
+    历史坑：原字段只有一个 ``wuhuang_hit_mountain``，实现却是**宫级**，
+    报告按「五黄到坐山」渲染 → 文案与判定粒度不符。改名后语义唯一。
+    """
     palaces = fly_palaces(center, direction=fly)
     inverse = {star: palace for palace, star in palaces.items()}
     shan_palace = MOUNTAIN_PALACE.get(mountain)
+    wuhuang_palace = inverse.get(5)
+    erhei_palace = inverse.get(2)
+    hit_palace = bool(shan_palace) and wuhuang_palace == shan_palace
+    hit_mountain = hit_palace and shan_palace is not None and (
+        PALACE_CENTER_MOUNTAIN.get(shan_palace) == mountain
+    )
     return {
         "center": center,
         "palaces": palaces,
-        "wuhuang_palace": inverse.get(5),
-        "erhei_palace": inverse.get(2),
+        "wuhuang_palace": wuhuang_palace,
+        "erhei_palace": erhei_palace,
         "shan_palace": shan_palace,
         "shan_star": palaces.get(shan_palace) if shan_palace else None,
-        "wuhuang_hit_mountain": bool(shan_palace) and inverse.get(5) == shan_palace,
-        "erhei_hit_mountain": bool(shan_palace) and inverse.get(2) == shan_palace,
+        "wuhuang_hit_palace": hit_palace,
+        "wuhuang_hit_mountain": hit_mountain,
+        "erhei_hit_palace": bool(shan_palace) and erhei_palace == shan_palace,
     }
 
 

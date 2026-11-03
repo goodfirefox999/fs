@@ -215,8 +215,10 @@ def _cosmos_block(facts: dict[str, Any]) -> list[str]:
     hits = []
     for label, key in (("年", "year"), ("月", "month"), ("日", "day"), ("时", "hour")):
         plate = zb.get(key) or {}
-        hits.append(f"{label} {'是' if plate.get('wuhuang_hit_mountain') else '否'}")
-    lines.append(f"- 五黄到坐山：{' ｜ '.join(hits)}")
+        hits.append(f"{label} {'是' if plate.get('wuhuang_hit_palace') else '否'}")
+    # 粒度必须写进文案：紫白五黄到山是**宫级**（一宫三山同受），不是「只算宫心那一山」。
+    # 历史上该字段名为 wuhuang_hit_mountain 而实现是宫级，文案照抄山名 → 名实不符（Q-018）。
+    lines.append(f"- 五黄到坐山（宫级，一宫三山同受）：{' ｜ '.join(hits)}")
 
     js = facts.get("jishen") or {}
     td = js.get("tian_de") or {}

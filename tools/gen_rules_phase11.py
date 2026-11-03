@@ -96,7 +96,7 @@ RULES_SPEC: list[dict] = [
     # ================= 紫白四盘 =================
     rule(
         "PUB-ZIBAI-MONTH-001", "月五黄到山", severity="慎用", target="mountain",
-        condition={"fact": "facts.zibai.month.wuhuang_hit_mountain", "op": "eq", "value": True},
+        condition={"fact": "facts.zibai.month.wuhuang_hit_palace", "op": "eq", "value": True},
         explanation="坐山{site.mountain}恰落本月五黄所在之宫（月紫白逆退入中，顺飞九宫），按本规则判为慎用。",
         notes=(
             "待考证：月紫白以节气月换月是否通书共识；月五黄是否同忌向首；"
@@ -106,7 +106,7 @@ RULES_SPEC: list[dict] = [
     ),
     rule(
         "PUB-ZIBAI-DAY-001", "日五黄到山", severity="慎用", target="mountain",
-        condition={"fact": "facts.zibai.day.wuhuang_hit_mountain", "op": "eq", "value": True},
+        condition={"fact": "facts.zibai.day.wuhuang_hit_palace", "op": "eq", "value": True},
         explanation="坐山{site.mountain}恰落日五黄所在之宫，按本规则判为慎用。",
         notes=(
             "待考证：日盘三元边界取「节气后首个甲子日」还是「节气当日换元」；"
@@ -116,7 +116,7 @@ RULES_SPEC: list[dict] = [
     ),
     rule(
         "PUB-ZIBAI-HOUR-001", "时五黄到山", severity="慎用", target="hour",
-        condition={"fact": "facts.zibai.hour.wuhuang_hit_mountain", "op": "eq", "value": True},
+        condition={"fact": "facts.zibai.hour.wuhuang_hit_palace", "op": "eq", "value": True},
         explanation="所择时辰的五黄落于坐山之宫，按本规则判为慎用（时辰层面，弱于日/月层）。",
         notes=(
             "待考证：时紫白以「日支组起星」是否通书共识（另有「日星起时」一说）；"
@@ -225,7 +225,7 @@ def _case(rule_id: str, kind: str, overrides: dict, note: str) -> dict:
 def _overrides(rule: dict, hit: bool) -> dict:
     """按规则条件构造最小 overrides（只覆盖被引用的 facts 子树）。
 
-    ``cond["fact"]`` 形如 ``facts.zibai.month.wuhuang_hit_mountain``：根命名空间
+    ``cond["fact"]`` 形如 ``facts.zibai.month.wuhuang_hit_palace``：根命名空间
     已固定为 ``facts``，故只把其后的路径包成嵌套字典 —— 不能再套一层 ``facts``
     （第一版多套了一层，向量因此静默失效、全部 MISS：assert 落在「值仍是基准 False」上）。
     """

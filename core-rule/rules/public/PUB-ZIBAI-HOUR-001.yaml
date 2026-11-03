@@ -34,7 +34,7 @@ applies_to:
   node_kinds: []
   strictness_min: normal
 condition:
-  fact: facts.zibai.hour.wuhuang_hit_mountain
+  fact: facts.zibai.hour.wuhuang_hit_palace
   op: eq
   value: true
 score_weight: null

@@ -596,3 +596,28 @@ DUTIAN/XIUJIU/SANG×2/JIAQU×2）在 2026-06-15 候选上 eval_condition → val
 ## Q-023 dead_rule_scan 并行会话遗留代码归属待确认
 
 tools/dead_rule_scan.py:360 的 ctxs 占位赋值（F841）与 :366 的未用 az 循环（B007）由并行会话写入，语义存疑：az 循环可能是有意的按方位重复计数，也可能是半成品。归属确认前勿删（已加 TODO(owner-unknown) 注记）。确认后二选一：a) 若为有意计数，补注释并豁免 ruff；b) 若为半成品，删除并补测试说明。
+
+## 处置更新 · Q-018 之二（2026-11-03）：字段改名，把「一名两义」拆成两个名字
+
+**改了什么**：`facts.zibai.{year,month,day,hour}` 里原字段 `wuhuang_hit_mountain`
+的实现其实是**宫级**（`inverse[5] == 坐山所在宫`），与名字里的 "mountain" 不符，
+报告又按「五黄到坐山」渲染 → 文案与粒度对不上。现拆为：
+
+| 字段 | 粒度 | 定义 |
+|---|---|---|
+| `wuhuang_hit_palace` | 宫级 | 五黄所落宫 == 坐山所在宫（一宫三山同受） |
+| `wuhuang_hit_mountain` | 山级 | 上者成立**且**坐山是该宫宫心山（与 `facts.wuhuang.year.hit_mountain` 同义） |
+
+**行为有没有变**：没有。三条 `PUB-ZIBAI-{MONTH,DAY,HOUR}-001` 原本就是宫级，
+只是引用换了字段名，命中面与 tier 分布不变。测试锚点：
+`tests/unit/test_zibai_facts.py::TestWuhuangGranularity`（宫级覆盖丙午丁三山、
+山级只认午；两个字段必须同时存在）。
+
+**对上方裁定的作用**：这次改名**不预设结论**——它把两个粒度都变成可显式引用的字段，
+所以「月/日/时五黄改山级」这条裁定第一次变成**一行改动**（把规则引用换成
+`wuhuang_hit_mountain` 即可），不再需要先造字段。裁定仍待人类，本轮不动行为。
+
+**报告口径**：文案改为「五黄到坐山（宫级，一宫三山同受）」，不再让读者误以为是山级。
+
+---
+
