@@ -167,3 +167,34 @@ grep -rn "TestSanshaScope\|jianxiang\|jian_caliber" tests/ core-rule/ app-zeri/
 3. `git log`/`grep`/`sed` 等外部命令在沙箱与真机可能不同实现；跨环境复现
    "异常空输出"时，先打 `--version`。
    （本次若直接采信 grep，就会制造一起"指控他人虚报"的假事故。）
+
+## 七、补充：`lsof` 其实可用（2026-11-03 更正）
+
+本文第 15 行与第 63 行都写着「`ps`/`lsof` 在沙箱不可得」。2026-11-03 复核：
+**`ps` 仍不可得，`lsof` 可用**——旧结论把两个工具合并成了一句，属于 AGENTS 约束 11
+说的「未做对照实验就写环境」。
+
+| 工具 | 实际结果 |
+|---|---|
+| `ps aux` | `operation not permitted: ps`（确认不可用） |
+| `lsof +D <repo>` | **可用**，正常输出 COMMAND/PID/FD/NAME |
+
+实测（2026-11-03 10:20，推送完成后）：
+
+```bash
+lsof +D . | tail -n +2 | awk '{print $1}' | sort | uniq -c | sort -rn
+```
+
+持有仓库文件的进程只有：`mdworker_`（Spotlight 索引）＋本次命令自身的 shell 管道
+（`bash/zsh/awk/sort/uniq/lsof/toybox`）。**没有任何 python / node / git / 编辑器进程**。
+
+能证明与不能证明，分开写：
+
+- **可证**：取样时刻**没有第二个写入者持有仓库文件句柄**（并发写入已停止）。
+- **不可证**：过去某个时刻是谁写的。文件句柄是瞬态的，`lsof` 只反映当下；
+  历史归属仍只能靠 mtime + 提交作者字段（两路会话同身份，无区分力）。
+
+结论修正：第 63 行「进程取证只能靠文件 mtime」应改为
+「**`ps` 不可得；`lsof` 可用，但只能证明当下、不能追溯历史**」。
+下次再做并发取证，先跑 `lsof +D <repo>` 取当下快照，再谈 mtime。
+
