@@ -9,6 +9,9 @@ htmlcov/
 dist/
 build/
 out/
+# 变异报告是运行产物：时间戳每次都变，不进 git（默认写 out/）。
+# 需要版本化某次审计证据时，显式 `git add -f` 并在提交说明里写明归档原因。
+docs/mutation-report.md
 .hypothesis/
 bench_history.ci.jsonl
 tests/bench/bench_history.jsonl

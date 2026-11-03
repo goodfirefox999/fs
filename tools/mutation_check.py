@@ -324,7 +324,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--report",
         default=None,
-        help="报告路径（默认 out/mutation-report.md，运行产物不进 git；归档时显式传 docs/mutation-report.md）",
+        help="报告路径（默认 out/mutation-report.md，运行产物不进 git；"
+             "归档请在 out/ 下用带日期的文件名，确需入库时 git add -f）",
     )
     args = parser.parse_args(argv)
 
@@ -345,7 +346,8 @@ def main(argv: list[str] | None = None) -> int:
 
     print()
     # 默认写 out/：每次跑都变的运行时间戳不应污染 docs/ 的提交历史。
-    # 需要把某次结果作为审计证据归档时，显式 --report docs/mutation-report.md。
+    # docs/mutation-report.md 已加入 .gitignore 并从版本库移除；
+    # 确需把某次结果作为审计证据入库时，用带日期的文件名并 git add -f。
     report_path = Path(args.report) if args.report else ROOT / "out" / "mutation-report.md"
     _write_report(report_path, selected, survived, level=args.level)
 

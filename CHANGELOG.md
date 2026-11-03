@@ -41,11 +41,21 @@
 `$GITHUB_STEP_SUMMARY`；连续 2 次超 2.5s 时打 `::warning`。**不阻断**——阻断点
 仍只有 3.0s 阈值，这个装置只负责让「余量在收窄」在踩线前可见。
 
-### mutation 报告默认写 out/
+### mutation 报告默认写 out/，并移出版本库
 
-`make mutation` 默认 `out/mutation-report.md`（运行产物，不进 git）；需要归档时
-显式 `--report docs/mutation-report.md`。与 `bench_history.jsonl` 同类处理，
-杜绝「每次跑都改时间戳」污染提交历史。
+`make mutation` 默认 `out/mutation-report.md`（运行产物，不进 git）。
+`docs/mutation-report.md` 已加入 `.gitignore` 并从索引移除，原文件归档到
+`out/mutation-report.archived-2026-11-03.md`（本地保留，不入库）。需要把某次
+结果作为审计证据入库时，用带日期的文件名并 `git add -f`。与
+`bench_history.jsonl` 同类处理，杜绝「每次跑都改时间戳」污染提交历史。
+
+### CI 全年性能档按 runner 实测重设（9.0 → 13.0s，本地 3.5s 不动）
+
+代码未变的两轮 CI 实测：全年 6.59→9.02s、已考证模拟 7.34→9.36s；本地同版本
+10 个样本稳定在 3.06–3.42s。runner 比值从 2.03× 漂到 2.88×，9.0s 档
+（上界 ×1.22）被下一轮直接打穿，说明 22% 余量不足以覆盖 job-to-job 差异。
+13.0s = 实测上界 9.36 × 1.39，仍远低于 O(n²) 回归的 CI 口径（~18s+）；
+本地 3.5s 容量契约不变，相对门禁（历史中位数 ×1.5）不变。
 
 ## [Unreleased] 评审回路（十一）：文件级覆盖率地板 + 统一 Python 3.14 + 基线过松告警（2026-11-03）
 
