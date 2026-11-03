@@ -1,0 +1,86 @@
+# 提交归属记录（commit provenance）
+
+> **为什么需要这份文档**：`64f5be5..ee52dbe` 的 9 个提交，作者字段**全部**是
+> `zeri-agent <agent@local>`——同一台机器上多个会话共用同一 git 身份，历史里没有区分力。
+> 三个月后 `git bisect` 撞到某个提交，想问"这是谁做的、当时想解决什么"，
+> `git log` / `git blame` 都给不出答案。**只有这份表能答**。
+>
+> 归属判断是**推断**，不是记录：证据见第三节，置信度逐条标注。
+> 凡标「中」的条目，意味着"按文件清单与自述交叉判定"，不存在行级证据。
+
+## 一、四条线（本仓库至少四个写入线）
+
+| 线 | 代号 | 大致时段 | 主要产出 | 自述文档 |
+|---|---|---|---|---|
+| 0 | **线0 · Phase 9** | 2026-11-02 21:2x | 斗首五行（`doushou.py`、DS-* 六条规则、`doushou.yaml` 口径） | `CHANGELOG 0.5.0` |
+| A | **线A · 共识/门禁** | 2026-11-02 22:2x–11-03 09:2x | 紫白四盘、值宿、吉神、共识计票分账、`verdict_type`、grep 审计、junitxml、链验证 | `docs/research/concurrent-write-forensics-2026-11-02.md`、`decision-sheet-2026-11.md` |
+| B | **线B · 排盘补齐** | 2026-11-02 22:5x–23:4x | 建除、黄黑道、五黄换年、四废日、兼向口径、确定性探针、排盘路线图 | `docs/research/paipan-roadmap-2026-11.md` |
+| C | **线C · 本轮** | 2026-11-03 09:5x–10:2x | 链验证默认分批、make 解释器预检、AGENTS 约束 11、五黄粒度改名 | 本文件 + `CHANGELOG` 回路六 |
+
+> 线0 的存在由取证文档第二节 mtime 表确认（`doushou.py` mtime 21:26，早于线A 会话起始 22:19）。
+> 线A 与线B 同时活跃过（取证时 `determinism_probe.py` mtime 23:45:19，即在写取证文档前一刻仍在产出）。
+
+## 二、逐提交归属
+
+| # | SHA | 主题 | 归属 | 依据 | 置信 |
+|---|---|---|---|---|---|
+| 1 | `8f2217f` | 片1 工具/门禁 | **混合 A+B** | `tools/determinism_probe.py` 为线B（取证 §二 mtime 23:45）；`worktree_guard.py`、`check_no_aggregate_score.py`、三条门禁测试为线A（取证 §五自述"两条机器门禁"） | 中 |
+| 2 | `2b3229b` | 片2+3 代码 | **混合 0+A+B** | `doushou.py`/DS-* 为线0（mtime 21:26）；`jianchu.py`/`huangdao.py`/`shensha.py`/`mountain.py`/`__init__.py` 为线B（取证 §二逐文件 mtime）；`zibai.py`/`xiu.py`/`jishen.py`/`consensus.yaml`/`lint_static.py` 为线A | **高**（有逐文件 mtime） |
+| 3 | `504de49` | 片4 文档 | **混合 A+B** | `docs/research/paipan-roadmap-2026-11.md` 为线B（取证 §二 + 文档自述"本轮改动"）；裁定一页纸/取证/验证模式/补丁说明为线A | 高 |
+| 4 | `8e79f43` | `verdict_type` 未标注不兜底 | A | `docs/patches/verdict-type-unspecified.md` 属线A补丁序列；无 B 线文件 | 中 |
+| 5 | `9875a33` | 扫描桶白名单 + demo_veto 门禁 | A | 承接 `dead_rule_scan.py` 的桶白名单（线A 片1 引入）；测试 `test_hardening_guards.py` 为线A | 中 |
+| 6 | `79c3b1b` | grep 根因修正 + 宣称核对器 + 迁移棘轮 | A | 承接线A 的 grep 取证链；`verify_claims.py` 为线A | 中 |
+| 7 | `4edcfc0` | junitxml + 链验证 + grep 审计 | A | `history-rewrite-sop.md` 由线A 重写执行后撰写 | 中 |
+| 8 | `45c0a2c` | 链验证分批 + make 预检 + 约束 11 | **C** | 本轮（2026-11-03 上午）直接产出 | 高 |
+| 9 | `ee52dbe` | 五黄粒度改名（Q-018 之二） | **C** | 同上 | 高 |
+
+## 三、证据与局限
+
+### 3.1 可复跑的证据
+
+```bash
+git log --diff-filter=A --oneline -- <file>   # 文件首次进入仓库的提交（可复跑）
+git log --format='%h %an <%ae> %s' -9         # 作者字段（全部 zeri-agent，无区分力）
+```
+
+`--diff-filter=A` 实测结果（2026-11-03）：
+
+| 文件 | 首现提交 | 归线 |
+|---|---|---|
+| `core-symbol/src/core_symbol/jianchu.py` | `2b3229b` | B |
+| `core-symbol/src/core_symbol/huangdao.py` | `2b3229b` | B |
+| `tools/determinism_probe.py` | `8f2217f` | B |
+| `core-symbol/src/core_symbol/doushou.py` | `2b3229b` | 0 |
+
+### 3.2 不可复跑的证据（一次性）
+
+- **mtime 快照**：取证文档 §二那张表是 2026-11-02 23:45 取的，`git checkout`/还原/迁移后即失真。
+  它只能证明"当时谁先写了哪个文件"，不能重放。
+- 因此本表第 1–7 行的"混合"判定**依赖那张快照**；快照若被质疑，只能退回"作者字段无区分力"这一条，
+  即**归属未知**。
+
+### 3.3 三条硬限制
+
+1. **作者字段无区分力**：四个线共用 `zeri-agent`，`git blame` 看到的都是同一个人。
+2. **无法行级归属**：同一文件被两线先后修改时，后者静默胜出，git 只留最终状态。
+   例：`shensha.py` 基线（`eac493d`）已存在，线B 在 22:55 加了 `wuhuang_year_of_date`，
+   历史里看不到"加这一行的是线B"。
+3. **B 线文件已被 A 线提交裹入**：`jianchu.py`/`huangdao.py` 混在 `2b3229b` 里，
+   历史层面无法分离（拆分需重写 6 个提交并让已验证的链重新变红）。
+
+## 四、怎么用
+
+`git bisect` 命中某个 SHA 后：
+
+1. 查本表拿到线号；
+2. 按第一节的"自述文档"列去看那条线当时的判断依据；
+3. 若该行置信为「中」，**不要**据此断言意图——只能说"大概率属于该线"；
+4. 需要更强结论时，只能用第四节的三条限制去解释"为什么给不出"。
+
+## 五、维护规则
+
+- 新增提交**必须**在本表登记一行（SHA / 主题 / 归属 / 依据 / 置信）。
+- 未登记的提交一律视为「归属未知」，不得在事后报告里补写成"某线产出"。
+- 本表**没有**机器门禁（不做"提交数 == 表行数"的测试）——理由是它会拦住每一次正常提交，
+  而归属判断本身是人工推断，机器无法验证。这是一处**显式的、已知的**纪律缺口，
+  由评审人肉把关。

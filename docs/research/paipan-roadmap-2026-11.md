@@ -91,3 +91,50 @@
 > （引擎三态判定 / lint 子进程输出比对），单独跑均复现不出，固定 `PYTHONHASHSEED=0`
 > 后连跑全绿。方向指向"跨调用共享状态或集合遍历序"，但样本不足以定因。
 > 这直接违反红线 1，应在下一轮优先取证（见 CHANGELOG 0.6.1「已知问题」）。
+
+## 五、并行写入文件的语义审查清单（三问）
+
+> 触发：`jianchu.py` / `huangdao.py` / `determinism_probe.py` 由并行写入线产出，
+> 测试与实现**可能出自同一作者**（"测试和实现一起错"的典型风险）。
+> 1164 全绿只证明"两者一致"，不证明"两者都对"。本节按三问逐文件回答，
+> **不阻塞当前状态**，但必须留档，防止沉底。
+
+### 判据
+
+1. **独立恒等式**：每个公开函数，是否有至少一个不依赖该文件作者判断的恒等式或对照
+   （参考 `verification-patterns.md` 的九条恒等式）？
+2. **反证测试**：测试里是否有"构造违规 → 必响"，而不只是"正常输入 → 正确输出"？
+3. **指纹独立性**：常设门禁的"指纹"是否独立于被测代码？（若指纹函数本身调用被测模块，
+   就是循环论证）
+
+### 逐文件现状（2026-11-03 取证）
+
+| 文件 | Q1 独立恒等式 | Q2 反证测试 | Q3 指纹独立性 |
+|---|---|---|---|
+| `core-symbol/jianchu.py` | ✅ 建日=月建本支、破日=冲月建、十二神按序循环（`test_paipan_fixed.py:47/53/62`） | ⚠️ 部分：`test_all_twelve_stars_reachable_in_order` 能抓住"返回常量"的退化；**缺**"故意改错必红"的变异测试 | — |
+| `core-symbol/huangdao.py` | ✅ 青龙起例覆盖 12 月、月建日必青龙、勾陈 12/12 交叉吻合（`:94/104/108`） | ⚠️ 同上；`test_dao_grouping_partitions_twelve_stars` 是划分性检验（反退化） | — |
+| `tools/determinism_probe.py` | — | — | ⚠️ **见下，已答但有缺口** |
+
+### Q3 已答：指纹覆盖"决策面"，不覆盖"渲染面"
+
+读 `tools/determinism_probe.py:104-129`：
+
+- `facts` 段：`_sha(_canonical(ctx["facts"]))` —— **整包**哈希，且 `_canonical` 对
+  set/frozenset 直接抛错 → 事实层覆盖完整，**不是循环论证**（序列化器是探针自己的
+  `json.dumps(sort_keys=True)`，不复用被测代码的序列化）。
+- `eval` 段：`_sha(_canonical(_eval_summary(ev)))` —— 只取
+  `state / tier / publishable / vectors / structural / per_school{state,vetoes,cautions,positives,unknowns}`。
+
+**缺口**（真实、可复现）：`reasons` 字符串、`demo_hits`、`reference`、`conflicts`、
+`fact_hash`、`input_hash`、`rank_score` **不在**指纹内。因此若某条 `reason` 的拼接
+依赖 set 迭代序，探针不会红，而**报告文本会变**——这与"同输入必同输出"的对外承诺不符。
+
+处置（列入 C 第二批之后的 P2，不本轮做）：
+把 `_eval_summary` 扩到 `reasons`（排序后）+ `conflicts` + `fact_hash`，
+并在扩之前先跑一次多 seed 对照，确认扩展后仍稳定（否则会引入假红）。
+
+### 仍待回答
+
+- Q2 对 `jianchu`/`huangdao` 只到"反退化"，未到"反错误"。补法：各加一条变异测试
+  （把 `jianchu_of` 的偏移量 +1、把 `QINGLONG_START_ZHI` 整体移一位），断言现有测试必红。
+  这属于**测试有效性**证明，不是功能变更，可独立提交。
