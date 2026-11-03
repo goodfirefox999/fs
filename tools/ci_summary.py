@@ -16,9 +16,10 @@ errors / skipped + 耗时 + 判定」行，最后把每个 failure/error 的用�
     python tools/ci_summary.py --dir out --scope local               # 本地调试
 
 默认 ``--scope ci``（fail closed）：严格对称差——期望缺产物、产物未登记都报 ❌。
-本地显式 ``--scope local``：只核对期望清单的缺失（以 ⚠️ 提示，未登记不报），
-忽略 ``out/`` 里 test/golden 等历史遗留 junit——本地缺失不能静默，但也不能
-把 CI 的严格口径变成天天出现的红灯。
+本地显式 ``--scope local``：期望清单从 Makefile 的 ``cov`` 配方解析（即本地
+``make cov`` 实际产出的 junit），缺失以 ⚠️ 提示、未登记不报，忽略 ``out/`` 里
+test/golden 等历史遗留 junit。**本地没有生产者的套件（当前是 bench——它只在
+ci.yml 里跑）不在本地核对范围，其通过性只能由 CI 证明：本地 ✅ 不等于 CI ✅。**
 
 本工具只做汇总，不改变退出码：阻断点仍是各自的测试/门禁步骤。
 """
@@ -26,22 +27,70 @@ errors / skipped + 耗时 + 判定」行，最后把每个 failure/error 的用�
 from __future__ import annotations
 
 import argparse
+import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-__all__ = ["EXPECTED_SUITES", "collect", "render"]
+__all__ = ["EXPECTED_SUITES", "collect", "local_expected", "render"]
 
 # 期望套件清单 = CI 必须产出的 junit（cov 与 perf-smoke 来自 Makefile 的 cov 配方，
 # bench 来自 ci.yml）。只靠 glob 扫目录有个盲区：bench 步骤提前挂掉时
 # junit-bench.xml 根本不存在，它会从汇总表里消失、整页误显全绿——所以缺文件必须
 # 显式成 ❌。反方向同样要报：workflow 新增第四个 junit 而忘了登记时，它不能
 # 混进「全部通过」。两个方向都由 collect 的对称差处理；tests/unit/test_ci_summary.py
-# 会解析 ci.yml 与 make cov 配方反查清单漂移。
+# 会解析 ci.yml 与 make cov 配方反查清单漂移。本地核对范围由 local_expected() 从
+# make cov 配方解析——bench 无本地生产者，只能由 CI 证明（见模块 docstring）。
 EXPECTED_SUITES: dict[str, str] = {
     "cov": "junit-cov.xml",
     "bench": "junit-bench.xml",
     "perf-smoke": "junit-perf-smoke.xml",
 }
+
+_LOCAL_GATE_TARGET = "cov"
+_JUNITXML = re.compile(r"--junitxml=out/(junit-[A-Za-z0-9_.-]+\.xml)")
+
+
+def _makefile_recipe(makefile: str, target: str) -> str:
+    lines = makefile.splitlines()
+    for index, line in enumerate(lines):
+        if not line.startswith(f"{target}:"):
+            continue
+        recipe: list[str] = []
+        for nxt in lines[index + 1 :]:
+            if nxt and not nxt.startswith("\t"):
+                break
+            recipe.append(nxt)
+        return "\n".join(recipe)
+    raise ValueError(f"Makefile 缺少 {target} 目标")
+
+
+def local_expected(makefile: Path | None = None) -> dict[str, str]:
+    """本地宽松模式核对的套件 = ``make cov`` 实际产出的 junit。
+
+    从 Makefile 配方解析而不是硬编码「EXPECTED_SUITES 减 bench」：本地生产者
+    变了，清单跟着变，不会靠人记得同步。产物必须已登记在 EXPECTED_SUITES，
+    否则直接报错——本地核对不能悄悄漏掉新产物。解析不出任何 out/ 路径同样
+    报错：变量化 ``--junitxml=$(JUNIT_COV)`` 会让空清单伪装成「全部通过」。
+    """
+    path = makefile or Path(__file__).resolve().parents[1] / "Makefile"
+    recipe = _makefile_recipe(path.read_text(encoding="utf-8"), _LOCAL_GATE_TARGET)
+    produced = set(_JUNITXML.findall(recipe))
+    if not produced:
+        if "--junitxml" in recipe:
+            raise ValueError(
+                f"无法从 make {_LOCAL_GATE_TARGET} 配方解析出 out/junit-*.xml："
+                "存在 --junitxml 但路径不是字面量（变量/条件分支？）；"
+                "本地核对不能静默为空"
+            )
+        raise ValueError(
+            f"make {_LOCAL_GATE_TARGET} 配方没有 --junitxml=out/...；"
+            "本地核对不能静默为空"
+        )
+    registered = set(EXPECTED_SUITES.values())
+    unknown = produced - registered
+    if unknown:
+        raise ValueError(f"make cov 产出了未登记的 junit：{sorted(unknown)}；先登记 EXPECTED_SUITES")
+    return {suite: file for suite, file in EXPECTED_SUITES.items() if file in produced}
 
 
 def _case_name(case: ET.Element) -> str:
@@ -53,6 +102,10 @@ def _first_line(text: str | None) -> str:
         if line.strip():
             return line.strip()
     return "(无消息)"
+
+
+def _short_name(file: str) -> str:
+    return file.removeprefix("junit-").removesuffix(".xml")
 
 
 def _suite(path: Path) -> dict:
@@ -114,8 +167,8 @@ def collect(
 
     - ``ci``（默认，fail closed）：严格对称差——期望缺产物报「缺失」，产物未登记
       报「未登记」。
-    - ``local``：核对期望清单，缺失记为 ⚠️ 提示（本地未运行对应步骤时属正常）；
-      未登记不报，忽略本地遗留的其它 junit。
+    - ``local``：核对传入的本地期望清单（CLI 传 ``local_expected()``，即 make cov
+      可产出的套件），缺失记为 ⚠️ 提示；未登记不报，忽略本地遗留的其它 junit。
     """
     if scope not in {"ci", "local"}:
         raise ValueError(f"未知 scope：{scope}（只支持 ci/local）")
@@ -185,13 +238,27 @@ def render(records: list[dict], scope: str = "ci") -> str:
                 f"{len(unregistered)} 个套件未登记（{'、'.join(f'`{name}`' for name in unregistered)}）"
             )
         lines.append(f"**判定：❌ {'；'.join(reasons)}——本页不是绿色证明。**")
-    elif missing_local:
-        lines.append(
-            f"**判定：⚠️ 本地宽松模式：已核对缺失（{len(missing_local)} 个预期套件未产出，"
-            "仅提示，本地未运行对应步骤时属正常），未核对未登记。**"
+    elif missing_local or scope == "local":
+        # 本地记录的 file 集合 = 本地期望清单；登记了但不在其中的套件没有本地生产者。
+        local_files = [record["file"] for record in records]
+        checked = "、".join(_short_name(name) for name in local_files)
+        ci_only = [name for name in EXPECTED_SUITES.values() if name not in local_files]
+        ci_note = (
+            f"{'、'.join(_short_name(name) for name in ci_only)} 无本地生产者，只能由 CI 证明；"
+            if ci_only
+            else ""
         )
-    elif scope == "local":
-        lines.append("**判定：✅ 本地宽松模式：已核对缺失（无缺失），未核对未登记。**")
+        if missing_local:
+            missing_names = "、".join(_short_name(name) for name in missing_local)
+            lines.append(
+                f"**判定：⚠️ 本地宽松模式：本地可产出的套件中 {len(missing_local)} 个未产出"
+                f"（{missing_names}，仅提示）；{ci_note}未核对未登记。**"
+            )
+        else:
+            lines.append(
+                f"**判定：✅ 本地宽松模式：本地可产出的套件全部通过（{checked}）；"
+                f"{ci_note}未核对未登记。**"
+            )
     else:
         lines.append(f"**判定：✅ 全部 {len(records)} 个套件通过。**")
     lines.append("")
@@ -258,10 +325,14 @@ def main(argv: list[str] | None = None) -> int:
         "--scope",
         choices=("ci", "local"),
         default="ci",
-        help="ci=严格对称差（默认，缺失/未登记都报）；local=宽松，缺失仅 ⚠️ 提示、不报未登记",
+        help=(
+            "ci=严格对称差（默认，缺失/未登记都报）；"
+            "local=核对 make cov 可产出的套件（缺失仅 ⚠️、不报未登记；bench 只能由 CI 证明）"
+        ),
     )
     args = parser.parse_args(argv)
-    print(render(collect(Path(args.dir), scope=args.scope), scope=args.scope))
+    expected = local_expected() if args.scope == "local" else EXPECTED_SUITES
+    print(render(collect(Path(args.dir), expected=expected, scope=args.scope), scope=args.scope))
     return 0
 
 

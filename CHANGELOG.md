@@ -11,17 +11,30 @@ run #33（commit `0537793`，9.0s 旧档）的红来自 slow bench 9.02s / 9.36s
 知道红在哪。新增 `tools/ci_summary.py`：按 `EXPECTED_SUITES`（cov / bench /
 perf-smoke）对 `out/junit-*.xml` 做**对称差**——期望有、产物无 → ❌「缺失」；
 产物有、期望无 → ❌「未登记」（只查单向只是把「bench 消失」换成「新增套件
-漏登记」的静默）。`--scope ci|local`：默认 `ci`（fail closed），CI 调用点由
-测试反查必须显式带 `--scope ci`；本地用 `local`，只核对期望清单的缺失（以
-⚠️ 提示、不升级为 ❌，本地未运行 slow bench 时属正常），不报未登记、忽略
-`out/` 里 test/golden 的历史遗留 junit。套件表（passed/failed/errors/skipped/耗时/判定）逐条展开
-失败用例的耗时与首行断言消息；没有产物时明确写「不是绿色证明」。slow bench
-步骤同时落 `out/junit-bench.xml`，workflow 末尾以 `if: always()` 写入
-`$GITHUB_STEP_SUMMARY`。单测覆盖全通过、全失败、全缺失、删一个文件的部分缺失、
-产物未登记、skip 原因、XML 损坏，并**双向**反查清单与 `ci.yml` + `make cov`
-的实际 `--junitxml` 产物名（集合必须完全相等）。计数口径：1243（回路十二）
-→ 1247（+4 个 ci_summary 用例）→ 1252（本轮 4→9 用例，+5）→ 1253（补
-「未登记」反证用例，+1），不是口径漂移。
+漏登记」的静默）。`--scope ci|local`：默认 `ci`（fail closed）；反查范围是
+`.github/workflows/*.y*ml` 全目录（与 check_yaml 同范围），任何 workflow 的
+调用点都必须显式带 `--scope ci`——只查 `ci.yml` 会漏掉未来新增的
+release/nightly。本地用 `local`：期望清单从 Makefile 的 `cov` 配方解析（即
+`make cov` 实际产出的 cov + perf-smoke），缺失以 ⚠️ 提示、不升级为 ❌，不报
+未登记、忽略 `out/` 里 test/golden 的历史遗留 junit。**bench 无本地生产者
+（只在 `ci.yml` 里跑），不在本地核对范围，其通过性只能由 CI 证明——本地 ✅
+不等于 CI ✅**（判定行显式写出）。套件表（passed/failed/errors/skipped/耗时/
+判定）逐条展开失败用例的耗时与首行断言消息；没有产物时明确写「不是绿色证明」。
+slow bench 步骤同时落 `out/junit-bench.xml`，workflow 末尾以 `if: always()`
+写入 `$GITHUB_STEP_SUMMARY`。单测覆盖全通过、全失败、全缺失、删一个文件的
+部分缺失、产物未登记、skip 原因、XML 损坏，并**双向**反查清单与 `ci.yml` +
+`make cov` 的实际 `--junitxml` 产物名（集合必须完全相等）；另锁「本地清单 =
+`make cov` 产物且 ⊆ 登记清单」以及「新增 workflow 显式 `--scope local`」的
+反证。解析边界也 fail closed：调用点按参数解析 scope 值，同时接受
+`--scope ci` 与 `--scope=ci`，缺省、重复或 `--scope=local` 都判红；
+`local_expected()` 在「有 `--junitxml` 但解析不出 `out/` 路径（变量/条件分支）」
+或「配方没有 junitxml」时直接报错，绝不返回空清单伪装「全部通过」；判定行的
+套件名单从实际核对记录拼接，并有「新增第三个本地套件必须出现在判定行」的
+渲染测试。计数口径：1243（回路十二）→ 1247（+4 个 ci_summary 用例）→ 1252
+（4→9，+5）→ 1253（未登记反证 +1）→ 1256（scope 三种行为 +3）→ 1257
+（替换 2 个旧用例、新增 CI 调用点反查，净 +1）→ 1260（本地清单解析 +1、
+本地 CLI 只核对 cov/perf-smoke +1、workflow 全扫反证 +1）→ 1263（等号写法
+反证 +1、Makefile 解析失败反证 +1、判定行动态拼接 +1），不是口径漂移。
 
 ### CI 性能档补上回归线口径
 

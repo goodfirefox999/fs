@@ -1,15 +1,19 @@
 """``tools/ci_summary.py``：Step Summary 必须列全套件，失败/缺失都不能从表里消失。
 
 回归用例（run #33）：slow bench 9.02s / 9.36s 超 9.0s 档导致 job 红，但 summary
-只有冒烟 1.33s（通过），看 summary 的人无法知道红在哪。覆盖六类形状：全通过、
-全失败、全缺失、部分缺失（删一个 junit）、产物未登记、skip 可见；另做双向漂移反查。
+只有冒烟 1.33s（通过），看 summary 的人无法知道红在哪。覆盖全通过、全失败、
+全缺失、部分缺失（删一个 junit）、产物未登记、skip 可见；另做清单双向漂移、
+本地清单（make cov 解析）漂移、全 workflow 调用点反查（含新增 workflow 反证）。
 """
 
 from __future__ import annotations
 
 import importlib.util
 import re
+from collections.abc import Iterator
 from pathlib import Path
+
+import pytest
 
 _ROOT = Path(__file__).resolve().parents[2]
 _SPEC = importlib.util.spec_from_file_location("ci_summary", _ROOT / "tools" / "ci_summary.py")
@@ -18,6 +22,8 @@ ci_summary = importlib.util.module_from_spec(_SPEC)
 _SPEC.loader.exec_module(ci_summary)
 
 _EXPECTED_FILES = list(ci_summary.EXPECTED_SUITES.values())
+# 本地有生产者的套件（make cov 产物）；bench 只在 ci.yml 里跑，单独反查漂移。
+_LOCAL_EXPECTED = {"cov": "junit-cov.xml", "perf-smoke": "junit-perf-smoke.xml"}
 
 
 def _write(tmp_path: Path, name: str, body: str) -> Path:
@@ -85,26 +91,47 @@ def test_unregistered_junit_is_a_visible_failure(tmp_path: Path) -> None:
 
 
 def test_local_scope_ignores_stale_junit(tmp_path: Path) -> None:
-    """本地宽松模式：out/ 里 test/golden 的历史 junit 不报未登记，避免训练忽略。"""
+    """本地宽松模式：范围外的历史 junit（golden、bench）不报未登记，避免训练忽略。"""
     _write_all_passing(tmp_path)
     _write(tmp_path, "junit-golden.xml", _suite(1, 0, 0, 1.0, _passing_cases()))
-    text = ci_summary.render(ci_summary.collect(tmp_path, scope="local"), scope="local")
+    text = ci_summary.render(
+        ci_summary.collect(tmp_path, expected=_LOCAL_EXPECTED, scope="local"), scope="local"
+    )
     assert "junit-golden.xml" not in text
+    assert "junit-bench.xml" not in text, "bench 无本地生产者，不在本地核对范围"
     assert "### 未登记套件" not in text
     assert "❌" not in text
-    assert "**判定：✅ 本地宽松模式：已核对缺失（无缺失），未核对未登记。**" in text
+    assert (
+        "**判定：✅ 本地宽松模式：本地可产出的套件全部通过（cov、perf-smoke）；"
+        "bench 无本地生产者，只能由 CI 证明；未核对未登记。**"
+    ) in text
 
 
 def test_local_scope_reports_missing_as_warning(tmp_path: Path) -> None:
-    """本地宽松模式：缺失要可见（⚠️），但不升级为 ❌；未登记不报。"""
+    """本地宽松模式：本地可产出套件缺失要可见（⚠️），但不升级为 ❌；未登记不报。"""
     _write(tmp_path, "junit-cov.xml", _suite(1, 0, 0, 10.0, _passing_cases()))
-    text = ci_summary.render(ci_summary.collect(tmp_path, scope="local"), scope="local")
-    assert "`junit-bench.xml`" in text and "`junit-perf-smoke.xml`" in text
+    text = ci_summary.render(
+        ci_summary.collect(tmp_path, expected=_LOCAL_EXPECTED, scope="local"), scope="local"
+    )
+    assert "`junit-perf-smoke.xml`" in text
     assert "| ⚠️ 缺失（本地未运行该步骤时属正常） |" in text
     assert "### 本地缺失（仅提示，不阻断）" in text
-    assert "**判定：⚠️ 本地宽松模式：已核对缺失（2 个预期套件未产出" in text
+    assert "**判定：⚠️ 本地宽松模式：本地可产出的套件中 1 个未产出（perf-smoke，仅提示）；" in text
+    assert "bench 无本地生产者，只能由 CI 证明" in text
     assert "### 未登记套件" not in text
+    assert "个套件缺失或不可读" not in text, "旧场景：本地缺失不得走 CI 的严格判定"
     assert "❌" not in text
+
+
+def test_local_verdict_is_built_from_checked_suites(tmp_path: Path) -> None:
+    """判定行按实际核对清单拼接：新增本地套件必须出现，防硬编码 cov/perf-smoke。"""
+    expected = {**_LOCAL_EXPECTED, "golden": "junit-golden.xml"}
+    _write_all_passing(tmp_path)
+    _write(tmp_path, "junit-golden.xml", _suite(1, 0, 0, 1.0, _passing_cases()))
+    text = ci_summary.render(
+        ci_summary.collect(tmp_path, expected=expected, scope="local"), scope="local"
+    )
+    assert "本地可产出的套件全部通过（cov、perf-smoke、golden）" in text
 
 
 def test_all_missing_reports_every_expected_suite(tmp_path: Path) -> None:
@@ -220,6 +247,18 @@ def test_cli_defaults_to_ci_and_accepts_local(tmp_path: Path, capsys) -> None:
     assert "本地宽松模式" in out
 
 
+def test_cli_local_scope_checks_make_cov_suites_only(tmp_path: Path, capsys) -> None:
+    """CLI local 走 local_expected：bench 不再产生永久 ⚠️，但必须写明只能由 CI 证明。"""
+    _write_all_passing(tmp_path)
+    assert ci_summary.main(["--dir", str(tmp_path), "--scope", "local"]) == 0
+    out = capsys.readouterr().out
+    assert "junit-bench.xml" not in out
+    assert (
+        "**判定：✅ 本地宽松模式：本地可产出的套件全部通过（cov、perf-smoke）；"
+        "bench 无本地生产者，只能由 CI 证明；未核对未登记。**"
+    ) in out
+
+
 def _make_recipe(makefile: str, target: str) -> str:
     lines = makefile.splitlines()
     for index, line in enumerate(lines):
@@ -253,14 +292,134 @@ def test_expected_suites_match_ci_artifacts_both_directions() -> None:
     )
 
 
+def test_local_expected_parses_make_cov_recipe() -> None:
+    """本地清单 = make cov 实际产物；全部已登记，且当前不含 bench（CI-only）。"""
+    makefile = (_ROOT / "Makefile").read_text(encoding="utf-8")
+    produced = set(
+        re.findall(r"--junitxml=out/(junit-[A-Za-z0-9_.-]+\.xml)", _make_recipe(makefile, "cov"))
+    )
+    local = ci_summary.local_expected()
+    assert set(local.values()) == produced, "local_expected 与 make cov 配方漂移"
+    assert set(local.values()) <= set(ci_summary.EXPECTED_SUITES.values())
+    assert set(local) == {"cov", "perf-smoke"}, (
+        "本地生产者集合变了：若 bench 等套件获得本地生产者，须同步判定行与文档里的 CI-only 声明"
+    )
+
+
+def test_local_expected_fails_closed_on_unparseable_makefile(tmp_path: Path) -> None:
+    """Makefile 变量化/缺 junitxml 时必须报错，不能静默返回空清单伪装「全部通过」。"""
+    makefile = tmp_path / "Makefile"
+    makefile.write_text(
+        "JUNIT_COV := out/junit-cov.xml\n"
+        "cov:\n"
+        "\t$(PYTHON) -m pytest --junitxml=$(JUNIT_COV)\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="无法从 make cov 配方解析"):
+        ci_summary.local_expected(makefile)
+
+    makefile.write_text("cov:\n\t$(PYTHON) -m pytest\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="没有 --junitxml"):
+        ci_summary.local_expected(makefile)
+
+
+def _logical_lines(text: str) -> Iterator[tuple[int, str]]:
+    """把反斜杠续行合并成逻辑行（YAML run 块里一条命令可能跨多行）。"""
+    start = 0
+    buffer = ""
+    for lineno, line in enumerate(text.splitlines(), 1):
+        if not buffer:
+            start = lineno
+        buffer += line.rstrip()
+        if buffer.endswith("\\"):
+            buffer = buffer[:-1] + " "
+            continue
+        yield start, buffer
+        buffer = ""
+    if buffer:
+        yield start, buffer
+
+
+_SCOPE_ARG = re.compile(r"--scope(?:=|\s+)([\w-]+)")
+
+
+def _scope_args(command: str) -> list[str]:
+    """提取调用点的 scope 值：同时接受 ``--scope ci`` 与 ``--scope=ci``。"""
+    return _SCOPE_ARG.findall(command)
+
+
+def _scan_ci_invocations(workflows_dir: Path) -> list[tuple[str, int, str]]:
+    """扫全部 workflow（.yml/.yaml，与 check_yaml 同范围）的非注释调用点。"""
+    invocations: list[tuple[str, int, str]] = []
+    for path in sorted(workflows_dir.glob("*.y*ml")):
+        for lineno, logical in _logical_lines(path.read_text(encoding="utf-8")):
+            # shell/YAML 注释：行首或空白后的 #；引号内的 # 不当作注释
+            command = re.split(r"(?:^|\s)#", logical, maxsplit=1)[0]
+            if "tools/ci_summary.py" in command:
+                invocations.append((path.name, lineno, command.strip()))
+    return invocations
+
+
 def test_ci_invocations_explicitly_use_ci_scope() -> None:
-    """默认 fail closed 之外再上一道锁：CI 每个调用点都必须显式 --scope ci。"""
-    workflow = (_ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
-    invocations = [
-        line
-        for line in workflow.splitlines()
-        if "tools/ci_summary.py" in line and not line.lstrip().startswith("#")
+    """所有 workflow 的调用点都必须显式 scope=ci（空格或等号写法均可）。
+
+    默认值只保证「不写 --scope」时 fail closed；未来新增 release.yml/nightly.yml
+    若显式写 --scope local，默认值救不了。范围与 check_yaml 一致，全目录扫描，
+    新增 workflow 不靠人记得登记反查。只看「是否含有 --scope ci 子串」会把
+    `--scope=ci` 误判为缺失，所以按参数解析后精确比较值为 ``["ci"]``。
+    """
+    invocations = _scan_ci_invocations(_ROOT / ".github" / "workflows")
+    assert invocations, "所有 workflow 里找不到 ci_summary 调用点，反查测试已失效"
+    offenders = [
+        f"{file}:{lineno}: {command}（scope={_scope_args(command) or '缺'}）"
+        for file, lineno, command in invocations
+        if _scope_args(command) != ["ci"]
     ]
-    assert invocations, "ci.yml 里找不到 ci_summary 调用点，反查测试已失效"
-    for line in invocations:
-        assert "--scope ci" in line, f"CI 调用点缺少 --scope ci：{line.strip()}"
+    assert not offenders, "CI 调用点必须且只能带一次 scope=ci：\n" + "\n".join(offenders)
+
+
+def test_workflow_scan_accepts_equals_form_and_rejects_local(tmp_path: Path) -> None:
+    """`--scope=ci` 与 `--scope ci` 等价；`--scope=local` 必须判违规。"""
+    workflows = tmp_path / "workflows"
+    workflows.mkdir()
+    (workflows / "equals.yml").write_text(
+        "      - run: python tools/ci_summary.py --dir out --scope=ci\n", encoding="utf-8"
+    )
+    (workflows / "bad.yaml").write_text(
+        "      - run: python tools/ci_summary.py --dir out --scope=local\n", encoding="utf-8"
+    )
+    scopes = {
+        file: _scope_args(command) for file, _, command in _scan_ci_invocations(workflows)
+    }
+    assert scopes == {"bad.yaml": ["local"], "equals.yml": ["ci"]}
+    assert [file for file, args in scopes.items() if args != ["ci"]] == ["bad.yaml"]
+
+
+def test_workflow_scan_catches_bad_invocation_in_any_workflow(tmp_path: Path) -> None:
+    """反证：未来新增 workflow 若显式 --scope local（含续行），全目录扫描必须抓住。"""
+    workflows = tmp_path / "workflows"
+    workflows.mkdir()
+    (workflows / "ci.yml").write_text(
+        "# python tools/ci_summary.py --scope local（注释不算调用）\n"
+        "      - run: python tools/ci_summary.py --dir out --scope ci\n",
+        encoding="utf-8",
+    )
+    (workflows / "nightly.yaml").write_text(
+        "      - run: |\n"
+        "          python tools/ci_summary.py --dir out \\\n"
+        "            --scope local\n",
+        encoding="utf-8",
+    )
+    (workflows / "notes.md").write_text(
+        "python tools/ci_summary.py --scope local\n", encoding="utf-8"
+    )
+    invocations = _scan_ci_invocations(workflows)
+    assert [file for file, _, _ in invocations] == ["ci.yml", "nightly.yaml"], (
+        "非 y*ml 文件不应被扫描；注释行不算调用"
+    )
+    offenders = [
+        (file, command) for file, _, command in invocations if _scope_args(command) != ["ci"]
+    ]
+    assert len(offenders) == 1, "注释里的违规调用不得误报，违规调用也不得漏报"
+    assert offenders[0][0] == "nightly.yaml"
+    assert _scope_args(offenders[0][1]) == ["local"], "续行合并后应看到完整命令"
