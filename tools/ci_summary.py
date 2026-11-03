@@ -12,7 +12,11 @@ errors / skipped + 耗时 + 判定」行，最后把每个 failure/error 的用�
 
 用法::
 
-    python tools/ci_summary.py --dir out >> "$GITHUB_STEP_SUMMARY"
+    python tools/ci_summary.py --dir out --scope ci >> "$GITHUB_STEP_SUMMARY"
+
+``--scope ci``（CI 固定使用）做严格对称差；``--scope local``（默认）只列期望
+清单中实际存在的套件，忽略本地 ``out/`` 里 test/golden 等历史遗留 junit——
+否则「未登记」会被训练成噪音，真正的新增未登记也会被忽略。
 
 本工具只做汇总，不改变退出码：阻断点仍是各自的测试/门禁步骤。
 """
@@ -99,11 +103,24 @@ def _suite(path: Path) -> dict:
     return record
 
 
-def collect(directory: Path, expected: dict[str, str] | None = EXPECTED_SUITES) -> list[dict]:
-    """实际产物与期望清单做对称差；``expected=None`` 关闭登记检查（仅调试用）。"""
+def collect(
+    directory: Path,
+    expected: dict[str, str] | None = EXPECTED_SUITES,
+    scope: str = "local",
+) -> list[dict]:
+    """按 scope 收集 junit；``expected=None`` 表示不按登记清单过滤（仅调试用）。
+
+    - ``local``（默认）：只列期望清单中实际存在的套件，忽略本地遗留的其它 junit。
+    - ``ci``：严格对称差，期望缺产物报「缺失」，产物未登记报「未登记」。
+    """
+    if scope not in {"ci", "local"}:
+        raise ValueError(f"未知 scope：{scope}（只支持 ci/local）")
     found = {path.name: path for path in sorted(directory.glob("junit-*.xml"))}
-    if expected is None:
-        return [_suite(path) for path in found.values()]
+    if scope == "local":
+        if expected is None:
+            return [_suite(path) for path in found.values()]
+        return [_suite(found[name]) for name in expected.values() if name in found]
+
     records: list[dict] = []
     for suite, name in expected.items():
         if name in found:
@@ -124,7 +141,7 @@ def collect(directory: Path, expected: dict[str, str] | None = EXPECTED_SUITES) 
     return records
 
 
-def render(records: list[dict]) -> str:
+def render(records: list[dict], scope: str = "local") -> str:
     lines = ["## CI 测试汇总", ""]
     if not records:
         lines.append(
@@ -154,7 +171,12 @@ def render(records: list[dict]) -> str:
             )
         lines.append(f"**判定：❌ {'；'.join(reasons)}——本页不是绿色证明。**")
     else:
-        lines.append(f"**判定：✅ 全部 {len(records)} 个套件通过。**")
+        if scope == "local":
+            lines.append(
+                f"**判定：✅ 已找到的 {len(records)} 个套件通过（本地宽松模式，未核对缺失/未登记）。**"
+            )
+        else:
+            lines.append(f"**判定：✅ 全部 {len(records)} 个套件通过。**")
     lines.append("")
 
     lines.append("| 套件 | passed | failed | errors | skipped | 耗时 | 判定 |")
@@ -205,8 +227,14 @@ def render(records: list[dict]) -> str:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="汇总 out/junit-*.xml 为 GitHub Step Summary")
     parser.add_argument("--dir", default="out", help="junit 产物目录（默认 out）")
+    parser.add_argument(
+        "--scope",
+        choices=("ci", "local"),
+        default="local",
+        help="ci=严格对称差（缺失/未登记都报）；local=宽松，只列期望清单中存在的套件（默认）",
+    )
     args = parser.parse_args(argv)
-    print(render(collect(Path(args.dir))))
+    print(render(collect(Path(args.dir), scope=args.scope), scope=args.scope))
     return 0
 
 
