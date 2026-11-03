@@ -148,6 +148,8 @@ jobs:
           echo "PYTHONPATH=core-time/src:core-symbol/src:core-rule/src:core-eval/src:app-zeri/src:." >> $GITHUB_ENV
       - name: Render golden case report
         run: |
+          # 独立 job 是全新 workspace，out/ 不会从 test job 继承（二者不共享文件系统）。
+          mkdir -p out
           python -m app_zeri.cli verify \
             --course 2027-07-11T14:00 --azimuth 320 \
             --task 修造 --strictness strict --allow-unverified \
