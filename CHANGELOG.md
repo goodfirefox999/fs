@@ -11,9 +11,10 @@ run #33（commit `0537793`，9.0s 旧档）的红来自 slow bench 9.02s / 9.36s
 知道红在哪。新增 `tools/ci_summary.py`：按 `EXPECTED_SUITES`（cov / bench /
 perf-smoke）对 `out/junit-*.xml` 做**对称差**——期望有、产物无 → ❌「缺失」；
 产物有、期望无 → ❌「未登记」（只查单向只是把「bench 消失」换成「新增套件
-漏登记」的静默）。`--scope ci|local`：CI 固定 `ci` 做严格对称差；本地默认
-`local` 只列期望清单中实际存在的套件，忽略 `out/` 里 test/golden 的历史遗留
-junit——否则「未登记」会被训练成噪音，真正的新增未登记也会被忽略。套件表（passed/failed/errors/skipped/耗时/判定）逐条展开
+漏登记」的静默）。`--scope ci|local`：默认 `ci`（fail closed），CI 调用点由
+测试反查必须显式带 `--scope ci`；本地用 `local`，只核对期望清单的缺失（以
+⚠️ 提示、不升级为 ❌，本地未运行 slow bench 时属正常），不报未登记、忽略
+`out/` 里 test/golden 的历史遗留 junit。套件表（passed/failed/errors/skipped/耗时/判定）逐条展开
 失败用例的耗时与首行断言消息；没有产物时明确写「不是绿色证明」。slow bench
 步骤同时落 `out/junit-bench.xml`，workflow 末尾以 `if: always()` 写入
 `$GITHUB_STEP_SUMMARY`。单测覆盖全通过、全失败、全缺失、删一个文件的部分缺失、

@@ -88,20 +88,23 @@ def test_local_scope_ignores_stale_junit(tmp_path: Path) -> None:
     """本地宽松模式：out/ 里 test/golden 的历史 junit 不报未登记，避免训练忽略。"""
     _write_all_passing(tmp_path)
     _write(tmp_path, "junit-golden.xml", _suite(1, 0, 0, 1.0, _passing_cases()))
-    text = ci_summary.render(ci_summary.collect(tmp_path), scope="local")
+    text = ci_summary.render(ci_summary.collect(tmp_path, scope="local"), scope="local")
     assert "junit-golden.xml" not in text
     assert "### 未登记套件" not in text
     assert "❌" not in text
-    assert "**判定：✅ 已找到的 3 个套件通过（本地宽松模式，未核对缺失/未登记）。**" in text
+    assert "**判定：✅ 本地宽松模式：已核对缺失（无缺失），未核对未登记。**" in text
 
 
-def test_local_scope_does_not_report_missing_expected(tmp_path: Path) -> None:
-    """本地只跑了部分套件时不把缺失当红；严格缺失判定只属于 --scope ci。"""
+def test_local_scope_reports_missing_as_warning(tmp_path: Path) -> None:
+    """本地宽松模式：缺失要可见（⚠️），但不升级为 ❌；未登记不报。"""
     _write(tmp_path, "junit-cov.xml", _suite(1, 0, 0, 10.0, _passing_cases()))
-    text = ci_summary.render(ci_summary.collect(tmp_path), scope="local")
-    assert "个套件缺失或不可读" not in text
+    text = ci_summary.render(ci_summary.collect(tmp_path, scope="local"), scope="local")
+    assert "`junit-bench.xml`" in text and "`junit-perf-smoke.xml`" in text
+    assert "| ⚠️ 缺失（本地未运行该步骤时属正常） |" in text
+    assert "### 本地缺失（仅提示，不阻断）" in text
+    assert "**判定：⚠️ 本地宽松模式：已核对缺失（2 个预期套件未产出" in text
+    assert "### 未登记套件" not in text
     assert "❌" not in text
-    assert "**判定：✅ 已找到的 1 个套件通过" in text
 
 
 def test_all_missing_reports_every_expected_suite(tmp_path: Path) -> None:
@@ -204,14 +207,17 @@ def test_no_records_at_all_is_explicitly_not_green(tmp_path: Path) -> None:
     assert "| 套件 |" not in text
 
 
-def test_cli_scope_defaults_to_local_and_accepts_ci(tmp_path: Path, capsys) -> None:
-    """CLI 默认宽松（本地），显式 --scope ci 才做严格对称差。"""
+def test_cli_defaults_to_ci_and_accepts_local(tmp_path: Path, capsys) -> None:
+    """CLI 默认 fail closed（严格对称差）；本地须显式 --scope local。"""
     _write_all_passing(tmp_path)
     _write(tmp_path, "junit-golden.xml", _suite(1, 0, 0, 1.0, _passing_cases()))
     assert ci_summary.main(["--dir", str(tmp_path)]) == 0
-    assert "junit-golden.xml" not in capsys.readouterr().out
-    assert ci_summary.main(["--dir", str(tmp_path), "--scope", "ci"]) == 0
-    assert "未登记" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "junit-golden.xml" in out and "未登记" in out
+    assert ci_summary.main(["--dir", str(tmp_path), "--scope", "local"]) == 0
+    out = capsys.readouterr().out
+    assert "junit-golden.xml" not in out
+    assert "本地宽松模式" in out
 
 
 def _make_recipe(makefile: str, target: str) -> str:
@@ -245,3 +251,16 @@ def test_expected_suites_match_ci_artifacts_both_directions() -> None:
         f"未登记（产物有清单无）：{sorted(produced - declared)}；"
         f"已失效（清单有产物无）：{sorted(declared - produced)}"
     )
+
+
+def test_ci_invocations_explicitly_use_ci_scope() -> None:
+    """默认 fail closed 之外再上一道锁：CI 每个调用点都必须显式 --scope ci。"""
+    workflow = (_ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+    invocations = [
+        line
+        for line in workflow.splitlines()
+        if "tools/ci_summary.py" in line and not line.lstrip().startswith("#")
+    ]
+    assert invocations, "ci.yml 里找不到 ci_summary 调用点，反查测试已失效"
+    for line in invocations:
+        assert "--scope ci" in line, f"CI 调用点缺少 --scope ci：{line.strip()}"

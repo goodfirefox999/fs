@@ -12,11 +12,13 @@ errors / skipped + 耗时 + 判定」行，最后把每个 failure/error 的用�
 
 用法::
 
-    python tools/ci_summary.py --dir out --scope ci >> "$GITHUB_STEP_SUMMARY"
+    python tools/ci_summary.py --dir out >> "$GITHUB_STEP_SUMMARY"   # 默认 --scope ci
+    python tools/ci_summary.py --dir out --scope local               # 本地调试
 
-``--scope ci``（CI 固定使用）做严格对称差；``--scope local``（默认）只列期望
-清单中实际存在的套件，忽略本地 ``out/`` 里 test/golden 等历史遗留 junit——
-否则「未登记」会被训练成噪音，真正的新增未登记也会被忽略。
+默认 ``--scope ci``（fail closed）：严格对称差——期望缺产物、产物未登记都报 ❌。
+本地显式 ``--scope local``：只核对期望清单的缺失（以 ⚠️ 提示，未登记不报），
+忽略 ``out/`` 里 test/golden 等历史遗留 junit——本地缺失不能静默，但也不能
+把 CI 的严格口径变成天天出现的红灯。
 
 本工具只做汇总，不改变退出码：阻断点仍是各自的测试/门禁步骤。
 """
@@ -106,22 +108,30 @@ def _suite(path: Path) -> dict:
 def collect(
     directory: Path,
     expected: dict[str, str] | None = EXPECTED_SUITES,
-    scope: str = "local",
+    scope: str = "ci",
 ) -> list[dict]:
     """按 scope 收集 junit；``expected=None`` 表示不按登记清单过滤（仅调试用）。
 
-    - ``local``（默认）：只列期望清单中实际存在的套件，忽略本地遗留的其它 junit。
-    - ``ci``：严格对称差，期望缺产物报「缺失」，产物未登记报「未登记」。
+    - ``ci``（默认，fail closed）：严格对称差——期望缺产物报「缺失」，产物未登记
+      报「未登记」。
+    - ``local``：核对期望清单，缺失记为 ⚠️ 提示（本地未运行对应步骤时属正常）；
+      未登记不报，忽略本地遗留的其它 junit。
     """
     if scope not in {"ci", "local"}:
         raise ValueError(f"未知 scope：{scope}（只支持 ci/local）")
     found = {path.name: path for path in sorted(directory.glob("junit-*.xml"))}
+    if expected is None:
+        return [_suite(path) for path in found.values()]
     if scope == "local":
-        if expected is None:
-            return [_suite(path) for path in found.values()]
-        return [_suite(found[name]) for name in expected.values() if name in found]
+        records: list[dict] = []
+        for name in expected.values():
+            if name in found:
+                records.append(_suite(found[name]))
+            else:
+                records.append({"file": name, "missing_local": True})
+        return records
 
-    records: list[dict] = []
+    records = []
     for suite, name in expected.items():
         if name in found:
             records.append(_suite(found.pop(name)))
@@ -135,13 +145,14 @@ def collect(
     for path in found.values():
         record = _suite(path)
         record["unregistered"] = (
-            "未登记套件：产物存在但不在 EXPECTED_SUITES（新增套件须登记，否则汇总口径不明）"
+            "未登记套件：产物存在但不在 EXPECTED_SUITES"
+            "（新增套件须登记；本地历史 junit 请用 --scope local）"
         )
         records.append(record)
     return records
 
 
-def render(records: list[dict], scope: str = "local") -> str:
+def render(records: list[dict], scope: str = "ci") -> str:
     lines = ["## CI 测试汇总", ""]
     if not records:
         lines.append(
@@ -151,11 +162,15 @@ def render(records: list[dict], scope: str = "local") -> str:
         return "\n".join(lines)
 
     missing = [record["file"] for record in records if record.get("error")]
+    missing_local = [record["file"] for record in records if record.get("missing_local")]
     unregistered = [record["file"] for record in records if record.get("unregistered")]
     failed = [
         record["file"]
         for record in records
-        if not record.get("error") and not record.get("unregistered") and not record["ok"]
+        if not record.get("error")
+        and not record.get("missing_local")
+        and not record.get("unregistered")
+        and not record["ok"]
     ]
     if missing or failed or unregistered:
         reasons: list[str] = []
@@ -170,13 +185,15 @@ def render(records: list[dict], scope: str = "local") -> str:
                 f"{len(unregistered)} 个套件未登记（{'、'.join(f'`{name}`' for name in unregistered)}）"
             )
         lines.append(f"**判定：❌ {'；'.join(reasons)}——本页不是绿色证明。**")
+    elif missing_local:
+        lines.append(
+            f"**判定：⚠️ 本地宽松模式：已核对缺失（{len(missing_local)} 个预期套件未产出，"
+            "仅提示，本地未运行对应步骤时属正常），未核对未登记。**"
+        )
+    elif scope == "local":
+        lines.append("**判定：✅ 本地宽松模式：已核对缺失（无缺失），未核对未登记。**")
     else:
-        if scope == "local":
-            lines.append(
-                f"**判定：✅ 已找到的 {len(records)} 个套件通过（本地宽松模式，未核对缺失/未登记）。**"
-            )
-        else:
-            lines.append(f"**判定：✅ 全部 {len(records)} 个套件通过。**")
+        lines.append(f"**判定：✅ 全部 {len(records)} 个套件通过。**")
     lines.append("")
 
     lines.append("| 套件 | passed | failed | errors | skipped | 耗时 | 判定 |")
@@ -184,6 +201,11 @@ def render(records: list[dict], scope: str = "local") -> str:
     for record in records:
         if record.get("error"):
             lines.append(f"| `{record['file']}` | - | - | - | - | - | ❌ {record['error']} |")
+            continue
+        if record.get("missing_local"):
+            lines.append(
+                f"| `{record['file']}` | - | - | - | - | - | ⚠️ 缺失（本地未运行该步骤时属正常） |"
+            )
             continue
         if record.get("unregistered"):
             verdict = "❌ 未登记"
@@ -205,6 +227,11 @@ def render(records: list[dict], scope: str = "local") -> str:
             lines.append(f"- {detail}（{file}）")
     else:
         lines.append("无 failed / errors。")
+
+    if missing_local:
+        lines += ["", "### 本地缺失（仅提示，不阻断）"]
+        for name in missing_local:
+            lines.append(f"- `{name}`：本地未产出；若刚跑过对应步骤，请检查它是否失败。")
 
     unregistered_details = [
         (record["file"], record["unregistered"])
@@ -230,8 +257,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--scope",
         choices=("ci", "local"),
-        default="local",
-        help="ci=严格对称差（缺失/未登记都报）；local=宽松，只列期望清单中存在的套件（默认）",
+        default="ci",
+        help="ci=严格对称差（默认，缺失/未登记都报）；local=宽松，缺失仅 ⚠️ 提示、不报未登记",
     )
     args = parser.parse_args(argv)
     print(render(collect(Path(args.dir), scope=args.scope), scope=args.scope))
