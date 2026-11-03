@@ -46,20 +46,24 @@ def _is_ci() -> bool:
     return bool(os.environ.get("CI") or os.environ.get("GITHUB_ACTIONS"))
 
 
-# 本地 3.5s；CI 9.0s。
-# 2026-11-03 在 runner 上连续两轮实测：全年 6.59s / 已考证模拟 7.34s，本地同版本
-# 分别 3.24s / 3.31s——两个独立测试的 CI/本地比值都落在 2.0–2.2×，说明是 runner
-# 慢，不是 3.14 性能回归。
+# 本地 3.5s；CI 13.0s。
+# 本机（Apple Silicon）2026-11-03 连续 10 次样本 3.06–3.42s，中位 3.25s——本地档
+# 余量稳定，未动。CI 档不按本地值定，按 runner 实测比值定：
 #
-# 为什么 CI 档是 9.0s 而不是 3.5×2=7.0s：7.0s 直接被两轮实测的波动（6.59→7.34，
-# 11%）打穿——这正是「floor(实测) 零余量」在性能门禁上的同一个错误：把阈值放在
-# 实测值上，等于把 runner 抖动当回归。9.0s ≈ 实测上界 × 1.22，与本地 3.5s 对
-# 本地实测 3.2–3.3s 的余量比例一致。
+#   run               全年      已考证模拟   本地同版本   比值
+#   13:46–14:16 前两轮  6.59s     7.34s      3.24/3.31   2.03–2.22×
+#   14:16 最新一轮      9.02s     9.36s      3.25        2.78–2.88×
 #
-# 它仍能抓住 O(n²) 回归：pareto 类回归实测 ~9s（本地口径）、CI 口径 ~18s，
-# 9.0s 拦得住。**不得因为红了就无脑上调**——先看相对门禁（中位数 ×1.5）是否也红，
-# 两条都红才是真回归。分档策略与单月冒烟一致（tests/golden 的 _single_month_budget_sec）。
-CI_BUDGET_SEC = 9.0
+# 9.0 档按「实测上界 × 1.22」设，下一轮就被 9.36 打穿：同一 workflow、同一
+# ubuntu-24.04、代码未变，说明 job-to-job 的 runner 差异本身就能到 40%，
+# 22% 余量不够。13.0s = 实测上界 9.36 × 1.39，覆盖已观测的 runner 波动；
+# 仍能抓住 O(n²) 回归（pareto 类回归本地 ~9s、CI 口径 ~18s 以上）。
+#
+# 判红前先看本地相对门禁（中位数 ×1.5）：本地 10 个样本稳定且相对门禁绿，
+# 才可按 runner 档解释；两条都红才是产品回归。分档策略与单月冒烟一致
+# （tests/golden 的 _single_month_budget_sec）。**不得因为红了就无脑上调**：
+# 下一次若再红，先拿 CI 历史样本与本地中位数对账，再改这个数并留下推导。
+CI_BUDGET_SEC = 13.0
 BUDGET_SEC = CI_BUDGET_SEC if _is_ci() else 3.5
 
 
@@ -197,18 +201,20 @@ def test_brute_force_matches_sampled() -> None:
     assert sorted(generated) == sorted(brute_states), "生成器结果集与暴力全量不一致"
 
 
-def test_ci_budget_is_double_local() -> None:
-    """CI/本地分档必须成立：runner 实测慢 ~2×，同档会在 CI 上假红。
+def test_ci_budget_is_tiered_above_observed_runner_range() -> None:
+    """CI/本地分档必须成立：runner 实测慢 2.0–2.9×，同档会在 CI 上假红。
 
-    2026-11-03 实测证据：全年 6.59s(CI) vs 3.24s(本地)，单月冒烟 1.01s vs 0.52s，
-    两个独立测试比值一致 → runner 慢，不是 3.14 回归。分档只放宽绝对预算，
+    2026-11-03 实测（代码未变）：全年 6.59→9.02s、已考证模拟 7.34→9.36s，
+    本地同版本稳定在 3.06–3.42s（10 样本）；比值从 2.03× 漂到 2.88×，
+    说明 job-to-job 的 runner 差异可达 40%。分档只放宽绝对预算，
     相对门禁（中位数 × 1.5）不变，O(n²) 回归仍被两侧拦住。
     """
     if os.environ.get("CI") or os.environ.get("GITHUB_ACTIONS"):
-        assert BUDGET_SEC == CI_BUDGET_SEC == 9.0, "CI 档须留出 runner 抖动余量（实测上界 7.34s）"
+        assert BUDGET_SEC == CI_BUDGET_SEC == 13.0, "CI 档须留出 runner 抖动余量（实测上界 9.36s）"
     else:
         assert BUDGET_SEC == 3.5, "本地档不得被放宽"
-    assert CI_BUDGET_SEC > 7.34, "CI 档必须高于已观测的实测上界，否则重演零余量假红"
+    assert CI_BUDGET_SEC > 9.36, "CI 档必须高于已观测的实测上界，否则重演零余量假红"
+    assert CI_BUDGET_SEC < 18.0, "CI 档不得逼近 O(n²) 回归区间，否则容量门禁失效"
 
 
 def test_history_reads_the_same_file_it_writes(tmp_path, monkeypatch) -> None:
