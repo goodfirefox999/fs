@@ -58,7 +58,8 @@ export PYTHONPATH=core-time/src:core-symbol/src:core-rule/src:core-eval/src:app-
 | 建除 / 黄黑道 | ✅ 日家 + 时家；建除两条恒等式（建日=月建日、破日=月破日）逐月自校；十二神与既有勾陈表 12/12 交叉吻合 |
 | 二十八宿值日 | ✅ 七元起宿 + 星期恒等式自校验（1900-2100 零违例）+ 三站黄历对算；**值宿吉凶标签为粗化** |
 | 吉神表 | ✅ 天德（卦位口径 `tiande_guaxiang` 三选一）/ 月德 / 月德合 / 天赦 |
-| 确定性门禁 | ✅ `tools/determinism_probe.py` 两级指纹（决策面/输出面分开断言）多 seed 一致（20/20）；`make gate` 对输出面漂移写 `out/output-fail.flag`（带警告通过），决策面/机器忙仍阻断；条件禁浮点、口径必须显式 `default`（`rules lint` 两条不变式 + 反证测试） |
+| 确定性门禁 | ✅ `tools/determinism_probe.py` 两级指纹（决策面/输出面分开断言）多 seed 一致（20/20）；`make gate` 对输出面漂移写 `out/output-fail.flag`（带警告通过），决策面/机器忙仍阻断；CI 中直接调 `make determinism`/原始探针会以 64 拒绝；条件禁浮点、口径必须显式 `default`（`rules lint` 两条不变式 + 反证测试） |
+| 覆盖率门禁 | ✅ `make gate` 先经 `make cov` 用 `pytest --cov` 新鲜采集，再 `coverage report --fail-under=80`；当前 84%（app-zeri 68%，单独列缺口）；无 `|| true`；旧 `.coverage` 不得作为数据源 |
 | 死代码门禁 | ✅ `rules lint` 第 14 项：`derive_*` 必须有定义文件外的调用点（传递闭包）、符号层模块必须被 import；`coverage_gaps.yaml` 的 `implementation` 声明与代码事实双向核对 |
 | 判定类型（C 第一批） | ✅ `verdict_type`(gate/vote/reference) + `engine_eligible` + 理由编码；参考层命中可见但不进 state/tier/publishable（当前 23 条已标，63 条待批量迁移） |
 | 影子规则 | ✅ 1 条（`PUB-WUHUANG-PALACE-001`，`engine_eligible: false` 只观察不计分）；"观察不投票"有语义测试 |
@@ -67,7 +68,7 @@ export PYTHONPATH=core-time/src:core-symbol/src:core-rule/src:core-eval/src:app-
 | 稳健集 / 敏感集 | ✅ `--robustness`（坐向 ±uncertainty + 口径开关扰动矩阵） |
 | 口径注册表 | ✅ 三煞（2 口径）/ 纳音（4 口径）/ 斗首土长生（2 口径）/ 紫白飞布（2 口径）/ 天德卦位（3 口径） |
 | 案例库 | ⚠️ 仅 1 条 A 级金标准案例；论坛案例（511 条）尚未结构化入库 |
-| 变异测试抽查 | ✅ 8/8 变异被抓住（`make mutation`） |
+| 变异测试抽查 | ✅ 28/28 变异被抓住（`make mutation`） |
 | 服务化（FastAPI/PWA） | ❌ 未实现（M10） |
 
 **当前能给出什么结论**：
@@ -113,7 +114,7 @@ make test-fast   # 跳过 slow 标记
 make cov         # 覆盖率（门禁：整体 ≥80%）
 make lint        # 规则库 lint（含规则清单一致性）
 make mutation    # 变异测试抽查（验证测试真的能抓住错误）
-make gate        # 全部 CI 门禁（测试 + lint + 签名 + 无网络扫描）
+make gate        # 全部 CI 门禁（YAML + 覆盖率 + lint + 签名 + 无网络扫描）
 ```
 
 ## 许可与数据

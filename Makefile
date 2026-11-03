@@ -4,7 +4,7 @@ export PYTHONPATH := core-time/src:core-symbol/src:core-rule/src:core-eval/src:a
 # 解释器：优先仓库 venv（本沙箱系统 $(PYTHON) 无 pytest——2026-11-03 实测）
 PYTHON ?= .venv/bin/python
 
-.PHONY: help test test-fast cov lint gate golden rules cases clean report mutation determinism determinism-gate check-proxy push check-python
+.PHONY: help test test-fast cov lint gate golden rules cases clean report mutation determinism determinism-gate check-yaml check-proxy push check-python
 
 # 解释器预检（2026-11-03）：.venv 不存在时 make 只会甩 ModuleNotFoundError，
 # 看不出"该建 venv"。这里前置断言，给出可直接粘贴的命令。
@@ -24,9 +24,10 @@ check-python:
 help:
 	@echo "make test       全量测试（含性能）"
 	@echo "make test-fast  跳过 slow 标记"
-	@echo "make cov        覆盖率报告（门禁：整体 >=80%）"
+	@echo "make cov        覆盖率报告（新鲜采集，门禁：整体 >=80%）"
 	@echo "make lint       规则库 lint"
-	@echo "make gate       全部 CI 门禁"
+	@echo "make check-yaml 校验 .github/workflows/*.yml 语法"
+	@echo "make gate       全部 CI 门禁（check-yaml + cov + lint + ...）"
 	@echo "make golden     金标准回归"
 	@echo "make cases      运行案例库并产出四份报告"
 	@echo "make report     生成金标准案例报告"
@@ -49,13 +50,20 @@ test-fast: check-python
 	$(PYTHON) -m pytest -m "not slow" --junitxml=out/junit-fast.xml
 	@$(PYTHON) tools/summarize_junit.py out/junit-fast.xml
 
+# 注意：cov 必须由 pytest --cov 新鲜采集 .coverage，再交给 coverage report。
+# 2026-11-03 事故：gate 不跑 cov，只读上一次遗留的 .coverage，报出 75%
+# （fresh 实测 84%）；再配 `|| true`，覆盖率门禁名存实亡。禁止改回读旧数据。
 cov: check-python
 	@mkdir -p out
 	$(PYTHON) -m pytest -m "not slow" --cov --cov-report=term --cov-report=html --junitxml=out/junit-cov.xml
 	$(PYTHON) -m coverage report --fail-under=80
+	@$(PYTHON) tools/summarize_junit.py out/junit-cov.xml
 
 lint:
 	$(PYTHON) -m app_zeri.cli rules lint
+
+check-yaml: check-python
+	$(PYTHON) tools/check_yaml.py
 
 golden: check-python
 	@mkdir -p out
@@ -77,7 +85,14 @@ mutation:
 # 确定性门禁（2026-11-03）：多 PYTHONHASHSEED 比对指纹。
 # 退出码 1 = PRODUCT_FAIL（产品不确定）；2 = ENV_SUSPECT（机器忙，不是产品问题）；
 # 3 = OUTPUT_FAIL（报告文本不确定）。本目标保留原始退出码，供人工复核。
+# CI 中禁止直接调用：否则 3 会绕过 determinism_gate 适配层直接阻断。
+# 64 = 调用方式错误（不是产品/环境判定）。
 determinism:
+	@if [ "$${CI:-}" = "true" ]; then \
+		echo "❌ CI 中禁止直接调用 make determinism：它会绕过 OUTPUT_FAIL 适配层。"; \
+		echo "   请改用 make gate（内部走 tools/determinism_gate.py）。"; \
+		exit 64; \
+	fi
 	$(PYTHON) tools/determinism_probe.py --gate
 
 # CI 适配层（AGENTS.md 确定性门禁第 15 条）：只把 3 降级成 0 + out/output-fail.flag。
@@ -91,12 +106,14 @@ check-proxy:
 push: check-proxy
 	git push
 
-gate: test-fast lint
+# 覆盖率必须是本目标刚跑出来的：`cov` 用 pytest --cov 新鲜采集 .coverage，
+# 并由 coverage report --fail-under=80 阻断。禁止（a）只读旧 .coverage，
+# （b）用 `|| true` 吞掉失败。测试锚点：tests/unit/test_gate_wiring.py。
+gate: check-yaml cov lint
 	$(PYTHON) tools/no_network_scan.py
 	$(PYTHON) tools/check_status_signature.py --offline
 	$(PYTHON) tools/check_no_aggregate_score.py
 	$(PYTHON) tools/determinism_gate.py
-	$(PYTHON) -m coverage report --fail-under=80 || true
 	@if [ -f out/output-fail.flag ]; then \
 		echo "⚠️ gate 完成（带 OUTPUT_FAIL 警告：out/output-fail.flag）"; \
 	else \

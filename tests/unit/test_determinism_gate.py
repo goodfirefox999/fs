@@ -68,6 +68,31 @@ class TestTimingCheck:
         assert data.count("100.0") <= probe._BASELINE_SAMPLES + 1
 
 
+class TestCiBypassGuard:
+    """CI 唯一入口是 determinism_gate 适配层；直接调 --gate 必须被拒绝。"""
+
+    def test_ci_direct_gate_is_rejected(self, monkeypatch, capsys) -> None:
+        monkeypatch.setenv("CI", "true")
+        monkeypatch.delenv(probe.ADAPTER_ENV, raising=False)
+        monkeypatch.setattr(probe, "_gate", lambda *a, **k: pytest.fail("不得进入 _gate"))
+        assert probe.main(["--gate", "0,1"]) == 64
+        err = capsys.readouterr().err
+        assert "禁止直接调用" in err
+        assert "make gate" in err
+
+    def test_ci_adapter_token_allows_gate(self, monkeypatch) -> None:
+        monkeypatch.setenv("CI", "true")
+        monkeypatch.setenv(probe.ADAPTER_ENV, "1")
+        monkeypatch.setattr(probe, "_gate", lambda *a, **k: 0)
+        assert probe.main(["--gate", "0,1"]) == 0
+
+    def test_non_ci_direct_gate_is_allowed(self, monkeypatch) -> None:
+        monkeypatch.delenv("CI", raising=False)
+        monkeypatch.delenv(probe.ADAPTER_ENV, raising=False)
+        monkeypatch.setattr(probe, "_gate", lambda *a, **k: 0)
+        assert probe.main(["--gate", "0,1"]) == 0
+
+
 class TestGateExitCodes:
     def test_two_seeds_are_deterministic(self) -> None:
         """真实门禁：两个 seed 指纹一致 → 0。"""

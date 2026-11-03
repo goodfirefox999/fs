@@ -49,6 +49,11 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parents[1]
+
+#: CI 中只有适配层可以调用 --gate。适配层会把它置为 "1"；直接调用会被拒绝。
+#: 这不是安全边界，是防绕过：否则 3 会绕过 OUTPUT_FAIL 的「带警告通过」处置。
+ADAPTER_ENV = "ZERI_DETERMINISM_ADAPTER"
+
 for pkg in ("core-time", "core-symbol", "core-rule", "core-eval", "app-zeri"):
     src = ROOT / pkg / "src"
     if str(src) not in sys.path:
@@ -219,6 +224,8 @@ def main(argv: list[str] | None = None) -> int:
            **不得**据此判定产品不确定（见 AGENTS.md 补丁纪律第 7/8 条）
     3      **OUTPUT_FAIL**：决策一致但**输出指纹**不一致 —— 报告文本跨进程不稳定。
            可带警告发布，但不能无声（2026-11-03 评审七回路新增）
+    64     **USAGE**：CI 中直接调用 --gate，绕过了 determinism_gate 适配层。
+           这不是确定性判定，是调用方式错误；请改用 make gate。
     =====  ============================================================
 
     两级为什么分开：决策面红 = 产品坏了（必须停）；输出面红 = 用户看到的解释会变
@@ -246,6 +253,16 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.gate:
+        # CI 中唯一入口是 tools/determinism_gate.py；绕过它会让 3 直接阻断，
+        # 也会让「带警告通过」和「适配层坏了」无法区分。
+        if os.environ.get("CI", "").lower() == "true" and os.environ.get(ADAPTER_ENV) != "1":
+            print(
+                "USAGE(64): CI 中禁止直接调用 determinism_probe.py --gate。\n"
+                "  请改用 make gate（内部走 tools/determinism_gate.py），"
+                "否则 OUTPUT_FAIL 会绕过适配层。",
+                file=sys.stderr,
+            )
+            return 64
         return _gate(args.gate, verbose=args.verbose)
 
     t0 = time.perf_counter()

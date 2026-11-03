@@ -43,12 +43,40 @@ def test_safe_proxy_hides_credentials() -> None:
     assert proxy.safe_proxy("127.0.0.1:62727") == "127.0.0.1:62727"
 
 
+def test_probe_nonzero_rc_keeps_rc_in_evidence(monkeypatch) -> None:
+    """curl 可能先打印 200 再超时；证据必须带 rc，不能让人误读成可达。"""
+
+    class Proc:
+        returncode = 28
+        stdout = "200"
+        stderr = "Connection timed out"
+
+    monkeypatch.setattr(proxy.subprocess, "run", lambda *a, **k: Proc())
+    ok, evidence = proxy.probe("https://example.com")
+    assert ok is False
+    assert "200" in evidence and "rc=28" in evidence
+
+
 class TestCheck:
-    def test_proxy_reachable_is_green(self, monkeypatch, no_git_proxy, capsys) -> None:
+    def test_proxy_reachable_reports_both_paths_and_route(
+        self, monkeypatch, no_git_proxy, capsys
+    ) -> None:
         monkeypatch.setattr(proxy, "env_proxy", lambda: ("https_proxy", "http://127.0.0.1:1"))
-        monkeypatch.setattr(proxy, "probe", lambda url, **kw: (True, "200"))
+        calls: list[str | None] = []
+
+        def fake_probe(url, *, proxy=None, timeout=10):  # noqa: ANN001
+            calls.append(proxy)
+            return True, "200"
+
+        monkeypatch.setattr(proxy, "probe", fake_probe)
         assert proxy.check("https://github.com") == 0
-        assert "✅" in capsys.readouterr().out
+        out = capsys.readouterr().out
+        assert "env_proxy: 有（https_proxy=http://127.0.0.1:1）" in out
+        assert "git_config_proxy: 无" in out
+        assert "direct: 200  via_proxy: 200" in out
+        assert "push_route: 当前将走 proxy（环境变量 https_proxy）" in out
+        assert "✅" in out
+        assert calls == [None, "http://127.0.0.1:1"], "直连与代理都要留下证据"
 
     def test_proxy_down_direct_up_points_at_proxy(self, monkeypatch, no_git_proxy, capsys) -> None:
         monkeypatch.setattr(proxy, "env_proxy", lambda: ("https_proxy", "http://127.0.0.1:1"))
@@ -61,20 +89,27 @@ class TestCheck:
         monkeypatch.setattr(proxy, "probe", fake_probe)
         assert proxy.check("https://github.com") == 1
         out = capsys.readouterr().out
+        assert "direct: 200  via_proxy: 502" in out
+        assert "push_route: 当前将走 proxy（环境变量 https_proxy）" in out
         assert "问题在代理/环境变量，不是上游" in out
-        assert calls == ["http://127.0.0.1:1", None], "必须先试代理，再试直连做对照"
+        assert calls == [None, "http://127.0.0.1:1"], "先探直连做对照，再探代理"
 
     def test_proxy_down_direct_down_mentions_upstream(self, monkeypatch, no_git_proxy, capsys) -> None:
         monkeypatch.setattr(proxy, "env_proxy", lambda: ("https_proxy", "http://127.0.0.1:1"))
         monkeypatch.setattr(proxy, "probe", lambda url, **kw: (False, "curl 超时"))
         assert proxy.check("https://github.com") == 1
-        assert "上游/网络故障" in capsys.readouterr().out
+        out = capsys.readouterr().out
+        assert "direct: curl 超时  via_proxy: curl 超时" in out
+        assert "上游/网络故障" in out
 
     def test_missing_env_but_direct_up_warns(self, monkeypatch, no_git_proxy, capsys) -> None:
         monkeypatch.setattr(proxy, "env_proxy", lambda: (None, None))
         monkeypatch.setattr(proxy, "probe", lambda url, **kw: (True, "200"))
         assert proxy.check("https://github.com") == 0
         out = capsys.readouterr().out
+        assert "env_proxy: 无  git_config_proxy: 无" in out
+        assert "direct: 200  via_proxy: 未配置" in out
+        assert "push_route: 当前将走 direct" in out
         assert "未配置代理" in out
         assert "静默直连" in out
 
@@ -89,4 +124,16 @@ class TestCheck:
         monkeypatch.setattr(proxy, "git_proxy", lambda: ("https.proxy", "http://127.0.0.1:2"))
         monkeypatch.setattr(proxy, "probe", lambda url, **kw: (True, "200"))
         assert proxy.check("https://github.com") == 0
-        assert "git config https.proxy" in capsys.readouterr().out
+        out = capsys.readouterr().out
+        assert "push_route: 当前将走 proxy（git config https.proxy）" in out
+        assert "git config https.proxy" in out
+
+    def test_both_configured_reports_env_route(self, monkeypatch, capsys) -> None:
+        """环境变量与 git config 同时存在时，报告实际优先的那条。"""
+        monkeypatch.setattr(proxy, "env_proxy", lambda: ("https_proxy", "http://127.0.0.1:1"))
+        monkeypatch.setattr(proxy, "git_proxy", lambda: ("https.proxy", "http://127.0.0.1:2"))
+        monkeypatch.setattr(proxy, "probe", lambda url, **kw: (True, "200"))
+        assert proxy.check("https://github.com") == 0
+        out = capsys.readouterr().out
+        assert "env_proxy: 有" in out and "git_config_proxy: 有" in out
+        assert "push_route: 当前将走 proxy（环境变量 https_proxy）" in out

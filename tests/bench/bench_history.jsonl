@@ -149,3 +149,5 @@
 {"ts": "2026-11-03T10:49:33", "candidates": 4380, "elapsed": 3.0953, "passed": true, "pareto_size": 2625}
 {"ts": "2026-11-03T10:52:45", "candidates": 4380, "elapsed": 3.2461, "passed": true, "pareto_size": 2625}
 {"ts": "2026-11-03T10:52:49", "candidates": 4380, "elapsed": 3.1463, "passed": true, "pareto_size": 2625}
+{"ts": "2026-11-03T11:01:32", "candidates": 4380, "elapsed": 3.4549, "passed": true, "pareto_size": 2625}
+{"ts": "2026-11-03T11:01:36", "candidates": 4380, "elapsed": 3.378, "passed": true, "pareto_size": 2625}

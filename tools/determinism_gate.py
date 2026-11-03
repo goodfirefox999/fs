@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from datetime import datetime
@@ -38,8 +39,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 PROBE = ROOT / "tools" / "determinism_probe.py"
 FLAG_NAME = "output-fail.flag"
+#: 与 tools/determinism_probe.py 的 ADAPTER_ENV 保持一致；只有本适配层可以置位。
+ADAPTER_ENV = "ZERI_DETERMINISM_ADAPTER"
 
-__all__ = ["FLAG_NAME", "arbitrate", "main"]
+__all__ = ["ADAPTER_ENV", "FLAG_NAME", "arbitrate", "main"]
 
 
 def flag_path(out_dir: Path | str) -> Path:
@@ -103,12 +106,15 @@ def main(argv: list[str] | None = None) -> int:
     # 先清旧 flag：即使探针超时/崩溃，也不能让上一次的 OUTPUT_FAIL 贴到这一次。
     flag_path(args.out_dir).unlink(missing_ok=True)
 
+    env = os.environ.copy()
+    env[ADAPTER_ENV] = "1"  # 放行探针的 CI 防绕过检查；只在本适配层内生效
     try:
         proc = subprocess.run(
             [sys.executable, str(PROBE), "--gate", args.seeds],
             capture_output=True,
             text=True,
             cwd=str(ROOT),
+            env=env,
             timeout=args.timeout,
         )
     except subprocess.TimeoutExpired as exc:

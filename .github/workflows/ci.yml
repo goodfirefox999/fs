@@ -26,6 +26,9 @@ jobs:
         run: |
           echo "PYTHONPATH=core-time/src:core-symbol/src:core-rule/src:core-eval/src:app-zeri/src:." >> $GITHUB_ENV
 
+      - name: Validate workflow YAML
+        run: python tools/check_yaml.py
+
       - name: Lint (ruff)
         run: ruff check core-time core-symbol core-rule core-eval app-zeri tests tools || true
         # 首次接入先不阻断；规则收敛后去掉 `|| true`

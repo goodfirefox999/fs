@@ -130,6 +130,20 @@
     做降级，且只降级 3**。1/2 若被降级，等于把「产品坏」或「机器忙」伪装成
     「带警告发布」——这正是把判据做成装饰的典型方式。
 
+16. **覆盖率门禁必须读新鲜数据，且不得 `|| true`。** `make gate` 依赖 `cov`：
+    由 `pytest --cov` 重新采集 `.coverage`，再由 `coverage report --fail-under=80`
+    阻断。禁止只读上一次遗留的 `.coverage`，禁止用 `|| true` 吞掉失败。
+    > 2026-11-03 实测：旧 `.coverage` 报 75%，fresh `make cov` 报 84%——旧数据
+    > 让「覆盖率下降」和「覆盖率通过」在日志里长得一模一样。测试锚点：
+    > `tests/unit/test_gate_wiring.py`。
+
+17. **CI 的确定性门禁只能走适配层。** CI 中 `make determinism` 以 64 拒绝；
+    直接调 `determinism_probe.py --gate` 在 `CI=true` 且没有适配层 token 时
+    也以 64 拒绝。唯一入口是 `make gate`（内部 `tools/determinism_gate.py`）。
+    不要为了「少一层」在 CI 里直接调原始探针——那会让 OUTPUT_FAIL 的
+    「带警告通过」失效。测试锚点：`tests/unit/test_gate_wiring.py` +
+    `tests/unit/test_determinism_gate.py`。
+
 ## 必须停下提问的情形
 
 - 规格自相矛盾、算子不足、fact 白名单缺项

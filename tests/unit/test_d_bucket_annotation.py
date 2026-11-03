@@ -119,8 +119,22 @@ def _strip_unlabeled_section(report: str) -> str:
     return report[:start] + (report[end + 1 :] if end >= 0 else "")
 
 
+def _rule_lib_version(report: str) -> str | None:
+    match = re.search(r'"rule_lib_version": "([^"]+)"', report)
+    return match.group(1) if match else None
+
+
 def _normalize_metadata(report: str) -> str:
-    """去掉两类与行为无关、但必然随标注变化的元数据。"""
+    """归一化三类**必然**随标注/运行变化的元数据，其余部分不得有差异。
+
+    本测试不是「删掉两节再比」：
+
+    - 「未归类规则」节的差异由调用方精确断言为「本次命中的 D 桶规则」，
+      不多不少；若未来差异集合变大，该断言必红。
+    - ``rule_lib_version`` 在调用方断言**必须变化**（YAML 内容变了，内容哈希
+      不变反而说明版本计算没覆盖规则内容），这里只把它换成占位符以比较其余全文。
+    - 生成时间是墙钟，与判定无关，只做占位符归一化。
+    """
     text = _strip_unlabeled_section(report)
     text = re.sub(r"_生成时间：.*_", "_生成时间：<normalized>_", text)
     text = re.sub(r'"rule_lib_version": "[^"]*"', '"rule_lib_version": "<normalized>"', text)
@@ -175,8 +189,16 @@ def test_before_after_decision_and_output_are_identical(tmp_path: Path, name, dt
 
     report_after = render_markdown(result_after, registry=after_reg)
     report_before = render_markdown(result_before, registry=before_reg)
+
+    # rule_lib_version 必须变：规则 YAML 内容变了，内容哈希应与之一致地变化。
+    # 若这里相等，说明版本没有覆盖规则内容，归一化就会掩盖一个真实缺陷。
+    version_before = _rule_lib_version(report_before)
+    version_after = _rule_lib_version(report_after)
+    assert version_before and version_after, f"{name}: 报告缺少 rule_lib_version"
+    assert version_before != version_after, f"{name}: 规则内容已变但 rule_lib_version 未变"
+
     assert _normalize_metadata(report_after) == _normalize_metadata(report_before), (
-        f"{name}: 除「未归类」与版本元数据外，报告不应有任何差异"
+        f"{name}: 除「未归类」、rule_lib_version、生成时间外，报告不应有任何差异"
     )
 
     # 唯一允许的变化：未归类清单里少了「本次评估命中的 D 桶规则」，且不能多删。

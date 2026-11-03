@@ -142,16 +142,22 @@
 
 ## Q-008 覆盖率未达 90% 的模块
 
-**现状**（`make cov` 实测，整体 81%，门禁 80% 通过）：
+**现状**（`make cov` fresh 实测，整体 84%，门禁 80% 通过）：
 
 | 模块 | 覆盖率 | 缺口原因 |
 |---|---|---|
-| `core-eval/sensitivity.py` | 补测后待复核 | 扰动回调的异常分支难构造 |
-| `app-zeri/cli.py` | 未统计（不计入 source） | 参数解析分支多，收益低 |
-| `app-zeri/case_runner.py` | 未统计 | 依赖案例文件存在性 |
+| `app-zeri/cli.py` | 34% | 参数解析分支多，当前以少量端到端调用覆盖 |
+| `app-zeri/case_runner.py` | 44% | 依赖案例文件存在性与错误分支 |
+| `app-zeri/report.py` | 77% | 报告分支多，部分异常路径未覆盖 |
 
-**处置原则**：**不通过降低门禁或删除断言来"达标"**。当前如实登记为缺口，
-建议后续补 CLI 端到端测试（subprocess 调用）与案例运行器的错误分支测试。
+`core-eval/sensitivity.py` 已补到 100%；`core-time/core-symbol/core-rule/core-eval`
+包级覆盖率分别为 96%/94%/92%/93%。`tools/` 与 `tests/` 不计入 source，
+`app-zeri` 自 2026-11-03 起已计入 source（不再用「未统计」回避）。
+
+**处置原则**：**不通过降低门禁或删除断言来"达标"**。门禁已改为
+`make gate` → `make cov` 新鲜采集 + `coverage report --fail-under=80`，不再
+`|| true`；当前 84% 是真实值。建议后续补 CLI 端到端测试（subprocess 调用）
+与案例运行器的错误分支测试，把 app-zeri 拉到 80%。
 
 **需要人类裁定**：是否接受"整体 80% + core-* 分模块 90% 目标"这一双门禁？
 或要求 core-* 全部硬性 90%（则需补测，预计 1-2 个工作日）？

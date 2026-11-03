@@ -78,6 +78,25 @@ class TestArbitrate:
         assert "超时" in capsys.readouterr().err
 
 
+class TestAdapterEnv:
+    def test_probe_subprocess_gets_adapter_token(self, monkeypatch, tmp_path: Path) -> None:
+        """适配层必须显式放行探针的 CI 防绕过检查。"""
+        seen: dict[str, object] = {}
+
+        class Proc:
+            returncode = 0
+            stdout = "DETERMINISTIC: decision=aaa output=bbb"
+            stderr = ""
+
+        def fake_run(cmd, **kwargs):  # noqa: ANN001
+            seen.update(kwargs)
+            return Proc()
+
+        monkeypatch.setattr(gate.subprocess, "run", fake_run)
+        assert gate.main(["--out-dir", str(tmp_path)]) == 0
+        assert seen["env"][gate.ADAPTER_ENV] == "1"
+
+
 class TestRealProbe:
     def test_two_seeds_pass_without_flag(self, tmp_path: Path) -> None:
         """真实探针跑两个 seed：全绿时不得产生 flag。"""

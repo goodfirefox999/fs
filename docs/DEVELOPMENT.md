@@ -510,19 +510,25 @@ C（残缺/来源不明）→ 不统计。
 
 **覆盖率现状（`make cov` 实测）：**
 
-| 包 | 覆盖率 | 门禁 |
+| 包 | 覆盖率（2026-11-03 fresh） | 门禁 |
 |---|---|---|
-| core-time | 92-100% | ✅ ≥90% |
-| core-symbol | 94-100% | ✅ ≥90% |
-| core-rule | 92-100% | ✅ ≥90% |
-| core-eval | 85-100%（sensitivity 100%、engine 86%、ranker 85%、disagreement 87%） | ⚠️ 目标 90%，未达 |
-| app-zeri | 未计入 source（CLI/案例运行器以端到端方式验证） | 目标 80% |
-| **整体** | **见 `make cov` 实测**（v0.2 新增约 130 个测试） | ✅ ≥80% |
+| core-time | 96% | ✅ ≥90% |
+| core-symbol | 94% | ✅ ≥90% |
+| core-rule | 92% | ✅ ≥90% |
+| core-eval | 93%（engine 92%、ranker 84%、disagreement 87%） | ✅ 目标 90% |
+| app-zeri | 68%（cli 34%、case_runner 44%、report 77%；已计入 source） | ⚠️ 目标 80%，未达 |
+| **整体** | **84%**（1204 个非 slow 测试；`make cov` 新鲜采集） | ✅ ≥80% |
 
-**变异测试抽查（`make mutation`）**：**26 处**定点变异，覆盖算子边界（in/gte/between/count_gte/
+> **门禁口径（2026-11-03 修正）**：`make gate` 必须先经 `make cov` 用
+> `pytest --cov` 重新写 `.coverage`，再 `coverage report --fail-under=80`；
+> 不得只读上一次遗留的 `.coverage`，不得跟 `|| true`。事故实证：旧数据报
+> 75%，fresh 实测 84%——旧数据会让「下降」和「通过」不可区分。
+> 测试锚点 `tests/unit/test_gate_wiring.py`。
+
+**变异测试抽查（`make mutation`）**：**28 处**定点变异，覆盖算子边界（in/gte/between/count_gte/
 same_group kind）、三态转换、tier 分支、冲突检测、unknown 分类、定义级白名单、
 publishable 必需集、演示标记、节气黄经、置闰、五虎遁/五鼠遁、旬空表、纳音表、
-二十四山顺序、分歧度公式、排序方向。**当前 26/26 全部被抓住**。
+二十四山顺序、分歧度公式、排序方向、建除位次、黄黑道星序。**当前 28/28 全部被抓住**。
 
 > 两轮共发现 **8 个测试缺口**（between 边界、unknown 拉 tier、publishable 必需集短路、
 > unknown 分类串味、same_group kind 被忽略、二十四山只抽查首尾、TIER_RANK 顺序、演示标记无断言），

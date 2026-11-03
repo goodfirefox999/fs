@@ -2,6 +2,56 @@
 
 遵循 [Keep a Changelog](https://keepachangelog.com/)；版本号遵循语义化版本。
 
+## [Unreleased] 评审回路（九）：覆盖率门禁修复 + 确定性防绕过 + 代理路径取证（2026-11-03）
+
+### 覆盖率门禁：75% 是旧 `.coverage`，不是当前欠账
+
+`make gate` 原来只跑 `test-fast`（不含 `--cov`），随后 `coverage report` 读上一次
+遗留的 `.coverage`，报出 75%；再跟 `|| true`，覆盖率门禁名存实亡。fresh
+`make cov` 实测 **84%**（5076 statements / 672 miss / 201 partial，1204 个非 slow
+测试），因此本轮先修数据源与吞错，不设 ratchet：
+
+- `gate: check-yaml cov lint`，`cov` 用 `pytest --cov` 重新采集 `.coverage`；
+- 删除 `coverage report --fail-under=80 || true`；
+- 新增 `tests/unit/test_gate_wiring.py`：锁住 gate 依赖 cov、无 `|| true`、
+  CI 只走确定性适配层；
+- `app-zeri` 68% 仍是真实缺口（cli 34%、case_runner 44%、report 77%），
+  已如实更新 Q-008；没有靠降门禁或删断言掩盖。
+
+### 确定性门禁防绕过
+
+CI 中直接 `make determinism` 以 64 拒绝；直接调 `determinism_probe.py --gate`
+在 `CI=true` 且无适配层 token 时也以 64 拒绝。适配层显式设置
+`ZERI_DETERMINISM_ADAPTER=1`，唯一 CI 入口仍是 `make gate`。
+AGENTS 第 17 条与 `test_gate_wiring` / `test_determinism_gate` 共同锁住。
+
+### D 桶差异断言精确化
+
+`tests/unit/test_d_bucket_annotation.py` 增加 `rule_lib_version` **必须变化**的断言，
+并在注释写明：「未归类规则」节不是「忽略差异」，而是精确断言
+「减少集合 == 本次命中的 D 桶规则」；未来差异集合变大，测试必红。
+
+### 代理预检输出实际路径
+
+`tools/check_proxy.py` 固定输出三行：`env_proxy/git_config_proxy`、
+`direct/via_proxy`、`push_route`；curl 非零退出码带 `rc=`，避免「打印 200
+但实际失败」的误读。`make push` 先打印本次将走的路径，再执行 `git push`。
+
+### YAML 全文件校验
+
+新增 `tools/check_yaml.py` 与 `make check-yaml`，接入 `make gate` 与 CI：
+对 `.github/workflows/*.yml` 做全文件 `yaml.safe_load`，不只修 `C19:` 一处。
+
+### 验证
+
+- `make gate`：通过（覆盖率 84%，无 `out/output-fail.flag`）；
+- `make test`：1207 passed = 1204 个非 slow + 3 个 slow（`out/junit-full.xml`）；
+- `make test-fast` / `make cov`：1204 passed / 3 deselected
+  （`out/junit-fast.xml`、`out/junit-cov.xml`）；
+- 新增/相关测试：49 passed（`out/junit-new2.xml`）；
+- `make lint` / `make check-yaml` / 20 seed 确定性比对：通过；
+- `make mutation`：28/28 被抓住。
+
 ## [Unreleased] 评审回路（八）：OUTPUT_FAIL CI 处置 + D 桶行为锁 + Q-024 补题（2026-11-03）
 
 ### `make gate` 对 OUTPUT_FAIL 的处置固定为「方案 1」
