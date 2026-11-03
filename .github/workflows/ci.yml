@@ -82,7 +82,8 @@ jobs:
         # run #33 的教训：summary 只报 perf_smoke=1.33s（通过），slow bench 超档
         # 却只在 log 里，读 summary 的人不知道红在哪。这里汇总所有 junit 套件。
         if: always()
-        run: python tools/ci_summary.py --dir out >> "$GITHUB_STEP_SUMMARY"
+        # tee：Step Summary 是写进文件的外部状态，同时回显到 job log 才能事后核对。
+        run: python tools/ci_summary.py --dir out | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Determinism gate (decision blocks, output warns)
         run: python tools/determinism_gate.py --out-dir out

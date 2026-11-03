@@ -73,7 +73,7 @@ def _suite(path: Path) -> dict:
                 continue
             message = node.get("message") or node.text
             failures_out.append(
-                f"- `{_case_name(case)}`（{float(case.get('time', 0) or 0):.2f}s）：{_first_line(message)}"
+                f"`{_case_name(case)}`（{float(case.get('time', 0) or 0):.2f}s）：{_first_line(message)}"
             )
     record["failure_details"] = failures_out
     skips: list[str] = []
@@ -82,7 +82,7 @@ def _suite(path: Path) -> dict:
         if node is None:
             continue
         reason = node.get("message") or node.get("type") or "(无原因)"
-        skips.append(f"- `{_case_name(case)}`：{reason}")
+        skips.append(f"`{_case_name(case)}`：{reason}")
     record["skip_details"] = skips
     return record
 

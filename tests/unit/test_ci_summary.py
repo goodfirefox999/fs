@@ -57,6 +57,7 @@ def test_bench_failure_is_visible_next_to_passing_smoke(tmp_path: Path) -> None:
     assert "`junit-perf-smoke.xml`" in text and "✅" in text
     assert "`junit-bench.xml`" in text and "❌" in text
     assert "- `tests.bench.test_perf::test_full_year_within_budget`（9.02s）：全量穷举耗时 9.02s，超出预算 9.0s" in text
+    assert "- - " not in text, "明细自带 bullet 会渲染成双层列表"
 
 
 def test_skip_reason_is_carried_into_summary(tmp_path: Path) -> None:
