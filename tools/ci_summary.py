@@ -1,0 +1,184 @@
+#!/usr/bin/env python3
+"""把 ``out/junit-*.xml`` 汇总成 GitHub Step Summary——**失败项不能只活在 job log**。
+
+事故形态（run #33）：slow bench 两次 9.02s / 9.36s 超出 9.0s 档，job 红；
+但 Step Summary 只有 ``perf_smoke_seconds: 1.33``（冒烟通过），看 summary 的人
+得到的是「冒烟明明过了怎么还红」。失败项被埋在 log 里，等于没有汇总。
+
+做法：按期望套件清单逐个核对（缺文件 = 一行 ❌「缺失」，不从表里消失），再扫描
+目录里其余 junit，逐个出「passed / failed / errors / skipped + 耗时 + 判定」行，
+最后把每个 failure/error 的用例名、耗时、首行消息列出来。没有 junit 产物时明确
+写「测试可能没跑」，不输出空白页。
+
+用法::
+
+    python tools/ci_summary.py --dir out >> "$GITHUB_STEP_SUMMARY"
+
+本工具只做汇总，不改变退出码：阻断点仍是各自的测试/门禁步骤。
+"""
+
+from __future__ import annotations
+
+import argparse
+import xml.etree.ElementTree as ET
+from pathlib import Path
+
+__all__ = ["EXPECTED_SUITES", "collect", "render"]
+
+# 期望套件清单 = CI 必须产出的 junit（cov 与 perf-smoke 来自 Makefile，bench 来自
+# ci.yml）。只靠 glob 扫目录有个致命盲区：bench 步骤提前挂掉时 junit-bench.xml
+# 根本不存在，它就会从汇总表里消失，整页看起来全绿——缺文件必须显式成 ❌ 行。
+# 改动 CI 产物文件名时同步改这里（tests/unit/test_ci_summary.py 会对照 Makefile
+# 与 ci.yml 反查漂移）。
+EXPECTED_SUITES: dict[str, str] = {
+    "cov": "junit-cov.xml",
+    "bench": "junit-bench.xml",
+    "perf-smoke": "junit-perf-smoke.xml",
+}
+
+
+def _case_name(case: ET.Element) -> str:
+    return "::".join(part for part in (case.get("classname"), case.get("name")) if part) or "(未命名)"
+
+
+def _first_line(text: str | None) -> str:
+    for line in (text or "").splitlines():
+        if line.strip():
+            return line.strip()
+    return "(无消息)"
+
+
+def _suite(path: Path) -> dict:
+    """解析单个 junit；损坏/缺失也返回一条可见记录，不静默跳过。"""
+    record: dict = {"file": path.name, "error": None}
+    if not path.exists():
+        record["error"] = "文件不存在"
+        return record
+    try:
+        root = ET.parse(path).getroot()
+    except ET.ParseError as exc:
+        record["error"] = f"XML 损坏（{exc}）"
+        return record
+    ts = root.find("testsuite")
+    if ts is None:
+        record["error"] = "无 testsuite 节点"
+        return record
+    attr = ts.attrib
+    tests, failures, errors, skipped = (
+        int(attr.get(key, 0)) for key in ("tests", "failures", "errors", "skipped")
+    )
+    record.update(
+        tests=tests,
+        passed=tests - failures - errors - skipped,
+        failed=failures,
+        errors=errors,
+        skipped=skipped,
+        time=float(attr.get("time", 0) or 0),
+    )
+    record["ok"] = failures == 0 and errors == 0 and record["passed"] > 0
+    failures_out: list[str] = []
+    for case in root.iter("testcase"):
+        for tag in ("failure", "error"):
+            node = case.find(tag)
+            if node is None:
+                continue
+            message = node.get("message") or node.text
+            failures_out.append(
+                f"`{_case_name(case)}`（{float(case.get('time', 0) or 0):.2f}s）：{_first_line(message)}"
+            )
+    record["failure_details"] = failures_out
+    skips: list[str] = []
+    for case in root.iter("testcase"):
+        node = case.find("skipped")
+        if node is None:
+            continue
+        reason = node.get("message") or node.get("type") or "(无原因)"
+        skips.append(f"`{_case_name(case)}`：{reason}")
+    record["skip_details"] = skips
+    return record
+
+
+def collect(directory: Path, expected: dict[str, str] | None = EXPECTED_SUITES) -> list[dict]:
+    """按期望清单核对 junit 产物；缺失/多余都可见，不静默跳过。"""
+    found = {path.name: path for path in sorted(directory.glob("junit-*.xml"))}
+    records: list[dict] = []
+    for suite, name in (expected or {}).items():
+        if name in found:
+            records.append(_suite(found.pop(name)))
+        else:
+            records.append(
+                {
+                    "file": name,
+                    "error": f"缺失：预期套件「{suite}」未产出 junit（该步骤可能提前失败或未执行）",
+                }
+            )
+    records.extend(_suite(path) for path in found.values())
+    return records
+
+
+def render(records: list[dict]) -> str:
+    lines = ["## CI 测试汇总", ""]
+    if not records:
+        lines.append(
+            "⚠️ 未找到任何 junit 产物（`out/junit-*.xml`）——测试可能没跑或提前退出。"
+            "本页不是绿色证明，请先看 job log 的失败步骤。"
+        )
+        return "\n".join(lines)
+
+    missing = [record["file"] for record in records if record.get("error")]
+    failed = [record["file"] for record in records if not record.get("error") and not record["ok"]]
+    if missing or failed:
+        reasons: list[str] = []
+        if failed:
+            reasons.append(f"{len(failed)} 个套件失败（{'、'.join(f'`{name}`' for name in failed)}）")
+        if missing:
+            reasons.append(
+                f"{len(missing)} 个套件缺失或不可读（{'、'.join(f'`{name}`' for name in missing)}）"
+            )
+        lines.append(f"**判定：❌ {'；'.join(reasons)}——本页不是绿色证明。**")
+    else:
+        lines.append(f"**判定：✅ 全部 {len(records)} 个套件通过。**")
+    lines.append("")
+
+    lines.append("| 套件 | passed | failed | errors | skipped | 耗时 | 判定 |")
+    lines.append("|---|---|---|---|---|---|---|")
+    for record in records:
+        if record.get("error"):
+            lines.append(f"| `{record['file']}` | - | - | - | - | - | ❌ {record['error']} |")
+            continue
+        verdict = "✅" if record["ok"] else "❌"
+        lines.append(
+            f"| `{record['file']}` | {record['passed']} | {record['failed']} | "
+            f"{record['errors']} | {record['skipped']} | {record['time']:.1f}s | {verdict} |"
+        )
+
+    failures = [
+        (record["file"], detail)
+        for record in records
+        for detail in record.get("failure_details", [])
+    ]
+    lines += ["", "### 失败项" if failures else "### 失败项：无"]
+    if failures:
+        for file, detail in failures:
+            lines.append(f"- {detail}（{file}）")
+    else:
+        lines.append("无 failed / errors。")
+
+    skips = [(record["file"], detail) for record in records for detail in record.get("skip_details", [])]
+    if skips:
+        lines += ["", "### 跳过项（非 pass）"]
+        for file, detail in skips:
+            lines.append(f"- {detail}（{file}）")
+    return "\n".join(lines)
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="汇总 out/junit-*.xml 为 GitHub Step Summary")
+    parser.add_argument("--dir", default="out", help="junit 产物目录（默认 out）")
+    args = parser.parse_args(argv)
+    print(render(collect(Path(args.dir))))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
