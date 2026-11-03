@@ -5,10 +5,10 @@
 但 Step Summary 只有 ``perf_smoke_seconds: 1.33``（冒烟通过），看 summary 的人
 得到的是「冒烟明明过了怎么还红」。失败项被埋在 log 里，等于没有汇总。
 
-做法：按期望套件清单逐个核对（缺文件 = 一行 ❌「缺失」，不从表里消失），再扫描
-目录里其余 junit，逐个出「passed / failed / errors / skipped + 耗时 + 判定」行，
-最后把每个 failure/error 的用例名、耗时、首行消息列出来。没有 junit 产物时明确
-写「测试可能没跑」，不输出空白页。
+做法：把「实际产物」与期望套件清单做**对称差**——期望有、产物没有报 ❌「缺失」，
+产物有、期望没有报 ❌「未登记」，两个方向都不能静默。再逐个出「passed / failed /
+errors / skipped + 耗时 + 判定」行，最后把每个 failure/error 的用例名、耗时、
+首行消息列出来。没有 junit 产物时明确写「测试可能没跑」，不输出空白页。
 
 用法::
 
@@ -25,11 +25,12 @@ from pathlib import Path
 
 __all__ = ["EXPECTED_SUITES", "collect", "render"]
 
-# 期望套件清单 = CI 必须产出的 junit（cov 与 perf-smoke 来自 Makefile，bench 来自
-# ci.yml）。只靠 glob 扫目录有个致命盲区：bench 步骤提前挂掉时 junit-bench.xml
-# 根本不存在，它就会从汇总表里消失，整页看起来全绿——缺文件必须显式成 ❌ 行。
-# 改动 CI 产物文件名时同步改这里（tests/unit/test_ci_summary.py 会对照 Makefile
-# 与 ci.yml 反查漂移）。
+# 期望套件清单 = CI 必须产出的 junit（cov 与 perf-smoke 来自 Makefile 的 cov 配方，
+# bench 来自 ci.yml）。只靠 glob 扫目录有个盲区：bench 步骤提前挂掉时
+# junit-bench.xml 根本不存在，它会从汇总表里消失、整页误显全绿——所以缺文件必须
+# 显式成 ❌。反方向同样要报：workflow 新增第四个 junit 而忘了登记时，它不能
+# 混进「全部通过」。两个方向都由 collect 的对称差处理；tests/unit/test_ci_summary.py
+# 会解析 ci.yml 与 make cov 配方反查清单漂移。
 EXPECTED_SUITES: dict[str, str] = {
     "cov": "junit-cov.xml",
     "bench": "junit-bench.xml",
@@ -99,10 +100,12 @@ def _suite(path: Path) -> dict:
 
 
 def collect(directory: Path, expected: dict[str, str] | None = EXPECTED_SUITES) -> list[dict]:
-    """按期望清单核对 junit 产物；缺失/多余都可见，不静默跳过。"""
+    """实际产物与期望清单做对称差；``expected=None`` 关闭登记检查（仅调试用）。"""
     found = {path.name: path for path in sorted(directory.glob("junit-*.xml"))}
+    if expected is None:
+        return [_suite(path) for path in found.values()]
     records: list[dict] = []
-    for suite, name in (expected or {}).items():
+    for suite, name in expected.items():
         if name in found:
             records.append(_suite(found.pop(name)))
         else:
@@ -112,7 +115,12 @@ def collect(directory: Path, expected: dict[str, str] | None = EXPECTED_SUITES) 
                     "error": f"缺失：预期套件「{suite}」未产出 junit（该步骤可能提前失败或未执行）",
                 }
             )
-    records.extend(_suite(path) for path in found.values())
+    for path in found.values():
+        record = _suite(path)
+        record["unregistered"] = (
+            "未登记套件：产物存在但不在 EXPECTED_SUITES（新增套件须登记，否则汇总口径不明）"
+        )
+        records.append(record)
     return records
 
 
@@ -126,14 +134,23 @@ def render(records: list[dict]) -> str:
         return "\n".join(lines)
 
     missing = [record["file"] for record in records if record.get("error")]
-    failed = [record["file"] for record in records if not record.get("error") and not record["ok"]]
-    if missing or failed:
+    unregistered = [record["file"] for record in records if record.get("unregistered")]
+    failed = [
+        record["file"]
+        for record in records
+        if not record.get("error") and not record.get("unregistered") and not record["ok"]
+    ]
+    if missing or failed or unregistered:
         reasons: list[str] = []
         if failed:
             reasons.append(f"{len(failed)} 个套件失败（{'、'.join(f'`{name}`' for name in failed)}）")
         if missing:
             reasons.append(
                 f"{len(missing)} 个套件缺失或不可读（{'、'.join(f'`{name}`' for name in missing)}）"
+            )
+        if unregistered:
+            reasons.append(
+                f"{len(unregistered)} 个套件未登记（{'、'.join(f'`{name}`' for name in unregistered)}）"
             )
         lines.append(f"**判定：❌ {'；'.join(reasons)}——本页不是绿色证明。**")
     else:
@@ -146,7 +163,10 @@ def render(records: list[dict]) -> str:
         if record.get("error"):
             lines.append(f"| `{record['file']}` | - | - | - | - | - | ❌ {record['error']} |")
             continue
-        verdict = "✅" if record["ok"] else "❌"
+        if record.get("unregistered"):
+            verdict = "❌ 未登记"
+        else:
+            verdict = "✅" if record["ok"] else "❌"
         lines.append(
             f"| `{record['file']}` | {record['passed']} | {record['failed']} | "
             f"{record['errors']} | {record['skipped']} | {record['time']:.1f}s | {verdict} |"
@@ -163,6 +183,16 @@ def render(records: list[dict]) -> str:
             lines.append(f"- {detail}（{file}）")
     else:
         lines.append("无 failed / errors。")
+
+    unregistered_details = [
+        (record["file"], record["unregistered"])
+        for record in records
+        if record.get("unregistered")
+    ]
+    if unregistered_details:
+        lines += ["", "### 未登记套件（须登记到 EXPECTED_SUITES）"]
+        for file, detail in unregistered_details:
+            lines.append(f"- {detail}（{file}）")
 
     skips = [(record["file"], detail) for record in records for detail in record.get("skip_details", [])]
     if skips:

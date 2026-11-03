@@ -1,13 +1,14 @@
 """``tools/ci_summary.py``：Step Summary 必须列全套件，失败/缺失都不能从表里消失。
 
 回归用例（run #33）：slow bench 9.02s / 9.36s 超 9.0s 档导致 job 红，但 summary
-只有冒烟 1.33s（通过），看 summary 的人无法知道红在哪。覆盖五类形状：
-全通过、全失败、全缺失、部分缺失（删一个 junit）、skip 可见；另加清单漂移反查。
+只有冒烟 1.33s（通过），看 summary 的人无法知道红在哪。覆盖六类形状：全通过、
+全失败、全缺失、部分缺失（删一个 junit）、产物未登记、skip 可见；另做双向漂移反查。
 """
 
 from __future__ import annotations
 
 import importlib.util
+import re
 from pathlib import Path
 
 _ROOT = Path(__file__).resolve().parents[2]
@@ -64,6 +65,19 @@ def test_missing_bench_junit_is_reported_not_skipped(tmp_path: Path) -> None:
     assert "缺失：预期套件「bench」未产出 junit" in text
     assert "**判定：❌ " in text and "本页不是绿色证明" in text
     assert text.count("| ✅ |") == 2, "另外两个套件仍应显示通过"
+
+
+def test_unregistered_junit_is_a_visible_failure(tmp_path: Path) -> None:
+    """产物有、清单无：新增套件漏登记时，即使全通过也不能混进「全部通过」。"""
+    _write_all_passing(tmp_path)
+    _write(tmp_path, "junit-mutation.xml", _suite(1, 0, 0, 10.0, _passing_cases()))
+    text = ci_summary.render(ci_summary.collect(tmp_path))
+    assert "`junit-mutation.xml`" in text
+    assert "未登记套件" in text
+    assert "| `junit-mutation.xml` | 1 | 0 | 0 | 0 | 10.0s | ❌ 未登记 |" in text
+    assert "**判定：❌ 1 个套件未登记" in text
+    assert "本页不是绿色证明" in text
+    assert "**判定：✅" not in text
 
 
 def test_all_missing_reports_every_expected_suite(tmp_path: Path) -> None:
@@ -166,11 +180,34 @@ def test_no_records_at_all_is_explicitly_not_green(tmp_path: Path) -> None:
     assert "| 套件 |" not in text
 
 
-def test_expected_suites_match_ci_artifacts() -> None:
-    """EXPECTED_SUITES 不得与真实 CI 产物脱节：文件名必须在 workflow/Makefile 里。"""
-    sources = (
-        (_ROOT / "Makefile").read_text(encoding="utf-8")
-        + (_ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+def _make_recipe(makefile: str, target: str) -> str:
+    lines = makefile.splitlines()
+    for index, line in enumerate(lines):
+        if not line.startswith(f"{target}:"):
+            continue
+        recipe: list[str] = []
+        for nxt in lines[index + 1 :]:
+            if nxt and not nxt.startswith("\t"):
+                break
+            recipe.append(nxt)
+        return "\n".join(recipe)
+    raise AssertionError(f"Makefile 缺少 {target} 目标")
+
+
+def test_expected_suites_match_ci_artifacts_both_directions() -> None:
+    """清单与 CI 产物必须双向一致：漏登记新增 junit 或登记了不产出的名字都要红。"""
+    workflow = (_ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+    makefile = (_ROOT / "Makefile").read_text(encoding="utf-8")
+    # 范围只取 CI 实际走的产物：ci.yml 内联步骤 + make cov 配方。Makefile 的
+    # test/test-fast/golden 是本地目标，不产出 CI artifact，刻意不纳入。
+    produced = set(
+        re.findall(
+            r"--junitxml=out/(junit-[A-Za-z0-9_.-]+\.xml)",
+            workflow + "\n" + _make_recipe(makefile, "cov"),
+        )
     )
-    for suite, name in ci_summary.EXPECTED_SUITES.items():
-        assert name in sources, f"期望套件「{suite}」的产物 {name} 在 Makefile/ci.yml 中不存在，清单已漂移"
+    declared = set(ci_summary.EXPECTED_SUITES.values())
+    assert produced == declared, (
+        f"未登记（产物有清单无）：{sorted(produced - declared)}；"
+        f"已失效（清单有产物无）：{sorted(declared - produced)}"
+    )

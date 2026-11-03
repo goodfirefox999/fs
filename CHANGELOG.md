@@ -9,13 +9,15 @@
 run #33（commit `0537793`，9.0s 旧档）的红来自 slow bench 9.02s / 9.36s，
 但 Step Summary 只有 `perf_smoke_seconds: 1.33`（通过），读 summary 的人无法
 知道红在哪。新增 `tools/ci_summary.py`：按 `EXPECTED_SUITES`（cov / bench /
-perf-smoke）逐个核对 `out/junit-*.xml`，缺一个就输出 ❌「缺失」行——只靠 glob
-会让提前挂掉的 bench 从表里消失、整页误显全绿；其余产物照常列出。套件表
-（passed/failed/errors/skipped/耗时/判定）逐条展开失败用例的耗时与首行断言
-消息；没有产物时明确写「不是绿色证明」。slow bench 步骤同时落
-`out/junit-bench.xml`，workflow 末尾以 `if: always()` 写入 `$GITHUB_STEP_SUMMARY`。
-单测覆盖全通过、全失败、全缺失、删一个文件的部分缺失、skip 原因、XML 损坏，
-并反查清单与 Makefile / ci.yml 的产物名是否漂移。
+perf-smoke）对 `out/junit-*.xml` 做**对称差**——期望有、产物无 → ❌「缺失」；
+产物有、期望无 → ❌「未登记」（只查单向只是把「bench 消失」换成「新增套件
+漏登记」的静默）。套件表（passed/failed/errors/skipped/耗时/判定）逐条展开
+失败用例的耗时与首行断言消息；没有产物时明确写「不是绿色证明」。slow bench
+步骤同时落 `out/junit-bench.xml`，workflow 末尾以 `if: always()` 写入
+`$GITHUB_STEP_SUMMARY`。单测覆盖全通过、全失败、全缺失、删一个文件的部分缺失、
+产物未登记、skip 原因、XML 损坏，并**双向**反查清单与 `ci.yml` + `make cov`
+的实际 `--junitxml` 产物名（集合必须完全相等）。计数口径：1243（回路十二）
+→ 1247（+4 个 ci_summary 用例）→ 1252（本轮 4→9 用例，+5），不是口径漂移。
 
 ### CI 性能档补上回归线口径
 
