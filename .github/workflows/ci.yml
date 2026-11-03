@@ -66,7 +66,7 @@ jobs:
             out/perf-smoke.jsonl
           if-no-files-found: ignore
 
-      - name: Performance budget (4380 candidates < 3s)
+      - name: Performance budget (4380 candidates, local 3.5s / CI 9.0s)
         run: python -m pytest -m slow
 
       - name: Upload performance history (CI samples)
