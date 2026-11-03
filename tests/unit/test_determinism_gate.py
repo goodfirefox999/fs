@@ -87,3 +87,60 @@ class TestGateExitCodes:
         parts = probe.fingerprint()
         assert any(k.endswith(".facts") for k in parts)
         assert any(k.endswith(".eval") for k in parts)
+
+    def test_output_fingerprint_is_separate(self) -> None:
+        """输出面必须独立成键，不能混解决策面。"""
+        parts = probe.output_fingerprint()
+        assert parts
+        assert all(k.endswith(".output") for k in parts)
+
+    def test_fingerprint_only_prints_two_labels(self, capsys) -> None:
+        """``--fingerprint-only`` 是门禁的机器协议：两行、两个标签，不能合并。"""
+        assert probe.main(["--fingerprint-only"]) == 0
+        lines = [ln for ln in capsys.readouterr().out.splitlines() if ln.strip()]
+        assert len(lines) == 2
+        assert lines[0].startswith("decision=")
+        assert lines[1].startswith("output=")
+
+
+class TestTwoLevelAssertions:
+    """退出码 3 是判据，不是装饰；用假子进程锁住两级断言的优先级。"""
+
+    class _Proc:
+        def __init__(self, stdout: str) -> None:
+            self.returncode = 0
+            self.stdout = stdout
+            self.stderr = ""
+
+    def _fake(self, monkeypatch, decisions: dict[str, str], outputs: dict[str, str]) -> None:
+        def fake_run(cmd, **kwargs):  # noqa: ANN001 - 模拟 subprocess.run
+            seed = kwargs["env"]["PYTHONHASHSEED"]
+            return self._Proc(f"decision={decisions[seed]}\noutput={outputs[seed]}\n")
+
+        monkeypatch.setattr(probe.subprocess, "run", fake_run)
+
+    def test_output_only_drift_returns_3(self, monkeypatch, capsys) -> None:
+        self._fake(monkeypatch, {"0": "same", "1": "same"}, {"0": "out-a", "1": "out-b"})
+        assert probe._gate("0,1") == 3
+        assert "OUTPUT_FAIL" in capsys.readouterr().err
+
+    def test_decision_drift_returns_1_even_if_output_same(self, monkeypatch, capsys) -> None:
+        self._fake(monkeypatch, {"0": "dec-a", "1": "dec-b"}, {"0": "same", "1": "same"})
+        assert probe._gate("0,1") == 1
+        assert "PRODUCT_FAIL" in capsys.readouterr().err
+
+    def test_both_drift_decision_wins(self, monkeypatch, capsys) -> None:
+        """两级同时漂时必须报 1：先挡产品坏，不能让「文本也漂」掩盖决策漂。"""
+        self._fake(monkeypatch, {"0": "dec-a", "1": "dec-b"}, {"0": "out-a", "1": "out-b"})
+        assert probe._gate("0,1") == 1
+        err = capsys.readouterr().err
+        assert "PRODUCT_FAIL" in err
+        assert "OUTPUT_FAIL" not in err
+
+    def test_missing_label_is_env_suspect(self, monkeypatch, capsys) -> None:
+        def fake_run(cmd, **kwargs):  # noqa: ANN001
+            return self._Proc("decision=same\n")
+
+        monkeypatch.setattr(probe.subprocess, "run", fake_run)
+        assert probe._gate("0,1") == 2
+        assert "无法解析" in capsys.readouterr().err

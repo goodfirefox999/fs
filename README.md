@@ -58,9 +58,9 @@ export PYTHONPATH=core-time/src:core-symbol/src:core-rule/src:core-eval/src:app-
 | 建除 / 黄黑道 | ✅ 日家 + 时家；建除两条恒等式（建日=月建日、破日=月破日）逐月自校；十二神与既有勾陈表 12/12 交叉吻合 |
 | 二十八宿值日 | ✅ 七元起宿 + 星期恒等式自校验（1900-2100 零违例）+ 三站黄历对算；**值宿吉凶标签为粗化** |
 | 吉神表 | ✅ 天德（卦位口径 `tiande_guaxiang` 三选一）/ 月德 / 月德合 / 天赦 |
-| 确定性门禁 | ✅ `tools/determinism_probe.py` 多 seed 指纹一致（20/20）；条件禁浮点、口径必须显式 `default`（`rules lint` 两条不变式 + 反证测试） |
+| 确定性门禁 | ✅ `tools/determinism_probe.py` 两级指纹（决策面/输出面分开断言）多 seed 一致（20/20）；`make gate` 对输出面漂移写 `out/output-fail.flag`（带警告通过），决策面/机器忙仍阻断；条件禁浮点、口径必须显式 `default`（`rules lint` 两条不变式 + 反证测试） |
 | 死代码门禁 | ✅ `rules lint` 第 14 项：`derive_*` 必须有定义文件外的调用点（传递闭包）、符号层模块必须被 import；`coverage_gaps.yaml` 的 `implementation` 声明与代码事实双向核对 |
-| 判定类型（C 第一批） | ✅ `verdict_type`(gate/vote/reference) + `engine_eligible` + 理由编码；参考层命中可见但不进 state/tier/publishable（当前 10 条已标，75 条待批量迁移） |
+| 判定类型（C 第一批） | ✅ `verdict_type`(gate/vote/reference) + `engine_eligible` + 理由编码；参考层命中可见但不进 state/tier/publishable（当前 23 条已标，63 条待批量迁移） |
 | 影子规则 | ✅ 1 条（`PUB-WUHUANG-PALACE-001`，`engine_eligible: false` 只观察不计分）；"观察不投票"有语义测试 |
 | 三态判定 / 分层向量 / 派别并列 / 四类冲突 | ✅ 已实现，金标准案例通过 |
 | 复核器 / 生成器 / 报告 / manifest | ✅ 4380 候选 ≈3.2 s（预算 3.5 s；逐候选叠加时柱后上调，见 CHANGELOG 0.5.0） |

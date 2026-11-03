@@ -1,7 +1,8 @@
 # C 第二批（verdict_type 标注）启动方案
 
 > 状态：**D 桶已落（12 条，2026-11-03）；C/E/F 等 Q-024**。
-> D 桶零行为变更，已验证（`test_verdict_baseline` 75→63 + 全量 `make test-fast`）。
+> D 桶判定零变更，已验证（`test_verdict_baseline` 75→63 + `test_d_bucket_annotation`
+> before/after 决策面/输出面 + 全量 `make test-fast`）。
 > 为什么不动：`models.py::effective_verdict_type` 的注释写明「未标注返回 `unspecified`，
 > **不猜** `vote`」——批量套机械规则会把"没人管过"伪装成"已分类"，
 > 正是这条设计要防的事。下面第三节给出三个反例，证明机械套用确实会错。
@@ -31,12 +32,14 @@
 
 ## 二、75 条分桶（机械判据，仅用于**排序**，不用于直接落标）
 
+> 快照口径：下表是 D 桶落标**前**的 75 条分布；D 桶 12 条已落标，当前余 63 条。
+
 | 桶 | 判据 | 条数 | 拟标 | 是否可直接落 |
 |---|---|---:|---|---|
 | A | `evaluable=False` | 0 | — | — |
 | B | `engine_eligible=False` | 0 | `reference` | 是（但当前无此类） |
 | C | `status=定义级`（severity=记录） | 10 | `reference`？ | **否**，见 §3.1 |
-| D | `hard_veto=True 且 severity=禁用` | 12 | `gate` | 是（**零行为变更**） |
+| D | `hard_veto=True 且 severity=禁用` | 12 | `gate` | 是（**判定零变更**） |
 | E | `severity ∈ {可用, 推荐}` | 24 | `vote`？ | **否**，见 §3.2 |
 | F | `severity=慎用` | 29 | `vote`？ | **否**，见 §3.2 |
 
@@ -48,8 +51,23 @@
 
 为什么零风险：`effective_verdict_type` 对 `hard_veto=True + severity=禁用`
 **已经推断为 `gate`**（`models.py:168` 的注释：这是定义级推断）。补显式只是把
-推断变成声明，`effective_verdict_type` 的返回值不变、报告不变、tier 不变。
+推断变成声明，`effective_verdict_type` 的返回值不变、判定结论与 tier 不变
+（报告的「未归类」清单会少这 12 条，见下）。
 做完后 `unlabeled_count` 75 → 63，需同步下调 `verdict_baseline.yaml`。
+
+**行为锁（2026-11-03 评审追加）**：`tests/unit/test_d_bucket_annotation.py`。
+它复制规则库、删掉 12 条的显式字段做 before，断言：
+
+- 12 条删掉显式字段后，`effective_verdict_type` 仍推断为 `gate`；
+- 决策面（`_eval_summary`）与输出面（`_eval_output`）逐字节一致；
+- 报告除两处元数据外逐字节一致：
+  1. 「未归类规则」节少了这 12 条（落标的**目的**）；
+  2. manifest 的 `rule_lib_version`（YAML 内容变了，内容哈希必变）。
+- 「未归类清单减少的集合」恰好等于「本次评估命中的 D 桶规则」，多删/少删都红。
+
+> 口径修正：完整报告**不是**逐字节一致。落标前这 12 条会在「未归类规则」节出现，
+> 落标后消失——这是标注行为本身，不是判定行为。把这两处元数据归一化后，
+> 其余报告文本必须逐字节一致；测试同时钉死唯一允许的差异集合。
 
 ### C/E/F 三桶（63 条）不能机械落标
 
@@ -64,6 +82,8 @@
 
 这是**分类学问题，不是规则问题**，需要人类定：定义级要不要第四种类型
 （如 `structural`）？在定之前标 `reference` 会污染类型语义。
+**已并入 Q-024**（2026-11-03 评审：与条件性 `verdict_type` 同属"单值枚举表达不了语义"，
+合并裁定，避免拆成两个互相依赖的题）。
 
 ### 3.2 F 桶里混着"只标记不判定"的规则
 

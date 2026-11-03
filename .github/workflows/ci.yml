@@ -41,6 +41,33 @@ jobs:
       - name: Performance budget (4380 candidates < 3s)
         run: python -m pytest -m slow
 
+      - name: Determinism gate (decision blocks, output warns)
+        run: python tools/determinism_gate.py --out-dir out
+
+      - name: Surface OUTPUT_FAIL (warn, do not hide)
+        if: always()
+        run: |
+          if [ -f out/output-fail.flag ]; then
+            echo "::warning title=OUTPUT_FAIL::报告文本跨进程不稳定；本次为带警告通过，详见 out/output-fail.flag"
+            {
+              echo "## ⚠️ OUTPUT_FAIL（带警告通过）"
+              echo ""
+              echo '```json'
+              cat out/output-fail.flag
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "✅ 无 OUTPUT_FAIL flag"
+          fi
+
+      - name: Upload OUTPUT_FAIL flag
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: output-fail-flag
+          path: out/output-fail.flag
+          if-no-files-found: ignore
+
       - name: Status signature check
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
@@ -52,7 +79,7 @@ jobs:
       - name: No-network scan (runtime code must not import network modules)
         run: python tools/no_network_scan.py
 
-      - name: Cache-key lint (C19: all composite cache keys via stable_cache_key)
+      - name: "Cache-key lint (C19: all composite cache keys via stable_cache_key)"
         run: python tools/cache_key_lint.py
 
       - name: Engine version bump reminder (warn only)

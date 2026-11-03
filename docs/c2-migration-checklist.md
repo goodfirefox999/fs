@@ -31,8 +31,11 @@
 
 判据：`hard_veto=True` 且 `severity=禁用`。`effective_verdict_type` 本来就把这一组合
 **推断**为 `gate`（`models.py:168`），补显式只是把推断变声明——
-`effective_verdict_type` 返回值不变、报告不变、tier 分布不变。测试锚点：
-`tests/unit/test_verdict_baseline.py`（计数 75→63）+ 全量 `make test-fast`。
+`effective_verdict_type` 返回值不变、判定结论与 tier 不变（报告的「未归类」清单会少这 12 条）。
+测试锚点：
+`tests/unit/test_verdict_baseline.py`（计数 75→63）、`tests/unit/test_d_bucket_annotation.py`
+（before/after 决策面与输出面逐字节一致；报告仅「未归类」节与 `rule_lib_version` 两处元数据变化）
+与全量 `make test-fast` 全绿。
 
 | 规则 | verdict_type | 说明 |
 |---|---|---|

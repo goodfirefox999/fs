@@ -647,8 +647,37 @@ tools/dead_rule_scan.py:360 的 ctxs 占位赋值（F841）与 :366 的未用 az
 | B. 命中映射表 | `verdict_type_when_hit: {hit: vote, direction: {破: negative, 闭: negative}}` | 不改类型枚举，只加可选字段 | 与 `severity` 语义重叠，易产生"两处都能定方向"的歧义 |
 | C. 拆规则 | 把 `DG-JIANCHU-001` 拆成 `DG-JIANCHU-JI-001`（建/成/开）与 `DG-JIANCHU-XIONG-001`（破/闭） | 零 schema 变更，现有类型直接可用 | 规则数 +1，`rules_manifest` 与 RT 向量要同步；且"一条起例拆成两条"会削弱"这是一条神煞"的语义 |
 
-**影响面**：`DG-JIANCHU-001` 及后续同类（凡"同一神煞不同值不同吉凶"的规则）。
-按当前 75 条未标注规则粗查，疑似同类还有建除类的其余分支、以及部分神煞的"得令/失令"分支，
+**方案 B 的硬前置（2026-11-03 评审追加）**：
+
+方案 B 与 `severity` 语义重叠，不能只写"重叠"就进入裁定。**若选 B，必须同时定义**：
+
+1. **优先级**：命中时方向以 `severity` 为准，还是以 `verdict_type_when_hit.direction` 为准？
+2. **冲突处置**：两者矛盾时是加载期拒绝（fail-fast）、运行期取更严、还是取映射表并告警？
+3. **单一真相源**：是否允许同一条规则同时写 `severity` 与 `verdict_type_when_hit`？
+   若允许，报告必须回显"生效方向来自哪个字段"。
+
+**未定义上述三项，方案 B 不可选**——否则会出现两个真相源，且报告无法解释为何
+同一条规则在两处给出相反方向。
+
+**合并议题：C 桶「定义级 10 条」的类型学（2026-11-03 评审追加）**：
+
+C 桶不落标的理由不是"方向随命中变"，而是**定义级规则根本不是吉凶表态**：
+它回答"是什么关系/几次/在哪个方位"（ADR-0007），既不是 `gate` 也不是 `vote`。
+当前三值枚举（`gate` / `vote` / `reference`）没有它的位置：
+
+- 标 `reference` → 把"唯一确定的结构事实"降级成"只展示不判定"，低估确定性；
+- 标 `vote` / `gate` → 把定义事实伪装成吉凶表态，违反 ADR-0007 / ADR-0009；
+- 新增第四种 `definition` / `structural` → 要定义它是否进 `structural` 桶、
+  是否计入 `unlabeled_count`、是否影响 `publishable`。
+
+这个问题与条件性 `verdict_type` 同属"单值枚举表达不了语义"，
+**并入 Q-024 一并裁定**：定义级规则
+（a）走 `verdict_type` 枚举并新增第四种类型，还是
+（b）根本不进规则层、走"事实层"（则需说明现有 `DEF-*` 规则如何迁移）？
+
+**影响面**：`DG-JIANCHU-001` 及后续同类（凡"同一神煞不同值不同吉凶"的规则），
+外加 C 桶 10 条定义级规则（`DEF-*`）的类型学。按当前 63 条未标注规则粗查，
+疑似条件性同类还有建除类的其余分支、以及部分神煞的"得令/失令"分支，
 需在裁定后逐条过一遍。
 
 **当前处置（裁定前）**：`DG-JIANCHU-001` 这类**不落标**，保持 `verdict_type: None`
@@ -660,7 +689,12 @@ tools/dead_rule_scan.py:360 的 ctxs 占位赋值（F841）与 :366 的未用 az
 1. 选定方案（A/B/C 或新方案），并说明为什么另外两个不选；
 2. 若选 A/B，给出 `direction_rule` / `verdict_type_when_hit` 的**最小 DSL 子集**
    （支持哪些算子、与现有 `condition` 的关系、求值顺序）；
-3. 若选 C，给出拆分后的规则 id 命名规则与 RT 向量迁移方案；
-4. 同步更新 `docs/c2-migration-checklist.md` 与 `verdict_baseline.yaml` 的口径说明。
+3. 若选 B，必须同时给出 `severity` 与 `verdict_type_when_hit` 的**优先级、冲突处置、
+   单一真相源**；未给出则 B 视为未完成；
+4. 若选 C，给出拆分后的规则 id 命名规则与 RT 向量迁移方案；
+5. 回答 C 桶定义级类型学：新增第四种类型（`definition` / `structural`），
+   还是把定义级移出规则层走事实层？并说明对 `structural` 桶、`unlabeled_count`、
+   `publishable` 的影响；
+6. 同步更新 `docs/c2-migration-checklist.md` 与 `verdict_baseline.yaml` 的口径说明。
 
 **关联**：`docs/c2-batch2-plan.md` §3.3（三个反例之三）。

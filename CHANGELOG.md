@@ -2,6 +2,65 @@
 
 遵循 [Keep a Changelog](https://keepachangelog.com/)；版本号遵循语义化版本。
 
+## [Unreleased] 评审回路（八）：OUTPUT_FAIL CI 处置 + D 桶行为锁 + Q-024 补题（2026-11-03）
+
+### `make gate` 对 OUTPUT_FAIL 的处置固定为「方案 1」
+
+新增 `tools/determinism_gate.py`：只把退出码 3 降级为 0，并写
+`out/output-fail.flag`（JSON，含 seed 指纹与 stderr）；1（PRODUCT_FAIL）与
+2（ENV_SUSPECT）仍原样阻断。`make determinism` 保留原始退出码（3 仍是 3），
+供人工复核；只有 `make gate` 走适配层。CI 增加读取 flag 的 `::warning` 与
+job summary 步骤，确保「带警告通过」不会退化成「无声通过」。
+AGENTS.md 新增确定性门禁第 15 条，把 0/1/2/3 的处置写成表。
+
+### D 桶 12 条：判定零变更从推理升级为机器锁
+
+新增 `tests/unit/test_d_bucket_annotation.py`：
+
+- 删掉 12 条的显式 `verdict_type` 后，`effective_verdict_type` 仍必须推断为 `gate`
+  （锁住推断路径，防止以后改推断逻辑时显式标注与推断悄悄分叉）；
+- 用「落标前规则库」做 before，断言决策面 `_eval_summary` 与输出面 `_eval_output`
+  逐字节一致；
+- 报告除两处元数据外逐字节一致，并把唯一允许的差异钉死：
+  「未归类规则」节减少的集合 == 本次评估命中的 D 桶规则；manifest 的
+  `rule_lib_version` 因 YAML 内容变化而变。
+
+> **口径修正**：完整报告并非逐字节一致。落标前这 12 条会出现在「未归类规则」节，
+> 落标后消失——这是标注行为本身。测试先归一化「未归类」节与 `rule_lib_version`，
+> 再断言其余全文一致；不把元数据变化伪装成零差异。
+
+### Q-024 题面补齐两个裁定前置
+
+- 方案 B 若被选中，必须同时定义 `severity` 与 `verdict_type_when_hit` 的优先级、
+  冲突处置与单一真相源；未定义则 B 不可选。
+- C 桶「定义级 10 条」的类型学并入 Q-024：第四种类型（`definition`/`structural`）
+  还是移出规则层走事实层；一并回答对 `structural` 桶、`unlabeled_count`、
+  `publishable` 的影响。
+
+### 输出指纹边界写死
+
+`tools/determinism_probe.py` 与 `docs/research/paipan-roadmap-2026-11.md` 明确：
+输出指纹覆盖的是**排序后的最终输出**，证明「用户最终看到的文本稳定」，
+不证明「生成过程稳定」；未排序 reasons/conflicts、set/dict 迭代序不在承诺范围内，
+若未来有接口暴露未排序列表，必须另加指纹。
+
+### push 前代理预检
+
+新增 `tools/check_proxy.py` 与 `make check-proxy` / `make push`：
+区分「环境变量丢失」「代理不可达」「上游不可达」三种情况，避免下次 502 时
+只能看到同一种超时。`make push` 先预检再 `git push`。
+
+### 验证
+
+- 新增/相关测试 `tests/unit/test_d_bucket_annotation.py`、
+  `tests/unit/test_determinism_gate_wrapper.py`、`tests/unit/test_check_proxy.py`
+  与 `tests/unit/test_determinism_gate.py` 扩展：33 passed（`out/junit-new.xml`）；
+- `make test-fast`：1188 passed / 3 deselected（`out/junit-fast.xml`）；
+- `make test`：1191 passed（`out/junit-full.xml`）；
+- `make lint` 通过；`make gate` 通过（无 `out/output-fail.flag`）；
+- 20 seed 确定性比对：`decision=83f0cf3a054a42ec output=b3c32e087535335c`；
+- `make mutation`：28/28 存活检查通过（`docs/mutation-report.md`）。
+
 ## [Unreleased] 评审回路（七）：两级指纹 + 变异测试 + Q-024（2026-11-03）
 
 ### 确定性门禁升级：决策指纹 / 输出指纹分开断言
@@ -33,7 +92,8 @@
 ### C 第二批：D 桶 12 条落标，棘轮 75 → 63
 
 判据 `hard_veto=True 且 severity=禁用`。`effective_verdict_type` 本来就把这一组合推断为
-`gate`，补显式只把推断变声明——**零行为变更**（返回值、报告、tier 分布均不变）。
+`gate`，补显式只把推断变声明——**判定零变更**（返回值、tier 分布不变；
+报告「未归类」清单少这 12 条，属标注本身的目的）。
 
 C/E/F 三桶**未动**：机械套用会标错（`SH-CHONGSHAN-MARKER-001` 与 `PUB-XIANGSHOU-001`
 正文写"仅输出标记/仅作提示"，应为 reference），且标错一条会让共识分母从 `3/4` 变 `3/5`。

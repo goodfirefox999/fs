@@ -4,7 +4,7 @@ export PYTHONPATH := core-time/src:core-symbol/src:core-rule/src:core-eval/src:a
 # 解释器：优先仓库 venv（本沙箱系统 $(PYTHON) 无 pytest——2026-11-03 实测）
 PYTHON ?= .venv/bin/python
 
-.PHONY: help test test-fast cov lint gate golden rules cases clean report mutation determinism check-python
+.PHONY: help test test-fast cov lint gate golden rules cases clean report mutation determinism determinism-gate check-proxy push check-python
 
 # 解释器预检（2026-11-03）：.venv 不存在时 make 只会甩 ModuleNotFoundError，
 # 看不出"该建 venv"。这里前置断言，给出可直接粘贴的命令。
@@ -32,6 +32,10 @@ help:
 	@echo "make report     生成金标准案例报告"
 	@echo "make rules      重新生成规则库与测试向量（会覆盖，慎用）"
 	@echo "make mutation   变异测试抽查（验证测试是否真的能抓住错误）"
+	@echo "make determinism 确定性探针（原始退出码：3 = OUTPUT_FAIL，仍返回 3）"
+	@echo "make determinism-gate 确定性门禁 CI 适配层（只把 3 降级为带警告通过）"
+	@echo "make check-proxy push 前代理预检（区分环境变量丢失 vs 上游故障）"
+	@echo "make push       代理预检后 git push"
 
 # 2026-11-03：junitxml 默认化（AGENTS 环境事实第 10 条）——本沙箱 pytest 的 stdout
 # 汇总行不可见，报数的唯一权威来源是 XML；每次测试收尾用 summarize_junit.py 打标准行。
@@ -71,17 +75,33 @@ mutation:
 	$(PYTHON) tools/mutation_check.py
 
 # 确定性门禁（2026-11-03）：多 PYTHONHASHSEED 比对指纹。
-# 退出码 1 = PRODUCT_FAIL（产品不确定）；2 = ENV_SUSPECT（机器忙，不是产品问题）。
+# 退出码 1 = PRODUCT_FAIL（产品不确定）；2 = ENV_SUSPECT（机器忙，不是产品问题）；
+# 3 = OUTPUT_FAIL（报告文本不确定）。本目标保留原始退出码，供人工复核。
 determinism:
 	$(PYTHON) tools/determinism_probe.py --gate
+
+# CI 适配层（AGENTS.md 确定性门禁第 15 条）：只把 3 降级成 0 + out/output-fail.flag。
+# 1/2 仍阻断；这样「可带警告发布」不会退化成「所有失败都放过」。
+determinism-gate:
+	$(PYTHON) tools/determinism_gate.py
+
+check-proxy:
+	$(PYTHON) tools/check_proxy.py
+
+push: check-proxy
+	git push
 
 gate: test-fast lint
 	$(PYTHON) tools/no_network_scan.py
 	$(PYTHON) tools/check_status_signature.py --offline
 	$(PYTHON) tools/check_no_aggregate_score.py
-	$(PYTHON) tools/determinism_probe.py --gate
+	$(PYTHON) tools/determinism_gate.py
 	$(PYTHON) -m coverage report --fail-under=80 || true
-	@echo "✅ gate 完成"
+	@if [ -f out/output-fail.flag ]; then \
+		echo "⚠️ gate 完成（带 OUTPUT_FAIL 警告：out/output-fail.flag）"; \
+	else \
+		echo "✅ gate 完成"; \
+	fi
 
 rules:
 	$(PYTHON) tools/gen_rules.py

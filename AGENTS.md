@@ -78,7 +78,8 @@
     - 改动事实层后必须跑 `make determinism`（或
       `python3 tools/determinism_probe.py --gate`）比对多 seed 指纹，
       **必须输出 `DETERMINISTIC`（退出码 0）**；退出码 **1 = 产品不确定**、
-      **2 = 机器忙（ENV_SUSPECT）**——2 不许当成产品问题。手动等价的 shell 写法：
+      **2 = 机器忙（ENV_SUSPECT）**——2 不许当成产品问题；**3 = 输出面不确定**
+      （决策一致但报告文本漂，CI 处置见第 15 条）。手动等价的 shell 写法：
       `for s in 0 1 2 3; do PYTHONHASHSEED=$s python tools/determinism_probe.py; done | sort -u`
       必须只输出一行。
 
@@ -112,6 +113,22 @@
 > 第 11–14 条来自 2026-11-02 的一份设计评审：设计稿在第 0 节禁止加权求和，
 > 却在第 5.2 节亲手写了 `consensus_score = w1*方向 + 0.3*Borda + 0.3*同向率`。
 > **原则写对了不等于实现写对了**；能自动跑的 lint 比写得更漂亮的文档管用。
+
+### 确定性门禁的退出码处置（2026-11-03 评审七回路）
+
+15. **退出码 3 不得悬空。** `tools/determinism_probe.py --gate` 的契约是判据，
+    不是装饰；Makefile/CI 不得用 `|| true` 一把吞掉：
+
+    | 退出码 | 含义 | 处置 |
+    |---|---|---|
+    | `0` | 两级指纹一致 | 通过 |
+    | `1` | `PRODUCT_FAIL`：决策面漂 | **阻断**，必须停 |
+    | `2` | `ENV_SUSPECT`：机器忙/进程争抢 | **阻断并重跑**，不得写成产品问题 |
+    | `3` | `OUTPUT_FAIL`：决策一致但报告文本漂 | **带警告通过**：`make gate` 经 `tools/determinism_gate.py` 映射为 0，同时写 `out/output-fail.flag`（JSON，含 seed 指纹与 stderr）；CI 必须读取该文件并发 `::warning`/写入 job summary，**不得静默** |
+
+    `make determinism` 保留原始退出码（3 仍是 3），供人工复核；**只有 `make gate`
+    做降级，且只降级 3**。1/2 若被降级，等于把「产品坏」或「机器忙」伪装成
+    「带警告发布」——这正是把判据做成装饰的典型方式。
 
 ## 必须停下提问的情形
 
