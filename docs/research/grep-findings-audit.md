@@ -21,3 +21,33 @@
 - `docs/research/concurrent-write-forensics-2026-11-02.md:164: 2. "grep 无输出"仍然**不是**"不存在"的证据——只是理由从"判二进制"改为`
 
 > 本表由脚本生成；新增「grep 零命中」类结论时请同步登记到 FINDINGS。
+
+## C-09「证据不足」的处置（不可机器复跑 → 给出可复跑的替代证据）
+
+C-09 依赖 **mtime 快照**（`ls -la -T`），是**一次性证据**：文件被 `git checkout`、
+`touch`、备份还原或迁移后 mtime 即失真，脚本无法重放当时的取样。因此它永远停在
+「⚠️ 证据不足」，不要为了让它变绿而去改判据。
+
+可复跑的替代证据（2026-11-03 实测，命令可直接重跑）：
+
+```bash
+git log --diff-filter=A --oneline -- <file>   # 文件首次进入提交的位置
+```
+
+| 文件 | 首现提交 | 说明 |
+|---|---|---|
+| `core-symbol/src/core_symbol/jianchu.py` | `2b3229b` | 与 `huangdao.py` 同批 |
+| `core-symbol/src/core_symbol/huangdao.py` | `2b3229b` | 同上 |
+| `tools/determinism_probe.py` | `8f2217f` | 门禁工具批 |
+| `core-symbol/src/core_symbol/shensha.py` | `eac493d` | 基线已有，后续仅被修改 |
+
+这组证据能回答「**何时进入仓库**」，**不能**回答「**谁写的**」——七个提交的作者字段
+统一为 `zeri-agent <agent@local>`，两路会话共用同一身份，作者字段无区分力。
+「谁写的」只能靠 mtime + 进程表（沙箱不可得），故该结论维持不可证。
+
+**若日后需要复核**，重新取样时必须同时落盘三样，缺一即作废：
+
+1. `ls -la -T <文件>`（或 `stat -f '%Sm %N'`）的原始输出；
+2. 同一时刻的 `git status --porcelain` 与 `git rev-parse HEAD`；
+3. 取样人/时间/命令（写进本文，不写进聊天记录）。
+

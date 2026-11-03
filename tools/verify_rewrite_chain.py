@@ -12,12 +12,17 @@
 
     python tools/verify_rewrite_chain.py --base 64f5be5 --tip main
     python tools/verify_rewrite_chain.py --base 64f5be5 --tip HEAD --with-lint
+    python tools/verify_rewrite_chain.py --base 64f5be5 --tip main --all-at-once
 
 说明：
 - 每个 SHA 各建独立 worktree（不碰主工作区，避免 worktree_guard 误报脏状态）；
 - 测试固定 ``-m "not slow"``（与 make test-fast 同口径）+ ``--junitxml``（AGENTS
   约束第 10 条：本沙箱 ``-q`` 下 pytest 汇总行不可见，XML 是唯一权威数字来源）；
-- ``--with-lint`` 同时跑 ``rules lint``；
+- **默认分批**（``--batch-size``，默认 3）：全链在单进程里跑会撞资源上限被 SIGKILL
+  （2026-11-03 实测 137），分批后每批是一个**短命子进程**，批间自动回收。
+  ``--all-at-once`` 才一次跑完（仅在确认机器够大时用）；
+- ``--with-lint`` 同时跑 ``rules lint``；**默认不跑**——lint 会显著抬高单批资源占用，
+  而它本身是独立门禁（``make lint``），不必塞进逐 SHA 验证；
 - SOP 全文见 ``docs/research/history-rewrite-sop.md``。
 """
 
@@ -95,11 +100,30 @@ def verify_sha(sha: str, workroot: Path, with_lint: bool) -> tuple[bool, str]:
         sh("git", "worktree", "remove", "--force", str(wt), cwd=REPO)
 
 
+def _chunks(seq: list[str], size: int) -> list[list[str]]:
+    return [seq[i:i + size] for i in range(0, len(seq), size)]
+
+
+def verify_range(shas: list[str], workroot: Path, with_lint: bool) -> bool:
+    all_ok = True
+    for sha in shas:
+        ok, detail = verify_sha(sha, workroot, with_lint)
+        all_ok &= ok
+        print(f"{'✅' if ok else '❌'} {sha[:8]}  {short(sha)}\n   {detail}")
+    return all_ok
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--base", required=True, help="链基底（不含），如 64f5be5")
     ap.add_argument("--tip", required=True, help="链终点（含），如 main")
-    ap.add_argument("--with-lint", action="store_true")
+    ap.add_argument("--with-lint", action="store_true",
+                    help="同时跑 rules lint（默认不跑：抬高单批资源占用，且它本身是独立门禁）")
+    ap.add_argument("--batch-size", type=int, default=3,
+                    help="每批 SHA 数（默认 3）。每批是一个短命子进程，批间自动回收，"
+                         "避免全链单进程撞资源上限被 SIGKILL")
+    ap.add_argument("--all-at-once", action="store_true",
+                    help="不分批，一次跑完（仅确认机器够大时用）")
     args = ap.parse_args()
 
     shas = shas_between(args.base, args.tip)
@@ -110,13 +134,35 @@ def main() -> int:
     workroot.mkdir(parents=True, exist_ok=True)
 
     print(f"验证 {args.base}..{args.tip}（{len(shas)} 个 SHA，junitxml 为权威数字）\n")
+
+    if args.all_at_once or len(shas) <= args.batch_size:
+        all_ok = verify_range(shas, workroot, args.with_lint)
+        subprocess.run(["git", "worktree", "prune"], cwd=REPO, capture_output=True)
+        print(f"\n结论：{'全链逐 SHA 独立绿' if all_ok else '存在红档，禁止 push/合并'}")
+        return 0 if all_ok else 1
+
+    # 分批：每批一个**短命子进程**。父进程只做编排，不持有 worktree/测试内存，
+    # 批间由子进程退出释放——这是 SIGKILL(137) 的默认规避方式（2026-11-03 实测）。
     all_ok = True
-    for sha in shas:
-        ok, detail = verify_sha(sha, workroot, args.with_lint)
-        all_ok &= ok
-        print(f"{'✅' if ok else '❌'} {sha[:8]}  {short(sha)}\n   {detail}")
-    subprocess.run(["git", "worktree", "prune"], cwd=REPO, capture_output=True)
-    print(f"\n结论：{'全链逐 SHA 独立绿' if all_ok else '存在红档，禁止 push/合并'}")
+    batches = _chunks(shas, max(1, args.batch_size))
+    for idx, chunk in enumerate(batches, 1):
+        base = sh("git", "rev-parse", f"{chunk[0]}^", cwd=REPO).stdout.strip()
+        if not base:
+            print(f"[error] 取不到 {chunk[0][:8]} 的父提交，无法分批")
+            return 1
+        cmd = [sys.executable, __file__, "--base", base, "--tip", chunk[-1], "--all-at-once"]
+        if args.with_lint:
+            cmd.append("--with-lint")
+        print(f"—— 批 {idx}/{len(batches)}：{chunk[0][:8]}..{chunk[-1][:8]}（{len(chunk)} 个 SHA）——")
+        rc = subprocess.run(cmd, cwd=REPO).returncode
+        all_ok &= rc == 0
+        if rc != 0:
+            print(f"[stop] 批 {idx} 出现红档，不再跑后续批次（先修这一批）")
+            break
+        subprocess.run(["git", "worktree", "prune"], cwd=REPO, capture_output=True)
+
+    print(f"\n结论：{'全链逐 SHA 独立绿' if all_ok else '存在红档，禁止 push/合并'}"
+          f"（分批模式，每批 {args.batch_size} 个）")
     return 0 if all_ok else 1
 
 

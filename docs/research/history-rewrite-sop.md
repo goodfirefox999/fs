@@ -39,6 +39,8 @@ git checkout -B repair <旧基底>
 python tools/verify_rewrite_chain.py --base <旧基底> --tip repair --with-lint
 #   - 每 SHA 独立 worktree + junitxml（-q 下汇总行不可见，XML 是权威数字）
 #   - 任何一档红 → 修内容后重来，不许跳过
+#   - 默认分批（每批 3 个 SHA，短命子进程），避免全链单进程被 SIGKILL(137)
+#   - --with-lint 可选；默认不跑（lint 是独立门禁，且抬高单批资源占用）
 
 # 4) 切换分支指针 + 清理
 git branch -f main repair && git checkout main && git branch -D repair
@@ -55,6 +57,7 @@ git bundle create ../<repo>-backup-post-rewrite-<日期>.bundle --all
 | worktree 残留 | 上次运行被 SIGKILL → `fatal: already exists` | 脚本创建前先 `remove --force` + rmtree |
 | pytest 汇总行 | `-q` 下 stdout 无汇总（AGENTS 约束 10） | 一律 junitxml + `summarize_junit.py` |
 | verify 脚本漏传 PYTHONPATH | worktree 内 0 collected | subprocess 显式 `env=PYTHONPATH=…`（教训：worktree 不继承主仓库 venv 的路径假设） |
+| **全链单进程被 SIGKILL** | 跑 `--base … --tip …` 中途 `exit 137`，且残留 worktree 让下次报 `already exists` | **默认分批**（`--batch-size`，默认 3，每批一个短命子进程，批间 prune）；`--all-at-once` 才一次跑完。默认**不跑 lint**——lint 抬高单批占用且本身是独立门禁（`make lint`）。撞 137 时先怀疑资源上限，不要先怀疑工具逻辑 |
 
 ## 验收定义
 
