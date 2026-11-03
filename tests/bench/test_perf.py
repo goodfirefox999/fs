@@ -56,8 +56,11 @@ def _is_ci() -> bool:
 #
 # 9.0 档按「实测上界 × 1.22」设，下一轮就被 9.36 打穿：同一 workflow、同一
 # ubuntu-24.04、代码未变，说明 job-to-job 的 runner 差异本身就能到 40%，
-# 22% 余量不够。13.0s = 实测上界 9.36 × 1.39，覆盖已观测的 runner 波动；
-# 仍能抓住 O(n²) 回归（pareto 类回归本地 ~9s、CI 口径 ~18s 以上）。
+# 22% 余量不够。13.0s = 实测上界 9.36 × 1.39，覆盖已观测的 runner 波动。
+#
+# 它抓的回归线：ADR-0014 实测 pareto O(n²) 回归本地 9.072s；按本轮最坏 runner
+# 比值 2.88× 折算，CI 口径约 26s（9.07 × 2.88）。13.0s 远低于 26s，这类回归
+# 在 CI 上必红；同时 13.0s 仍高于正常波动上界 9.36s，不把抖动当回归。
 #
 # 判红前先看本地相对门禁（中位数 ×1.5）：本地 10 个样本稳定且相对门禁绿，
 # 才可按 runner 档解释；两条都红才是产品回归。分档策略与单月冒烟一致
@@ -214,7 +217,8 @@ def test_ci_budget_is_tiered_above_observed_runner_range() -> None:
     else:
         assert BUDGET_SEC == 3.5, "本地档不得被放宽"
     assert CI_BUDGET_SEC > 9.36, "CI 档必须高于已观测的实测上界，否则重演零余量假红"
-    assert CI_BUDGET_SEC < 18.0, "CI 档不得逼近 O(n²) 回归区间，否则容量门禁失效"
+    # 回归线：本地 9.072s × 最坏 runner 比值 2.88 ≈ 26s；预算须显著低于它。
+    assert CI_BUDGET_SEC < 26.0 * 0.7, "CI 档不得逼近回归线 ~26s（须 <70%），否则容量门禁失效"
 
 
 def test_history_reads_the_same_file_it_writes(tmp_path, monkeypatch) -> None:

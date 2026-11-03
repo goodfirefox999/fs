@@ -2,6 +2,34 @@
 
 遵循 [Keep a Changelog](https://keepachangelog.com/)；版本号遵循语义化版本。
 
+## [Unreleased] 评审回路（十三）：Step Summary 汇总全部失败 + 登记相对门禁债务（2026-11-03）
+
+### 失败项不再只活在 job log
+
+run #33（commit `0537793`，9.0s 旧档）的红来自 slow bench 9.02s / 9.36s，
+但 Step Summary 只有 `perf_smoke_seconds: 1.33`（通过），读 summary 的人无法
+知道红在哪。新增 `tools/ci_summary.py`：扫描 `out/junit-*.xml`，输出套件表
+（passed/failed/errors/skipped/耗时/判定）并逐条展开失败用例的耗时与首行断言
+消息；没有产物时明确写「不是绿色证明」。slow bench 步骤同时落
+`out/junit-bench.xml`，workflow 末尾以 `if: always()` 写入 `$GITHUB_STEP_SUMMARY`。
+单测覆盖「冒烟绿 + bench 红同时可见」、skip 原因、空目录、XML 损坏四种形态。
+
+### CI 性能档补上回归线口径
+
+`test_perf.py` 注释补记：13.0s 抓的回归线 = ADR-0014 本地 9.072s × 最坏 runner
+比值 2.88 ≈ CI 口径 26s；13.0s 低于回归线、高于正常波动上界 9.36s。守卫测试
+同步锚定「预算 < 回归线 70%」。
+
+### 登记：CI slow bench 应改相对门禁
+
+`docs/DEVELOPMENT.md` 记录 7.0→9.0→13.0 的抖动追击与根因：CI 历史文件只上传
+artifact、未 restore，相对门禁在 CI 无基线而失效。触发条件写明：下一次无本地
+回归证据再被打穿时，先实现历史中位数 ×1.5 的相对门禁，不得继续上调绝对档。
+
+### 状态核实
+
+run #33 = `0537793`（9.0s 档）旧失败；main 上 `362752d` 的 run #35 已绿。
+
 ## [Unreleased] 评审回路（十二）：门禁顺序锁死 + skip 可见化 + 性能余量观察（2026-11-03）
 
 ### 覆盖率红时性能门禁不再静默消失
