@@ -193,9 +193,18 @@
 8. **偶发失败先证伪"产品不确定"**：先跑 `tools/determinism_probe.py` 多 seed
    比对指纹（一行输出＝产品侧确定）。指纹一致却仍偶发，问题在实验环境或测试宿主，
    此时**禁止**动产品代码，改查：工作树是否被并发写、是否有共享状态、是否超时/资源。
-9. **交替模式禁止用 BRE `\|`（2026-11-03，Q-020/Q-021 假阴性事故）**：
-   本沙箱 `grep` 是 toybox 0.8.13，BRE 的 `\|` 被当字面量 → **静默零匹配**。
-   交替必须写 `grep -E "A|B"` 或改用 Python 遍历；「grep 无输出」永远不是
-   「不存在」的证据。存在性核对用 `tools/verify_claims.py`（四列：宣称 →
-   实际路径 → 用例名 → 结果）。跨环境遇到"异常空输出"先打 `--version`
-   排除工具实现差异，再怀疑文件/数据。
+9. **本沙箱 grep 为 toybox 0.8.13：BRE 不支持 `\|`，交替必须用 `-E`**
+   （2026-11-03，Q-020/Q-021 假阴性事故）：`grep "A\|B"` 被当字面量 "A|B" →
+   **静默零匹配**（不报错、不提示）。因此：① 交替一律 `grep -aE "A|B"` 或
+   Python 遍历；② **静默零命中一律视为不可信**，必须换 `-aE` 或 Python 复核
+   后才可作为证据；③「grep 无输出」永远不是「不存在」的证据。存在性核对用
+   `tools/verify_claims.py`（四列：宣称 → 实际路径 → 用例名 → 结果）；
+   历史结论的连锁复查用 `tools/audit_grep_findings.py`（三态：成立/反转/证据不足）。
+   跨环境遇到"异常空输出"先打 `--version` 排除工具实现差异，再怀疑文件/数据。
+10. **pytest `-q` 下汇总行消失（2026-11-03 边界复核）**：pytest 9.2.0 + 本沙箱，
+    `-q` 时 stdout 只剩进度点（header/collected/summary 全无）；**非 -q 时汇总
+    正常**；`--junitxml` 恒可见。因此：报数的唯一权威来源是 junitxml
+    （`make test/test-fast/golden` 已默认落 `out/junit-*.xml` 并用
+    `tools/summarize_junit.py` 收尾打印标准行）；对外的「N passed」必须能给出
+    XML 路径，给不出即视为未验证。历史重写链的逐 SHA 验证用
+    `tools/verify_rewrite_chain.py`。

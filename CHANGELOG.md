@@ -10,7 +10,8 @@
 原因是片1 携带的仓库级断言 `TestRepoIsClean` 依赖引擎修复，**单独检出必然红**。
 处置：该断言拆到 `tests/integration/test_c20_repo_clean.py`（随引擎修复落地），
 工具片只保留 fixture 反证。每个 SHA 在独立 worktree 用 junitxml 验证
-（pytest 汇总行在本沙箱不可见——见下节——junitxml 是权威数字来源）：
+（**pytest `-q` 下汇总行在本沙箱不可见**——11-03 边界复核：非 -q 可见，junitxml
+恒可见，仍是权威数字来源；另 `-q` 是我当时所有调用的一致写法，故此前全踩中）：
 
 | SHA | 内容 | tests | failures/errors | rules lint |
 |---|---|---|---|---|

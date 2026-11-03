@@ -103,6 +103,8 @@ def _contexts():
             for year in YEARS:
                 for month in range(1, 13):
                     for day in DAYS:
+                        # TODO(owner-unknown): az 未在循环体内使用（ruff B007），
+                        # 但可能是「按方位重复计数」的有意行为——归属确认前勿改，见 Q-023。
                         for az in AZIMUTHS:
                             yield kind, year, (
                                 build_context(
@@ -357,6 +359,8 @@ def _cache_write(fp: str, payload: dict) -> None:
 
 def _run() -> int:
     if "--coverage" in sys.argv:
+        # TODO(owner-unknown): 归属确认前勿删，见 docs/QUESTIONS.md Q-023。
+        # 并行会话写入；ruff F841 报此行，清理须先过 Q-023 的二选一。
         ctxs = [(k, dt) for k, year, dt in []]  # 占位：真实统计在下方
     meta = []
     for kind in TASK_KINDS:

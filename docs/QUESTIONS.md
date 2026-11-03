@@ -590,3 +590,9 @@ DUTIAN/XIUJIU/SANG×2/JIAQU×2）在 2026-06-15 候选上 eval_condition → val
   按 AGENTS 硬禁止第 1 条，程序不编造。
 - **裁定方式**：师傅签字 → 填入 `overrides`（必要时增 `min_voters`）→
   该事项报告「共识度」节自动回显新阈值。
+
+---
+
+## Q-023 dead_rule_scan 并行会话遗留代码归属待确认
+
+tools/dead_rule_scan.py:360 的 ctxs 占位赋值（F841）与 :366 的未用 az 循环（B007）由并行会话写入，语义存疑：az 循环可能是有意的按方位重复计数，也可能是半成品。归属确认前勿删（已加 TODO(owner-unknown) 注记）。确认后二选一：a) 若为有意计数，补注释并豁免 ruff；b) 若为半成品，删除并补测试说明。
