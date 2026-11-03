@@ -2,6 +2,41 @@
 
 遵循 [Keep a Changelog](https://keepachangelog.com/)；版本号遵循语义化版本。
 
+## [Unreleased] 评审回路（六）：链验证默认分批 + 解释器预检 + 环境归因纪律（2026-11-03）
+
+### 推送到远端（本次唯一的不可逆动作，已执行）
+
+- `origin/main`: `64f5be5 → ee52dbe`（**快进**，`merge-base --is-ancestor` 先验，非 force）；
+- 先推 tag `backup/pre-rewrite-2026-11-03`（旧链下机保护），再推 main——顺序与
+  "先 main 后 tag"相反，理由是**先建立退路再覆盖指针**：tag 不动 main，零风险。
+- 推前审查：9 个提交作者字段统一 `zeri-agent`；三个热文件（engine/ranker/arbitration）
+  的差异全部属于 ADR-0015（去跨派均值、整数比共识、reference 桶），无外来改动；
+  `jianchu.py` / `huangdao.py` / `determinism_probe.py` 系并行会话产出，均有测试
+  （`test_paipan_fixed.py`）与文档（`paipan-roadmap-2026-11.md`）覆盖，**未拆分**——
+  两条线是同一交付物的两片，拆分只会制造人为归属并让已验证的链重新变红。
+
+### 工具与纪律
+
+- `verify_rewrite_chain.py` **默认分批**（`--batch-size` 3，每批一个短命子进程，批间
+  `worktree prune`），`--all-at-once` 才一次跑完；默认不跑 lint。动因：全链单进程实测
+  SIGKILL(137)，"靠人记得去掉 lint"不是工程解。
+- `Makefile` 新增 `check-python`：`.venv` 缺失时打印可粘贴的建 venv 命令，
+  `test/test-fast/cov/golden` 全部前置，不再甩 `ModuleNotFoundError`。
+- **AGENTS 约束 11**：归因"环境问题"前必须先做**调用方式对照实验**
+  （参数/标志/包装器各变一次），无对照即视为未验证猜测。`-q` 与 toybox `grep`
+  两次误判的共同形态都是"可复现的调用方式差异被记成环境事实"。
+- SOP 已知坑表补 SIGKILL 行；grep 审计 C-09 补处置：mtime 是一次性证据，
+  给出可复跑的替代证据（`git log --diff-filter=A` 定位首现提交），并说明它只能答
+  "何时进入仓库"、不能答"谁写的"（作者字段两路会话共用同一身份）。
+
+### 修复：五黄命中粒度"一名两义"（Q-018 之二）
+
+`facts.zibai.*.wuhuang_hit_mountain` 的实现是**宫级**（一宫三山同受），名字写 mountain，
+报告又按「五黄到坐山」渲染。现拆成 `wuhuang_hit_palace`（宫级，三条 `PUB-ZIBAI-*-001`
+引用）与 `wuhuang_hit_mountain`（山级，仅宫心那一山）。**行为不变**（原本就是宫级，
+只换引用名），报告文案改为「五黄到坐山（宫级，一宫三山同受）」。
+新增 `TestWuhuangGranularity` 3 例。`PUB-WUHUANG-001` 仍用山级，未动。
+
 ## [Unreleased] 评审回路（四）：分片独立验证 + grep 根因修正 + 防腐化补锁（2026-11-03）
 
 ### 分片验证：每个提交单独检出全绿（bisect 安全性不再是推理，是执行结论）
