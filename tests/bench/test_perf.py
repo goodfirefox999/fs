@@ -16,21 +16,22 @@
 from __future__ import annotations
 
 import json
+import os
 import statistics
+import sys
 import time
 from datetime import date, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import pytest
-
 from app_zeri.generator import HOUR_SAMPLE_HOURS, candidate_datetimes, generate
 from app_zeri.schemas import SiteSpec, TaskSpec
 
 CST = ZoneInfo("Asia/Shanghai")
-BUDGET_SEC = 3.5
 HISTORY = Path(__file__).resolve().parent / "bench_history.jsonl"
 REGRESSION_FACTOR = 1.5
+_perf = sys.modules[__name__]
 
 
 def _is_ci() -> bool:
@@ -45,17 +46,29 @@ def _is_ci() -> bool:
     return bool(os.environ.get("CI") or os.environ.get("GITHUB_ACTIONS"))
 
 
+# 本地 3.5s；CI 7.0s（=3.5 × 2 取整）。
+# 2026-11-03 首次在 runner 上实测：全年 6.59s、单月冒烟 1.01s，而本地同版本分别是
+# 3.24s、0.52s——两个独立测试的 CI/本地比值都是 ~2.0×，说明是 runner 慢，不是
+# 3.14 性能回归（3.14.2 与 3.12.15 的本地实测差在噪声内）。2× 档仍能抓住
+# pareto 类 O(n²) 回归（实测 ~9s，本地口径；CI 口径 ~18s）；不得因为红了就无脑上调。
+# 分档与单月冒烟同一策略（tests/golden 的 _single_month_budget_sec）。
+BUDGET_SEC = 7.0 if _is_ci() else 3.5
+
+
 def _record_and_check(elapsed: float, pareto_size: int | None = None) -> None:
-    global HISTORY
-    history = (HISTORY.parent / "bench_history.ci.jsonl") if _is_ci() else HISTORY
     """记录本次耗时，并与历史中位数比较（防止"每次改一点"的渐进劣化）。
 
     评审第十一轮：**先记后断**——失败运行也入历史（带 passed 标记），
     消除"历史只含存活者"的系统性偏差；相对门禁（下一批）不得建立在幸存者中位数上。
     """
+    history = (HISTORY.parent / "bench_history.ci.jsonl") if _is_ci() else HISTORY
     samples: list[float] = []
     if history.exists():
-        for line in HISTORY.read_text(encoding="utf-8").splitlines():
+        # 必须读本次实际写入的那个文件：CI 写 bench_history.ci.jsonl，本地写
+        # bench_history.jsonl。原实现 exists() 查 history、read_text() 读 HISTORY，
+        # 在 CI 第二次跑时读本地文件（已被 gitignore + git rm --cached，不存在）
+        # 直接 FileNotFoundError。
+        for line in history.read_text(encoding="utf-8").splitlines():
             if not line.strip():
                 continue
             try:
@@ -150,8 +163,8 @@ def test_verified_rules_performance() -> None:
 @pytest.mark.slow
 def test_brute_force_matches_sampled() -> None:
     """抽样对照：生成器结果与"逐候选直接评估"完全一致（剪枝不得改变结果集）。"""
-    from core_eval import EvalConfig, evaluate
     from app_zeri.schemas import CourseSpec, build_context
+    from core_eval import EvalConfig, evaluate
 
     site = SiteSpec(azimuth_deg=320.0, lat=23.13, lon=113.26)
     task = TaskSpec(kind="修造", strictness="strict")
@@ -174,3 +187,34 @@ def test_brute_force_matches_sampled() -> None:
 
     generated = [(r.evaluation.candidate, r.evaluation.state, r.evaluation.tier) for r in result.ranked]
     assert sorted(generated) == sorted(brute_states), "生成器结果集与暴力全量不一致"
+
+
+def test_ci_budget_is_double_local() -> None:
+    """CI/本地分档必须成立：runner 实测慢 ~2×，同档会在 CI 上假红。
+
+    2026-11-03 实测证据：全年 6.59s(CI) vs 3.24s(本地)，单月冒烟 1.01s vs 0.52s，
+    两个独立测试比值一致 → runner 慢，不是 3.14 回归。分档只放宽绝对预算，
+    相对门禁（中位数 × 1.5）不变，O(n²) 回归仍被两侧拦住。
+    """
+    if os.environ.get("CI") or os.environ.get("GITHUB_ACTIONS"):
+        assert BUDGET_SEC == 7.0, "CI 档应为本地 3.5s 的 2×"
+    else:
+        assert BUDGET_SEC == 3.5, "本地档不得被放宽"
+
+
+def test_history_reads_the_same_file_it_writes(tmp_path, monkeypatch) -> None:
+    """记录与读取必须是同一个文件（CI 曾因此 FileNotFoundError）。
+
+    原实现 exists() 查 history（CI 文件）、read_text() 读 HISTORY（本地文件）；
+    本地文件被 gitignore + git rm --cached 后，CI 第二次跑直接抛 FileNotFoundError。
+    """
+    history = tmp_path / "bench_history.ci.jsonl"
+    history.write_text('{"elapsed": 1.0}\n{"elapsed": 1.0}\n{"elapsed": 1.0}\n', encoding="utf-8")
+    local = tmp_path / "bench_history.jsonl"  # 故意不创建：读它就会 FileNotFoundError
+
+    monkeypatch.setattr(_perf, "HISTORY", local)
+    monkeypatch.setattr(_perf, "_is_ci", lambda: True)
+    # 第一次调用写 CI 文件并读取它自己（3 条样本 → 有中位数 → 走相对门禁）
+    _perf._record_and_check(1.0)
+    tail = history.read_text(encoding="utf-8").strip().splitlines()[-1]
+    assert '"elapsed": 1.0' in tail
