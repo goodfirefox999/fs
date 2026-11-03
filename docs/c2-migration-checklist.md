@@ -4,7 +4,7 @@
 > 归类需按 `docs/research/verification-patterns.md` 的判据逐条过：
 > 有恒等式/原典支撑 → `vote` 或 `gate`；只有转述 → `reference`。
 >
-> **进度锁定**：`core-rule/config/verdict_baseline.yaml`（当前未标注 75 条，
+> **进度锁定**：`core-rule/config/verdict_baseline.yaml`（当前未标注 63 条，
 > 棘轮测试 `tests/unit/test_verdict_baseline.py` 保证只减不增）。
 >
 > **为什么这 75 条暂不归类**：不是"行为不明确"（路由行为仍按 severity/hard_veto，
@@ -27,14 +27,39 @@
 | PUB-TIANSHE-001 | vote | 天赦 |
 | PUB-WUHUANG-PALACE-001 | gate（ineligible） | Q-018 五黄到宫影子规则（并行会话标注） |
 
-## 待迁移（75 条，按派别分组）
+## 已完成（C 第二批 D 桶，12 条，2026-11-03）
 
-### donggong（5 条）
+判据：`hard_veto=True` 且 `severity=禁用`。`effective_verdict_type` 本来就把这一组合
+**推断**为 `gate`（`models.py:168`），补显式只是把推断变声明——
+`effective_verdict_type` 返回值不变、报告不变、tier 分布不变。测试锚点：
+`tests/unit/test_verdict_baseline.py`（计数 75→63）+ 全量 `make test-fast`。
 
-- [ ] `DG-DASHA-001`
+| 规则 | verdict_type | 说明 |
+|---|---|---|
+| DG-DASHA-001 | gate | 董公大煞 |
+| DG-JINSHEN-001 | gate | 金神七煞 |
+| PUB-CHONGMING-001 | gate | 日冲命 |
+| PUB-CHONGSHAN-001 | gate | 日冲山 |
+| PUB-MING-SANSHA-001 | gate | 年命三煞 |
+| PUB-SANSHA-001 | gate | 三煞占山（年） |
+| PUB-SANSHA-002 | gate | 三煞占山（月） |
+| PUB-SIJUE-001 | gate | 四绝日 |
+| PUB-SILI-001 | gate | 四离日 |
+| PUB-SUIPO-001 | gate | 岁破占山 |
+| PUB-WUHUANG-001 | gate | 年五黄占山 |
+| PUB-YUEPO-001 | gate | 月破占山 |
+
+> 注：这 12 条**行为零变更**，所以不涉及 RT 向量迁移；与 `PUB-WUHUANG-PALACE-001`
+> 那类「影子规则」不同，它们本来就在计票/否决通道里。
+
+## 待迁移（63 条，按派别分组）
+
+### donggong（3 条）
+
+- [x] `DG-DASHA-001`
 - [ ] `DG-GOUCHEN-001`
-- [ ] `DG-JIANCHU-001`
-- [ ] `DG-JINSHEN-001`
+- [ ] `DG-JIANCHU-001` —— **等 Q-024**（条件性 verdict_type，方向随命中变）
+- [x] `DG-JINSHEN-001`
 - [ ] `DG-SANXING-001`
 
 ### doushou（6 条）
@@ -46,7 +71,7 @@
 - [ ] `DS-SANWU-001`
 - [ ] `DS-SANYUAN-001`
 
-### public（47 条）
+### public（37 条）
 
 - [ ] `ASSERT-CHONG-001`
 - [ ] `ASSERT-GANCHONG-001`
@@ -67,9 +92,9 @@
 - [ ] `DEF-XUNKONG-001`
 - [ ] `DEF-ZIXING-001`
 - [ ] `PUB-BANHE-001`
-- [ ] `PUB-CHONGMING-001`
+- [x] `PUB-CHONGMING-001`
 - [ ] `PUB-CHONGMING-002`
-- [ ] `PUB-CHONGSHAN-001`
+- [x] `PUB-CHONGSHAN-001`
 - [ ] `PUB-CHONGSHAN-002`
 - [ ] `PUB-DAXIAOYUE-001`
 - [ ] `PUB-DUTIAN-001`
@@ -77,24 +102,24 @@
 - [ ] `PUB-GUANGFU-001`
 - [ ] `PUB-JIAQU-001`
 - [ ] `PUB-JIAQU-002`
-- [ ] `PUB-MING-SANSHA-001`
+- [x] `PUB-MING-SANSHA-001`
 - [ ] `PUB-SANG-001`
 - [ ] `PUB-SANG-002`
 - [ ] `PUB-SANHEFU-001`
-- [ ] `PUB-SANSHA-001`
-- [ ] `PUB-SANSHA-002`
+- [x] `PUB-SANSHA-001`
+- [x] `PUB-SANSHA-002`
 - [ ] `PUB-SANSHA-003`
-- [ ] `PUB-SIJUE-001`
-- [ ] `PUB-SILI-001`
-- [ ] `PUB-SUIPO-001`
+- [x] `PUB-SIJUE-001`
+- [x] `PUB-SILI-001`
+- [x] `PUB-SUIPO-001`
 - [ ] `PUB-TAISUI-001`
-- [ ] `PUB-WUHUANG-001`
+- [x] `PUB-WUHUANG-001`
 - [ ] `PUB-XIANGSHOU-001`
 - [ ] `PUB-XIUJIU-001`
 - [ ] `PUB-YANGGONG-001`
 - [ ] `PUB-YINFU-001`
 - [ ] `PUB-YUEJIAN-001`
-- [ ] `PUB-YUEPO-001`
+- [x] `PUB-YUEPO-001`
 
 ### sanhe（4 条）
 

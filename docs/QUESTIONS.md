@@ -621,3 +621,46 @@ tools/dead_rule_scan.py:360 的 ctxs 占位赋值（F841）与 :366 的未用 az
 
 ---
 
+---
+
+## Q-024 条件性 verdict_type：规则命中方向随事实值变化时如何表达？（2026-11-03 新增）
+
+**背景**：`verdict_type` 目前是单值枚举（`gate` / `vote` / `reference` / `None`），
+假设「一条规则的性质是固定的」。但有一类规则**命中方向随事实值变化**：
+
+| 规则 | 声明 severity | 正文 | 问题 |
+|---|---|---|---|
+| `DG-JIANCHU-001`（建除十二神） | 可用 | 「命中破/闭（一般不利）」 | 命中"建/成/开"是正向，命中"破/闭"是负向，同一条规则两个方向 |
+
+`vote` 与 `reference` 都不对：标 `vote` 会把"建"日也当成正向票，标 `reference`
+又会丢掉"破日确实不利"这个判定。这不是标注没想好，是**枚举表达不了条件性判定**。
+
+**为什么 Agent 不能代劳**：加字段＝改 schema，会影响 `effective_verdict_type` 的返回值、
+共识计票的分母（ADR-0015 的整数比）、以及报告"未归类"节的统计口径。三处都是
+行为分布变更，须人类定方案后再动代码。
+
+**候选方案**（择一，或另提）：
+
+| 方案 | 形态 | 优点 | 代价 |
+|---|---|---|---|
+| A. 新增类型 | `verdict_type: conditional` + `direction_rule: {破: negative, 闭: negative, 其他: neutral}` | 语义直白，一条规则仍是一条 | 要定义 `direction_rule` 的 DSL 子集与求值时机 |
+| B. 命中映射表 | `verdict_type_when_hit: {hit: vote, direction: {破: negative, 闭: negative}}` | 不改类型枚举，只加可选字段 | 与 `severity` 语义重叠，易产生"两处都能定方向"的歧义 |
+| C. 拆规则 | 把 `DG-JIANCHU-001` 拆成 `DG-JIANCHU-JI-001`（建/成/开）与 `DG-JIANCHU-XIONG-001`（破/闭） | 零 schema 变更，现有类型直接可用 | 规则数 +1，`rules_manifest` 与 RT 向量要同步；且"一条起例拆成两条"会削弱"这是一条神煞"的语义 |
+
+**影响面**：`DG-JIANCHU-001` 及后续同类（凡"同一神煞不同值不同吉凶"的规则）。
+按当前 75 条未标注规则粗查，疑似同类还有建除类的其余分支、以及部分神煞的"得令/失令"分支，
+需在裁定后逐条过一遍。
+
+**当前处置（裁定前）**：`DG-JIANCHU-001` 这类**不落标**，保持 `verdict_type: None`
+（即 `unspecified`），并在报告的"未归类"节列出。**不得**为了降低 `unlabeled_count`
+先标一个 `vote` 顶上——标错一条会让共识分母从 `3/4` 变 `3/5`，阈值判定可能翻转。
+
+**裁定完成定义**：
+
+1. 选定方案（A/B/C 或新方案），并说明为什么另外两个不选；
+2. 若选 A/B，给出 `direction_rule` / `verdict_type_when_hit` 的**最小 DSL 子集**
+   （支持哪些算子、与现有 `condition` 的关系、求值顺序）；
+3. 若选 C，给出拆分后的规则 id 命名规则与 RT 向量迁移方案；
+4. 同步更新 `docs/c2-migration-checklist.md` 与 `verdict_baseline.yaml` 的口径说明。
+
+**关联**：`docs/c2-batch2-plan.md` §3.3（三个反例之三）。

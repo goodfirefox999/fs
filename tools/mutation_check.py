@@ -259,6 +259,25 @@ MUTATIONS: tuple[Mutation, ...] = (
         tests=("tests/unit/test_v2_features.py", "tests/golden/test_golden_case.py"),
         why="演示命中被当成确定判定 —— 未考证规则会被表述为「确定排除」",
     ),
+    # ---- 并行写入线产出的两个模块（2026-11-03 评审七回路：Q2「反错误」补强）----
+    # 反退化测试只能证明「输出不是常量」，证明不了「输出正确」。
+    # 这两条把公式/表**故意改错一位**，若测试仍绿，说明它没在测语义。
+    Mutation(
+        key="jianchu-offset",
+        path="core-symbol/src/core_symbol/jianchu.py",
+        old="    return (ZHI.index(target_zhi) - ZHI.index(month_zhi)) % 12",
+        new="    return (ZHI.index(target_zhi) - ZHI.index(month_zhi) + 1) % 12",
+        tests=("tests/unit/test_paipan_fixed.py",),
+        why="建除位次整体错一位 —— 建日不再是月建日，破日不再等于月破；恒等式必红",
+    ),
+    Mutation(
+        key="huangdao-star-swap",
+        path="core-symbol/src/core_symbol/huangdao.py",
+        old='    "青龙", "明堂", "天刑", "朱雀", "金匮", "天德",',
+        new='    "明堂", "青龙", "天刑", "朱雀", "金匮", "天德",',
+        tests=("tests/unit/test_paipan_fixed.py",),
+        why="青龙与明堂对调 —— 月建日不再值青龙，勾陈 12/12 交叉对照必红",
+    ),
 )
 
 

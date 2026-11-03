@@ -2,6 +2,61 @@
 
 遵循 [Keep a Changelog](https://keepachangelog.com/)；版本号遵循语义化版本。
 
+## [Unreleased] 评审回路（七）：两级指纹 + 变异测试 + Q-024（2026-11-03）
+
+### 确定性门禁升级：决策指纹 / 输出指纹分开断言
+
+原来只有一个指纹，覆盖 `state/tier/publishable/vectors/per_school` —— **决策面**。
+缺口：`reasons` / `conflicts` / `demo_hits` / `reference` / `rank_score` 不在其中，
+若某条 reason 的拼接依赖 set 迭代序，探针不红而**报告文本会变**——
+用户看到"同一日课两次查询给了不同解释"，比 tier 翻更伤信任。
+
+现在分两级（**不合并**，合并会把"文本漂"读成"决策漂"）：
+
+| 级别 | 覆盖 | 失败含义 | 退出码 |
+|---|---|---|---|
+| 决策 | state / tier / publishable / vectors / per_school 计数 | 产品坏了，必须停 | 1 `PRODUCT_FAIL` |
+| 输出 | reasons（排序）/ conflicts（排序）/ demo_hits / reference / rank_score（round 6） | 报告文本不确定，可带警告发布但不能无声 | 3 `OUTPUT_FAIL` |
+
+**20 seed 实测**：`decision=83f0cf3a054a42ec output=b3c32e087535335c`，两面均一致
+→ 缺口当前**未发生**，两级指纹属防御性动作（按评审口径进 P2，不是"已坏"）。
+
+### 变异测试补两条（Q2 从"反退化"到"反错误"）
+
+反退化测试只能证明"输出不是常量"，证明不了"输出正确"。新增：
+
+- `jianchu-offset`：建除位次整体 +1（建日不再是月建日）→ 被抓住；
+- `huangdao-star-swap`：青龙/明堂对调 → 被抓住。
+
+`tools/mutation_check.py -k <key>` 可单独复现。
+
+### C 第二批：D 桶 12 条落标，棘轮 75 → 63
+
+判据 `hard_veto=True 且 severity=禁用`。`effective_verdict_type` 本来就把这一组合推断为
+`gate`，补显式只把推断变声明——**零行为变更**（返回值、报告、tier 分布均不变）。
+
+C/E/F 三桶**未动**：机械套用会标错（`SH-CHONGSHAN-MARKER-001` 与 `PUB-XIANGSHOU-001`
+正文写"仅输出标记/仅作提示"，应为 reference），且标错一条会让共识分母从 `3/4` 变 `3/5`。
+
+### 新开 Q-024：条件性 verdict_type
+
+`DG-JIANCHU-001`（建除）声明"可用"、正文"命中破/闭一般不利"——同一条规则方向随命中变，
+`vote` 与 `reference` 都不对。这是**单值枚举表达不了条件性判定**，不是标注没想好。
+候选方案 A（`conditional` + `direction_rule`）/ B（`verdict_type_when_hit` 映射）/
+C（拆成两条规则）已列进 Q-024，裁定前该类规则保持 `unspecified`。
+
+### 归属表加到期条件
+
+`commit-provenance.md` 中置信「中」的条目依赖一次性 mtime 快照，**2026-11-10 前**
+无新证据即降级为「归属未知」。没有到期条件的"待补证据"会退化成永久模糊状态，
+而模糊状态在 bisect 场景下比"未知"更危险。
+
+### 推送
+
+3 个纯文档提交已上远端（`ee52dbe..e4b676a`）。此前 GitHub 502 的对照结论：
+代理进程在监听、其他主机 200、`github.com` 也 200 —— 是**上游瞬时故障**，
+不是配置漂移（`git config` 无代理设置，全靠环境变量）。
+
 ## [Unreleased] 评审回路（六）：链验证默认分批 + 解释器预检 + 环境归因纪律（2026-11-03）
 
 ### 推送到远端（本次唯一的不可逆动作，已执行）

@@ -5,11 +5,13 @@
 #   - 当前数 > baseline_count → 测试失败（出现回退，未归类清单变长了）。
 # 更新本文件时必须同步 `docs/c2-migration-checklist.md` 的勾选状态。
 generated: 2026-11-03
-unlabeled_count: 75
+# C 第二批 D 桶（2026-11-03）：12 条 hard_veto+禁用 规则补显式 verdict_type: gate。
+# 零行为变更——effective_verdict_type 本来就把这一组合推断为 gate，补显式只把推断变声明。
+unlabeled_count: 63
 per_school:
-  donggong: 5
+  donggong: 3
   doushou: 6
-  public: 47
+  public: 37
   sanhe: 4
   tianxing: 4
   xuankong_dagua: 4

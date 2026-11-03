@@ -10,6 +10,7 @@ status: 待考证
 hard_veto: true
 severity: 禁用
 target: day
+verdict_type: gate
 applies_to:
   task_kinds: []
   node_kinds: []

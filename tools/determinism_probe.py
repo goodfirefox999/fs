@@ -101,6 +101,75 @@ def _eval_summary(ev: Any) -> dict[str, Any]:
     }
 
 
+def _judgment_text(j: Any) -> dict[str, Any]:
+    """一条判定的**对外可读面**：结论 + 理由文本（排序后）。"""
+    return {
+        "rule_id": _rid(j),
+        "verdict": getattr(j, "verdict", None),
+        "severity": getattr(j, "severity", None),
+        "reasons": sorted(str(x) for x in (getattr(j, "reasons", []) or [])),
+    }
+
+
+def _eval_output(ev: Any) -> dict[str, Any]:
+    """只取**报告文本面**：reasons / conflicts / demo_hits / reference / rank_score。
+
+    与 ``_eval_summary``（决策面）分开的理由（2026-11-03 评审七回路）：
+    决策面一致但报告文本变，用户看到的是"同一个日课，两次查询给了不同解释"——
+    这比 tier 翻更伤信任，因为用户无法判断哪个解释是真的。
+    """
+    per_school: dict[str, Any] = {}
+    for school, res in sorted(getattr(ev, "per_school", {}).items()):
+        buckets = (
+            list(getattr(res, "vetoes", []) or [])
+            + list(getattr(res, "cautions", []) or [])
+            + list(getattr(res, "positives", []) or [])
+            + list(getattr(res, "unknowns", []) or [])
+            + list(getattr(res, "demo_hits", []) or [])
+            + list(getattr(res, "reference", []) or [])
+        )
+        rank = getattr(res, "rank_score", None)
+        per_school[school] = {
+            # 浮点先 round 再哈希：避免末位抖动被当成"不确定"
+            "rank_score": None if rank is None else round(float(rank), 6),
+            "judgments": sorted(
+                (_canonical(_judgment_text(j)) for j in buckets),
+            ),
+            "demo_hits": sorted(_rid(j) for j in (getattr(res, "demo_hits", []) or [])),
+            "reference": sorted(_rid(j) for j in (getattr(res, "reference", []) or [])),
+        }
+    return {
+        "conflicts": sorted(_canonical(c) for c in (getattr(ev, "conflicts", []) or [])),
+        "per_school": per_school,
+    }
+
+
+def output_fingerprint(verbose: bool = False) -> dict[str, str]:
+    """**输出指纹**（报告文本面）。与决策指纹分开存、分开断言。"""
+    from app_zeri.schemas import CourseSpec, PersonSpec, SiteSpec, TaskSpec, build_context
+    from core_eval import EvalConfig, evaluate
+    from core_rule import default_registry
+    from core_time import CalendarConfig
+
+    registry = default_registry()
+    out: dict[str, str] = {}
+    for name, dt, azimuth in CASES:
+        ctx = build_context(
+            course=CourseSpec(dt=dt),
+            site=SiteSpec(azimuth_deg=azimuth, lat=23.13, lon=113.26),
+            task=TaskSpec(kind="修造", nodes=("修造",), strictness="strict"),
+            person=PersonSpec(),
+            cal=CalendarConfig(),
+        )
+        ev = evaluate(
+            ctx,
+            registry,
+            EvalConfig(task_kind="修造", strictness="strict", allow_unverified=True, demo_veto=True),
+        )
+        out[f"{name}.output"] = _sha(_canonical(_eval_output(ev)))
+    return out
+
+
 def fingerprint(verbose: bool = False) -> dict[str, str]:
     from app_zeri.schemas import CourseSpec, PersonSpec, SiteSpec, TaskSpec, build_context
     from core_eval import EvalConfig, evaluate
@@ -136,17 +205,26 @@ def main(argv: list[str] | None = None) -> int:
     退出码  含义
     =====  ============================================================
     0      指纹一致（或本次单跑正常）
-    1      **PRODUCT_FAIL**：跨 seed 指纹不一致 —— 产品侧存在不确定性
+    1      **PRODUCT_FAIL**：跨 seed **决策指纹**不一致 —— 产品侧存在不确定性
     2      **ENV_SUSPECT**：耗时 > 基线中位数 2 倍 —— 先怀疑机器忙/进程争抢，
-            **不得**据此判定产品不确定（见 AGENTS.md 补丁纪律第 7/8 条）
+           **不得**据此判定产品不确定（见 AGENTS.md 补丁纪律第 7/8 条）
+    3      **OUTPUT_FAIL**：决策一致但**输出指纹**不一致 —— 报告文本跨进程不稳定。
+           可带警告发布，但不能无声（2026-11-03 评审七回路新增）
     =====  ============================================================
+
+    两级为什么分开：决策面红 = 产品坏了（必须停）；输出面红 = 用户看到的解释会变
+    （比 tier 翻更伤信任，因为用户无法判断哪个解释是真的）。合并成一个指纹会把
+    后者读成前者，也会把前者掩盖在"只是文本"里。
 
     为什么要把 1 和 2 分开：pytest 输出里超时与断言失败都显示为 ``FAILED``，
     不区分就会把"机器慢了"读成"算法坏了"——这正是 2026-11-02 那次误判的成因。
     """
     parser = argparse.ArgumentParser(description="跨进程确定性探针")
     parser.add_argument("--verbose", action="store_true", help="打印每一段的指纹")
-    parser.add_argument("--fingerprint-only", action="store_true", help="只打印总指纹（供 --gate 子进程用）")
+    parser.add_argument("--fingerprint-only", action="store_true",
+                        help="只打印两级指纹（供 --gate 子进程用）")
+    parser.add_argument("--level", choices=("decision", "output", "both"), default="decision",
+                        help="打印哪一级指纹：decision（决策面）/ output（报告文本面）/ both")
     parser.add_argument("--no-timing-check", action="store_true", help="跳过耗时基线检查（测试/低配机器用）")
     parser.add_argument(
         "--gate",
@@ -165,14 +243,24 @@ def main(argv: list[str] | None = None) -> int:
     parts = fingerprint(verbose=args.verbose and not args.fingerprint_only)
     elapsed_ms = (time.perf_counter() - t0) * 1000.0
     total = _sha(_canonical(parts))
+    out_parts = output_fingerprint(verbose=args.verbose and not args.fingerprint_only)
+    out_total = _sha(_canonical(out_parts))
     if args.fingerprint_only:
-        print(total)
+        # 两行、两个标签：决策面与输出面**不合并**（合并会把"文本漂"读成"决策漂"）
+        print(f"decision={total}")
+        print(f"output={out_total}")
         return 0
 
-    for key, value in parts.items():
-        print(f"{value}  {key}")
-    print()
-    print(total)
+    if args.level in ("decision", "both"):
+        print("—— 决策面（state/tier/publishable/vectors/per_school 计数）——")
+        for key, value in parts.items():
+            print(f"{value}  {key}")
+        print(f"decision={total}")
+    if args.level in ("output", "both"):
+        print("—— 输出面（reasons/conflicts/demo_hits/reference/rank_score）——")
+        for key, value in out_parts.items():
+            print(f"{value}  {key}")
+        print(f"output={out_total}")
 
     if args.no_timing_check:
         return 0
@@ -228,7 +316,7 @@ def _gate(seeds_csv: str, *, verbose: bool = False) -> int:
         print("--gate 至少需要 2 个 seed", file=sys.stderr)
         return 1
 
-    results: dict[str, str] = {}
+    results: dict[str, dict[str, str]] = {}
     env_suspect = False
     slowest = 0.0
     for seed in seeds:
@@ -251,21 +339,46 @@ def _gate(seeds_csv: str, *, verbose: bool = False) -> int:
         if proc.returncode != 0:
             print(f"seed={seed} 子进程失败（rc={proc.returncode}）：\n{proc.stderr[-800:]}", file=sys.stderr)
             return 2
-        results[seed] = proc.stdout.strip().splitlines()[-1] if proc.stdout.strip() else ""
+        pair: dict[str, str] = {}
+        for line in proc.stdout.strip().splitlines():
+            if "=" in line:
+                key, value = line.split("=", 1)
+                pair[key.strip()] = value.strip()
+        if "decision" not in pair or "output" not in pair:
+            print(f"seed={seed} 子进程输出无法解析：{proc.stdout[-400:]!r}", file=sys.stderr)
+            return 2
+        results[seed] = pair
 
-    uniq = set(results.values())
     if verbose:
-        for seed, fp in results.items():
-            print(f"seed={seed}  {fp}")
-    if len(uniq) > 1:
-        print("PRODUCT_FAIL: 不同 PYTHONHASHSEED 下指纹不一致——产品侧存在不确定性：", file=sys.stderr)
-        for seed, fp in results.items():
-            print(f"  seed={seed}  {fp}", file=sys.stderr)
-        print("  取证：固定其中一个 seed 重跑并加 --verbose，对比哪一段（facts/eval）先漂。", file=sys.stderr)
+        for seed, pair in results.items():
+            print(f"seed={seed}  decision={pair['decision']}  output={pair['output']}")
+
+    # ---- 两级分别断言，**不合并** ----
+    decision_uniq = {p["decision"] for p in results.values()}
+    output_uniq = {p["output"] for p in results.values()}
+
+    if len(decision_uniq) > 1:
+        print("PRODUCT_FAIL（决策面）: 不同 PYTHONHASHSEED 下 state/tier/vectors 不一致：",
+              file=sys.stderr)
+        for seed, pair in results.items():
+            print(f"  seed={seed}  {pair['decision']}", file=sys.stderr)
+        print("  这是产品坏了，必须停；取证用 --level both --verbose 看 facts/eval 哪段先漂。",
+              file=sys.stderr)
         return 1
+
+    if len(output_uniq) > 1:
+        print("OUTPUT_FAIL（输出面）: 决策一致，但报告文本（reasons/conflicts/demo_hits/"
+              "reference/rank_score）跨进程不稳定：", file=sys.stderr)
+        for seed, pair in results.items():
+            print(f"  seed={seed}  {pair['output']}", file=sys.stderr)
+        print("  用户会看到「同一日课两次查询给了不同解释」。可带警告发布，但不能无声。",
+              file=sys.stderr)
+        return 3
+
     if env_suspect:
         return 2
-    print(f"DETERMINISTIC: {next(iter(uniq))}（{len(seeds)} 个 seed 一致，最慢 {slowest:.1f}s）")
+    print(f"DETERMINISTIC: decision={next(iter(decision_uniq))} "
+          f"output={next(iter(output_uniq))}（{len(seeds)} 个 seed 一致，最慢 {slowest:.1f}s）")
     return 0
 
 

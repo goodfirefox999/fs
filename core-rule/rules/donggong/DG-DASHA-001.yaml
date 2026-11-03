@@ -9,6 +9,7 @@ hard_veto: true
 severity: 禁用
 target: day
 evaluable: true
+verdict_type: gate
 applies_to:
   task_kinds:
   - 安葬

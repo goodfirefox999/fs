@@ -111,9 +111,9 @@
 
 | 文件 | Q1 独立恒等式 | Q2 反证测试 | Q3 指纹独立性 |
 |---|---|---|---|
-| `core-symbol/jianchu.py` | ✅ 建日=月建本支、破日=冲月建、十二神按序循环（`test_paipan_fixed.py:47/53/62`） | ⚠️ 部分：`test_all_twelve_stars_reachable_in_order` 能抓住"返回常量"的退化；**缺**"故意改错必红"的变异测试 | — |
-| `core-symbol/huangdao.py` | ✅ 青龙起例覆盖 12 月、月建日必青龙、勾陈 12/12 交叉吻合（`:94/104/108`） | ⚠️ 同上；`test_dao_grouping_partitions_twelve_stars` 是划分性检验（反退化） | — |
-| `tools/determinism_probe.py` | — | — | ⚠️ **见下，已答但有缺口** |
+| `core-symbol/jianchu.py` | ✅ 建日=月建本支、破日=冲月建、十二神按序循环（`test_paipan_fixed.py:47/53/62`） | ✅ **已补**：变异 `jianchu-offset`（位次 +1）被抓住（`tools/mutation_check.py -k jianchu-offset`） | — |
+| `core-symbol/huangdao.py` | ✅ 青龙起例覆盖 12 月、月建日必青龙、勾陈 12/12 交叉吻合（`:94/104/108`） | ✅ **已补**：变异 `huangdao-star-swap`（青龙/明堂对调）被抓住 | — |
+| `tools/determinism_probe.py` | — | — | ✅ **已补两级指纹**（决策面/输出面分开断言），20 seed 实测两面均一致 |
 
 ### Q3 已答：指纹覆盖"决策面"，不覆盖"渲染面"
 
@@ -133,8 +133,14 @@
 把 `_eval_summary` 扩到 `reasons`（排序后）+ `conflicts` + `fact_hash`，
 并在扩之前先跑一次多 seed 对照，确认扩展后仍稳定（否则会引入假红）。
 
-### 仍待回答
+### 已闭环（2026-11-03 当日）
 
-- Q2 对 `jianchu`/`huangdao` 只到"反退化"，未到"反错误"。补法：各加一条变异测试
-  （把 `jianchu_of` 的偏移量 +1、把 `QINGLONG_START_ZHI` 整体移一位），断言现有测试必红。
-  这属于**测试有效性**证明，不是功能变更，可独立提交。
+- **Q2 已补**：`jianchu-offset`、`huangdao-star-swap` 两条变异加入 `tools/mutation_check.py`，
+  实跑均被现有测试抓住（`-k` 单跑可复现）。反退化 → 反错误。
+- **Q3 已补**：`determinism_probe.py` 拆成**决策指纹**与**输出指纹**两级，分开存、分开断言：
+  - 决策面红 = `PRODUCT_FAIL`（退出码 1，必须停）；
+  - 输出面红 = `OUTPUT_FAIL`（退出码 3，报告文本不确定，可带警告发布但不能无声）。
+  输出面覆盖 `reasons`（排序）/ `conflicts`（排序）/ `demo_hits` / `reference` /
+  `rank_score`（round 6）。
+  20 seed 实测：`decision=83f0cf3a054a42ec output=b3c32e087535335c` **两面均一致** →
+  缺口当前**未发生**，两级指纹是防御性动作（按评审口径进 P2）。
