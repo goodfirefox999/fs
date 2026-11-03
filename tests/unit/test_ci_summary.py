@@ -1,10 +1,8 @@
-"""``tools/ci_summary.py``：Step Summary 必须列出所有失败项，不只 perf_smoke。
+"""``tools/ci_summary.py``：Step Summary 必须列全套件，失败/缺失都不能从表里消失。
 
 回归用例（run #33）：slow bench 9.02s / 9.36s 超 9.0s 档导致 job 红，但 summary
-只有冒烟 1.33s（通过），看 summary 的人无法知道红在哪。这里锁住三件事：
-1. 每个 junit 套件都出现在表里；
-2. 失败用例名、耗时、首行断言消息可在 summary 里直接读到；
-3. 没有 junit 产物时明确写「不是绿色证明」，不输出空白页。
+只有冒烟 1.33s（通过），看 summary 的人无法知道红在哪。覆盖五类形状：
+全通过、全失败、全缺失、部分缺失（删一个 junit）、skip 可见；另加清单漂移反查。
 """
 
 from __future__ import annotations
@@ -18,6 +16,8 @@ assert _SPEC and _SPEC.loader
 ci_summary = importlib.util.module_from_spec(_SPEC)
 _SPEC.loader.exec_module(ci_summary)
 
+_EXPECTED_FILES = list(ci_summary.EXPECTED_SUITES.values())
+
 
 def _write(tmp_path: Path, name: str, body: str) -> Path:
     path = tmp_path / name
@@ -25,47 +25,90 @@ def _write(tmp_path: Path, name: str, body: str) -> Path:
     return path
 
 
-def _suite(tests: int, failures: int, skipped: int, seconds: float, cases: str = "") -> str:
+def _suite(
+    tests: int, failures: int, skipped: int, seconds: float, cases: str = "", errors: int = 0
+) -> str:
     return (
-        f'<testsuite tests="{tests}" failures="{failures}" errors="0" skipped="{skipped}" '
-        f'time="{seconds}">{cases}</testsuite>'
+        f'<testsuite tests="{tests}" failures="{failures}" errors="{errors}" '
+        f'skipped="{skipped}" time="{seconds}">{cases}</testsuite>'
     )
 
 
-def test_bench_failure_is_visible_next_to_passing_smoke(tmp_path: Path) -> None:
-    """run #33 的形状：冒烟绿、slow bench 红——两行都要在表里，失败项要展开。"""
-    _write(
-        tmp_path,
-        "junit-perf-smoke.xml",
-        _suite(
-            1, 0, 0, 1.33,
-            '<testcase classname="tests.golden.test_x" '
-            'name="test_single_month_budget_smoke" time="1.33" />',
-        ),
+def _passing_cases(count: int = 1) -> str:
+    return "".join(
+        f'<testcase classname="tests.ok" name="test_ok_{index}" time="0.1" />'
+        for index in range(count)
     )
-    _write(
-        tmp_path,
-        "junit-bench.xml",
-        _suite(
-            1, 1, 0, 9.02,
-            '<testcase classname="tests.bench.test_perf" name="test_full_year_within_budget" time="9.02">'
-            '<failure message="全量穷举耗时 9.02s，超出预算 9.0s&#10;assert 9.02 &lt; 9.0" />'
-            "</testcase>",
-        ),
-    )
+
+
+def _write_all_passing(tmp_path: Path) -> None:
+    for name in _EXPECTED_FILES:
+        _write(tmp_path, name, _suite(1, 0, 0, 10.0, _passing_cases()))
+
+
+def test_all_expected_suites_pass_is_green(tmp_path: Path) -> None:
+    """全通过：判定行必须给出「全部 3 个套件通过」，不能只堆表格。"""
+    _write_all_passing(tmp_path)
     text = ci_summary.render(ci_summary.collect(tmp_path))
-    assert "`junit-perf-smoke.xml`" in text and "✅" in text
-    assert "`junit-bench.xml`" in text and "❌" in text
-    assert "- `tests.bench.test_perf::test_full_year_within_budget`（9.02s）：全量穷举耗时 9.02s，超出预算 9.0s" in text
-    assert "- - " not in text, "明细自带 bullet 会渲染成双层列表"
+    assert "**判定：✅ 全部 3 个套件通过。**" in text
+    assert text.count("| ✅ |") == 3
+    assert "缺失" not in text
+
+
+def test_missing_bench_junit_is_reported_not_skipped(tmp_path: Path) -> None:
+    """核心反证：删掉 junit-bench.xml（bench 步骤挂掉），汇总必须报缺失而非沉默。"""
+    _write_all_passing(tmp_path)
+    (tmp_path / "junit-bench.xml").unlink()
+    text = ci_summary.render(ci_summary.collect(tmp_path))
+    assert "`junit-bench.xml`" in text
+    assert "缺失：预期套件「bench」未产出 junit" in text
+    assert "**判定：❌ " in text and "本页不是绿色证明" in text
+    assert text.count("| ✅ |") == 2, "另外两个套件仍应显示通过"
+
+
+def test_all_missing_reports_every_expected_suite(tmp_path: Path) -> None:
+    """全缺失：每个期望套件都要有 ❌ 行，不能只剩一句「没找到文件」。"""
+    text = ci_summary.render(ci_summary.collect(tmp_path))
+    for name in _EXPECTED_FILES:
+        assert f"`{name}`" in text
+    assert text.count("缺失：预期套件") == 3
+    assert "本页不是绿色证明" in text
+    assert "✅" not in text
+
+
+def test_all_failing_suites_are_visible_with_details(tmp_path: Path) -> None:
+    """全失败：三行都 ❌，且每个失败用例名/耗时/首行消息可直接读。"""
+    for index, name in enumerate(_EXPECTED_FILES):
+        _write(
+            tmp_path,
+            name,
+            _suite(
+                1,
+                1,
+                0,
+                5.0,
+                f'<testcase classname="tests.bad" name="test_bad_{index}" time="1.0">'
+                f'<failure message="boom {index}&#10;assert False" /></testcase>',
+            ),
+        )
+    text = ci_summary.render(ci_summary.collect(tmp_path))
+    assert "**判定：❌ 3 个套件失败" in text
+    assert text.count("| ❌ |") == 3
+    for index, name in enumerate(_EXPECTED_FILES):
+        assert f"- `tests.bad::test_bad_{index}`（1.00s）：boom {index}（{name}）" in text
 
 
 def test_skip_reason_is_carried_into_summary(tmp_path: Path) -> None:
+    """skip 不算 pass，也不能隐形：表格计数 + 原因都要在 summary 里。"""
+    _write_all_passing(tmp_path)
     _write(
         tmp_path,
         "junit-cov.xml",
         _suite(
-            2, 0, 1, 345.8,
+            2,
+            0,
+            1,
+            345.8,
             '<testcase classname="tests.golden.test_x" name="test_a" time="0.1" />'
             '<testcase classname="tests.golden.test_x" name="test_smoke" time="0.0">'
             '<skipped message="覆盖率插桩放大耗时" />'
@@ -76,18 +119,58 @@ def test_skip_reason_is_carried_into_summary(tmp_path: Path) -> None:
     assert "| `junit-cov.xml` | 1 | 0 | 0 | 1 | 345.8s | ✅ |" in text
     assert "### 跳过项（非 pass）" in text
     assert "`tests.golden.test_x::test_smoke`：覆盖率插桩放大耗时" in text
+    assert "**判定：✅ 全部 3 个套件通过。**" in text, "有 skip 但无失败时仍算绿，但 skip 必须可见"
 
 
-def test_empty_directory_is_explicitly_not_green(tmp_path: Path) -> None:
+def test_bench_failure_is_visible_next_to_passing_smoke(tmp_path: Path) -> None:
+    """run #33 的形状：冒烟绿、slow bench 红——失败项要展开且不渲染双层 bullet。"""
+    _write_all_passing(tmp_path)
+    _write(
+        tmp_path,
+        "junit-bench.xml",
+        _suite(
+            1,
+            1,
+            0,
+            9.02,
+            '<testcase classname="tests.bench.test_perf" name="test_full_year_within_budget" time="9.02">'
+            '<failure message="全量穷举耗时 9.02s，超出预算 9.0s&#10;assert 9.02 &lt; 9.0" />'
+            "</testcase>",
+        ),
+    )
     text = ci_summary.render(ci_summary.collect(tmp_path))
+    assert "`junit-perf-smoke.xml`" in text and "✅" in text
+    assert "`junit-bench.xml`" in text and "❌" in text
+    assert (
+        "- `tests.bench.test_perf::test_full_year_within_budget`（9.02s）："
+        "全量穷举耗时 9.02s，超出预算 9.0s" in text
+    )
+    assert "- - " not in text, "明细自带 bullet 会渲染成双层列表"
+
+
+def test_corrupt_xml_is_a_visible_failure(tmp_path: Path) -> None:
+    """损坏的 junit 与缺失同等对待：一行 ❌，不能当作没跑过而略过。"""
+    _write_all_passing(tmp_path)
+    (tmp_path / "junit-bench.xml").write_text("<testsuites>", encoding="utf-8")
+    text = ci_summary.render(ci_summary.collect(tmp_path))
+    assert "`junit-bench.xml`" in text
+    assert "XML 损坏" in text
+    assert "❌" in text
+
+
+def test_no_records_at_all_is_explicitly_not_green(tmp_path: Path) -> None:
+    """关闭期望清单时（expected=None），空目录仍走「测试可能没跑」分支。"""
+    text = ci_summary.render(ci_summary.collect(tmp_path, expected=None))
     assert "未找到任何 junit 产物" in text
     assert "不是绿色证明" in text
     assert "| 套件 |" not in text
 
 
-def test_corrupt_xml_is_a_visible_failure(tmp_path: Path) -> None:
-    (tmp_path / "junit-broken.xml").write_text("<testsuites>", encoding="utf-8")
-    text = ci_summary.render(ci_summary.collect(tmp_path))
-    assert "`junit-broken.xml`" in text
-    assert "XML 损坏" in text
-    assert "❌" in text
+def test_expected_suites_match_ci_artifacts() -> None:
+    """EXPECTED_SUITES 不得与真实 CI 产物脱节：文件名必须在 workflow/Makefile 里。"""
+    sources = (
+        (_ROOT / "Makefile").read_text(encoding="utf-8")
+        + (_ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+    )
+    for suite, name in ci_summary.EXPECTED_SUITES.items():
+        assert name in sources, f"期望套件「{suite}」的产物 {name} 在 Makefile/ci.yml 中不存在，清单已漂移"

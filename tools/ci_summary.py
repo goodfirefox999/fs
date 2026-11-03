@@ -5,9 +5,10 @@
 但 Step Summary 只有 ``perf_smoke_seconds: 1.33``（冒烟通过），看 summary 的人
 得到的是「冒烟明明过了怎么还红」。失败项被埋在 log 里，等于没有汇总。
 
-做法：扫描目录下所有 junit 文件，逐个出「passed / failed / errors / skipped +
-耗时 + 判定」行，再把每个 failure/error 的用例名、耗时、首行消息列出来。
-没有 junit 产物时明确写「测试可能没跑」，不输出空白页。
+做法：按期望套件清单逐个核对（缺文件 = 一行 ❌「缺失」，不从表里消失），再扫描
+目录里其余 junit，逐个出「passed / failed / errors / skipped + 耗时 + 判定」行，
+最后把每个 failure/error 的用例名、耗时、首行消息列出来。没有 junit 产物时明确
+写「测试可能没跑」，不输出空白页。
 
 用法::
 
@@ -19,11 +20,21 @@
 from __future__ import annotations
 
 import argparse
-import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-__all__ = ["collect", "render"]
+__all__ = ["EXPECTED_SUITES", "collect", "render"]
+
+# 期望套件清单 = CI 必须产出的 junit（cov 与 perf-smoke 来自 Makefile，bench 来自
+# ci.yml）。只靠 glob 扫目录有个致命盲区：bench 步骤提前挂掉时 junit-bench.xml
+# 根本不存在，它就会从汇总表里消失，整页看起来全绿——缺文件必须显式成 ❌ 行。
+# 改动 CI 产物文件名时同步改这里（tests/unit/test_ci_summary.py 会对照 Makefile
+# 与 ci.yml 反查漂移）。
+EXPECTED_SUITES: dict[str, str] = {
+    "cov": "junit-cov.xml",
+    "bench": "junit-bench.xml",
+    "perf-smoke": "junit-perf-smoke.xml",
+}
 
 
 def _case_name(case: ET.Element) -> str:
@@ -87,8 +98,22 @@ def _suite(path: Path) -> dict:
     return record
 
 
-def collect(directory: Path) -> list[dict]:
-    return [_suite(path) for path in sorted(directory.glob("junit-*.xml"))]
+def collect(directory: Path, expected: dict[str, str] | None = EXPECTED_SUITES) -> list[dict]:
+    """按期望清单核对 junit 产物；缺失/多余都可见，不静默跳过。"""
+    found = {path.name: path for path in sorted(directory.glob("junit-*.xml"))}
+    records: list[dict] = []
+    for suite, name in (expected or {}).items():
+        if name in found:
+            records.append(_suite(found.pop(name)))
+        else:
+            records.append(
+                {
+                    "file": name,
+                    "error": f"缺失：预期套件「{suite}」未产出 junit（该步骤可能提前失败或未执行）",
+                }
+            )
+    records.extend(_suite(path) for path in found.values())
+    return records
 
 
 def render(records: list[dict]) -> str:
@@ -99,6 +124,21 @@ def render(records: list[dict]) -> str:
             "本页不是绿色证明，请先看 job log 的失败步骤。"
         )
         return "\n".join(lines)
+
+    missing = [record["file"] for record in records if record.get("error")]
+    failed = [record["file"] for record in records if not record.get("error") and not record["ok"]]
+    if missing or failed:
+        reasons: list[str] = []
+        if failed:
+            reasons.append(f"{len(failed)} 个套件失败（{'、'.join(f'`{name}`' for name in failed)}）")
+        if missing:
+            reasons.append(
+                f"{len(missing)} 个套件缺失或不可读（{'、'.join(f'`{name}`' for name in missing)}）"
+            )
+        lines.append(f"**判定：❌ {'；'.join(reasons)}——本页不是绿色证明。**")
+    else:
+        lines.append(f"**判定：✅ 全部 {len(records)} 个套件通过。**")
+    lines.append("")
 
     lines.append("| 套件 | passed | failed | errors | skipped | 耗时 | 判定 |")
     lines.append("|---|---|---|---|---|---|---|")

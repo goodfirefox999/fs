@@ -8,17 +8,22 @@
 
 run #33（commit `0537793`，9.0s 旧档）的红来自 slow bench 9.02s / 9.36s，
 但 Step Summary 只有 `perf_smoke_seconds: 1.33`（通过），读 summary 的人无法
-知道红在哪。新增 `tools/ci_summary.py`：扫描 `out/junit-*.xml`，输出套件表
-（passed/failed/errors/skipped/耗时/判定）并逐条展开失败用例的耗时与首行断言
+知道红在哪。新增 `tools/ci_summary.py`：按 `EXPECTED_SUITES`（cov / bench /
+perf-smoke）逐个核对 `out/junit-*.xml`，缺一个就输出 ❌「缺失」行——只靠 glob
+会让提前挂掉的 bench 从表里消失、整页误显全绿；其余产物照常列出。套件表
+（passed/failed/errors/skipped/耗时/判定）逐条展开失败用例的耗时与首行断言
 消息；没有产物时明确写「不是绿色证明」。slow bench 步骤同时落
 `out/junit-bench.xml`，workflow 末尾以 `if: always()` 写入 `$GITHUB_STEP_SUMMARY`。
-单测覆盖「冒烟绿 + bench 红同时可见」、skip 原因、空目录、XML 损坏四种形态。
+单测覆盖全通过、全失败、全缺失、删一个文件的部分缺失、skip 原因、XML 损坏，
+并反查清单与 Makefile / ci.yml 的产物名是否漂移。
 
 ### CI 性能档补上回归线口径
 
 `test_perf.py` 注释补记：13.0s 抓的回归线 = ADR-0014 本地 9.072s × 最坏 runner
 比值 2.88 ≈ CI 口径 26s；13.0s 低于回归线、高于正常波动上界 9.36s。守卫测试
-同步锚定「预算 < 回归线 70%」。
+同步锚定「预算 < 回归线 70%」。26s 与 9.36s 都是静态采样值：注释明确 runner
+比值变化（尤其变小，如 2.0× → 真实回归线 18.1s 而守卫上界仍 18.2s）时必须
+连同守卫断言一起重算，不能只改预算。
 
 ### 登记：CI slow bench 应改相对门禁
 
