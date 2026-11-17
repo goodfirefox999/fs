@@ -1,0 +1,57 @@
+# 龙行天下风水论坛采集系统配置 v2.0
+# 文档依据: AI 编程 Agent 工作指令 v2（风水择日区 12 版主主题帖采集）
+# v1 的解析与抽取规则继续有效；v2 扩展发现架构与采集范围
+
+target:
+  base_url: "https://www.ok2009ok.com"
+  mirror_url: "http://www.ok88ok88.com"
+  # 风水择日区 7 版块（v2 §1.4，fid=10 起名改名已排除）
+  boards: [58, 5, 2, 50, 24, 51, 55]
+  # 深采优先级：峦头欣赏/卫星图片图片密度最高应优先，fid=9 语料库最后
+  crawl_order: [24, 51, 58, 5, 2, 50, 55, 9]
+  # 可选语料源（资料区，古籍汇编，非案例验证集）
+  corpus_boards: [9]
+  # 12 位版主（v2 §1.5；uid 从列表页被动累积，灵珠子已知=1）
+  moderators: ["灵珠子", "fuxingzhiyi", "阿难", "崇山", "玉鉴金钟",
+               "易海小舟", "万山前行", "快乐先生", "易人", "河洛",
+               "岑溪乙哥", "我想学风水"]
+  known_uids: {灵珠子: 1}
+  # 深采过滤器（v2 §1.2(2)）：无图帖仅入全站索引、不深采正文（fid=9 语料库不受此限）
+  require_image: true
+  # 完整性下限（v1 遗产）：灵珠子精华搜索应 ≥74；发现报告记录 discrepancy，不静默
+  digest_search_expected: {灵珠子: 74}
+  expected_min_threads: 74
+
+rate_limit:
+  min_interval_seconds: 2.0
+  jitter_ratio: 0.15
+  max_concurrent_images: 3
+  retry_attempts: 3
+  retry_backoff_seconds: [5, 15, 45]
+  consecutive_5xx_pause_threshold: 5
+  pause_seconds: 600
+  # 跨进程共享令牌桶：图片下载与正文采集并行时，合计仍 ≤0.5 req/s（§2.1 全站一桶）
+  shared_bucket_file: "data/.rate_bucket"
+
+authorization:
+  # robots.txt: Disallow: /attachment/；read.php/thread.php/search.php 未被禁止
+  text_crawl_approved: true
+  # 2026-11-01 委托人在指令中明确授权开启（"把 config.yaml 的 image_download_approved 改为
+  # true，跑 images 子命令即可补齐 M6"）。u.php 登录墙仍然禁止绕过。
+  image_download_approved: true
+
+http:
+  user_agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+  timeout_seconds: 30
+  ca_bundle: "/etc/ssl/cert.pem"
+
+paths:
+  data_dir: "data"
+  raw_dir: "data/raw"
+  images_dir: "data/images"
+  db_path: "data/fs.sqlite"
+  manifest_csv: "data/tid_manifest.csv"
+  report_path: "data/collection_report.md"
+  logs_dir: "logs"
+
+license_note: "个人研究用途，不公开分发、不再传播、不用于商业训练。原文原图版权归原作者（论坛各原作者）所有。"
