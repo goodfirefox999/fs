@@ -1031,3 +1031,33 @@ facts 不得出现 grade/score/severity 等字段、规则 severity 不得取五
 
 **关联**：ADR-0013（裁决优先级）、`core-eval/src/core_eval/arbitration.py`、
 `docs/signoff-2026-11-04.md` §5。
+
+---
+
+## Q-031 二十四山边界点（±7.5°+15k）归属：归前山还是归后山（2026-11-18 新增）
+
+**发现方式**：建立双端确定性底座对拍（`tools/parity_snapshot.py` 生成 Python 基准，
+`fengshui-mp/tests/parity-mountain.test.ts` 逐点比对）时发现 3600 个采样点中有 **12 个漂移**，
+全部落在山界点：7.5° / 37.5° / 67.5° / … / 337.5°。
+
+**两端现状**：
+
+- Python `core_symbol.mountain.mountain_of_azimuth`：按 `(deg + 7.5) // 15` 取整，
+  **边界归前山**（7.5° → 子）；
+- TS `core/constants/shan24.ts resolveMountain`：边界归后山（7.5° → 癸）。
+
+**影响**：非边界的 3588 点完全一致，说明主体映射正确；但骑线判定是风水规则里的
+关键语义（小空亡/兼向），边界归属不同会导致两端对同一线度给出不同山名。
+这不是实现 bug，而是**从未被书面裁定的口径分歧**。
+
+**待人类裁定**：
+
+1. 边界点统一归前山（改 TS）还是统一归后山（改 Python）？
+2. 或者两端都保留各自口径，但把 7.5° 整点显式标为「界」而非任何一山？
+   该方案与「骑线预警」语义最贴合，但需改两端类型与 UI。
+
+**裁定前纪律**：`tests/parity-mountain.test.ts` 把这 12 点登记为已知分歧（不判失败），
+非边界点 100% 一致仍强制通过。**不得由 agent 擅自改任何一端。**
+
+**关联**：`docs/ts-parity.md` §3；`fengshui-collector/src/extract_bearing.py`
+`degree_to_shan()` 同样采用 `(deg+7.5)%360//15`（归前山），若裁定改口径需同步。

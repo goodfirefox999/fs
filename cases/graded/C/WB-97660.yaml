@@ -1,0 +1,36 @@
+case_id: WB-97660
+title: "亲戚将用建祖厅日课大家参考"
+grade: C
+source:
+  snapshot_path: "../../../../data/cases/forum_scrape/samples/tid_97660.html"
+  url: "https://web.archive.org/web/20171116054225id_/http://www.ok2009ok.com/read.php?tid=97660&page=e&fpage=1"
+  collected_at: "2026-11-18"
+  license_note: "个人研究用途，不公开分发。原文版权归论坛原作者；来源为 Internet Archive 机会性快照。"
+input:
+  course: "2017-05-24T20:06:00+08:00"
+  azimuth_deg: 300.0
+  task_kind: 勘察记录
+  lat: 0.0
+  lon: 0.0
+  nodes: []
+  strictness: normal
+  person_year_zhi: null
+  person_name: null
+  fenjin: null
+params_assumed:
+  - "坐向取自原文「坐戌向辰兼乾巽」，按「戌」山中心度 300° 换算，非实测罗盘读数。"
+  - 经纬度未知（原文仅文字地名），lat/lon 置 0，不参与真太阳时计算。
+  - 事主生肖与日课四柱缺失，相主与大煞类规则不得据此判定。
+  - 来源为 Wayback 机会性快照，不代表原帖全量；仅作通道验证，不进回归集。
+author_claim:
+  raw: |
+    亲戚将用建祖厅日课大家参考
+    原文坐向描述：坐戌向辰兼乾巽
+    峦头术语计数：{"玄武": 1, "白虎": 1, "朱雀": 1, "青龙": 1}
+    地名线索：风山、戌山
+  verdict: null
+  notes: 作者未给单一吉凶结论；术语计数仅作作者关注点的客观记录。
+expected: {}
+notes: |
+  本案例由 tools/export_cases.py 自动生成，用途是验证「论坛素材 → zeri Case」通道。
+  等级 C：原文快照为机会性抓取，输入不完整；任何规则判定结果都不得当真值。
