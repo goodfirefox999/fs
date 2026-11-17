@@ -106,3 +106,36 @@ class TestNoFloatLiterals:
     def test_real_ruleset_is_clean(self) -> None:
         """真实规则库必须全绿——这是"禁止新增浮点条件"的实际门禁。"""
         assert _check_no_float_literals(default_registry()) == []
+
+
+class TestDataIntegrityLintGroup:
+    """`data_integrity: broken` 必须进 lint 机器可读组（修正前命中不得作证据）。"""
+
+    def test_real_ruleset_lists_broken_data(self) -> None:
+        from app_zeri.cli import _lint_groups
+
+        assert _lint_groups(default_registry())["data_integrity_broken"] == ["DG-SANXING-001"]
+
+    def test_group_follows_rule_field(self) -> None:
+        """反证：组不是硬编码名单，跟着规则字段走；ok 不报。"""
+        from app_zeri.cli import _lint_groups
+
+        citation = SimpleNamespace(has_quote=False, verified_by=None)
+        broken = SimpleNamespace(
+            rule_id="X-BAD-001", status="待考证", citation=citation,
+            raw={"data_integrity": "broken"},
+        )
+        clean = SimpleNamespace(
+            rule_id="X-OK-001", status="待考证", citation=citation,
+            raw={"data_integrity": "ok"},
+        )
+        rs = SimpleNamespace(
+            cap_applied_ids=set(),
+            by_id={"X-BAD-001": broken},
+            rules=[broken, clean],
+        )
+        reg = SimpleNamespace(
+            ruleset=rs,
+            required_rules=SimpleNamespace(all_rule_ids=lambda: []),
+        )
+        assert _lint_groups(reg)["data_integrity_broken"] == ["X-BAD-001"]

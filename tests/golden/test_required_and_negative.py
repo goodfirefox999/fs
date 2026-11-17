@@ -259,11 +259,32 @@ class TestRequiredSetMeta:
             assert rule.school not in ("doushou", "xuankong")
 
     def test_person_dependent_only_when_person_provided(self, registry) -> None:
+        """person_dependent 机制保留：未提供命主时不得进入必需集。
+
+        2026-11-04（Q-028）：日冲命/年命三煞均为 C 级（出处未定位），
+        ``person_dependent`` 暂时清空，两种调用结果相同。机制本身仍须生效，
+        因此下面用合成配置直接验证过滤路径——补证恢复后此断言自然加强。
+        """
         without = registry.required_for("修造", person_provided=False)
         with_person = registry.required_for("修造", person_provided=True)
-        assert len(with_person) > len(without)
-        assert "PUB-CHONGMING-001" in with_person
-        assert "PUB-CHONGMING-001" not in without
+        if registry.required_rules.person_dependent:
+            assert len(with_person) > len(without)
+        else:
+            assert with_person == without, (
+                "person_dependent 为空时，是否提供命主不得改变必需集；"
+                "非空时 with_person 必须严格更大"
+            )
+
+        from core_rule.policy import RequiredRuleSet
+
+        probe = RequiredRuleSet(
+            core=("PUB-SILI-001",),
+            person_dependent=("PUB-CHONGMING-001",),
+            criteria=registry.required_rules.criteria,
+        )
+        probe_reg = dc_replace(registry, required_rules=probe)
+        assert "PUB-CHONGMING-001" not in probe_reg.required_for("修造", person_provided=False)
+        assert "PUB-CHONGMING-001" in probe_reg.required_for("修造", person_provided=True)
 
     def test_task_overrides_differ(self, registry) -> None:
         """嫁娶不涉坐山，必需集必须比修造窄（12 类共用同一组是错的）。"""
@@ -273,7 +294,7 @@ class TestRequiredSetMeta:
         assert "PUB-SANSHA-001" not in marry
 
     def test_all_unverified_blocks_publishable(self, golden_ctx, registry) -> None:
-        """当前状态：10 条必需规则全待考证 → 全部阻塞（安全底线语义）。"""
+        """当前状态：必需集 4 条 A 级规则 quote 未录 → 全部阻塞（安全底线语义）。"""
         ev = evaluate(golden_ctx, registry, EvalConfig(task_kind="修造", strictness="normal"))
         assert len(ev.required_blockers) == len(ev.required_rule_ids)
         assert ev.publishable is False
@@ -309,7 +330,7 @@ class TestRequiredSetMeta:
 
     def test_synthetic_verified_rule_unlocks_blocker(self, golden_ctx, registry) -> None:
         """模拟"补齐原文"：把一条待考证必需规则替换为已考证版本 → 阻塞消失。"""
-        rid = "PUB-SUIPO-001"
+        rid = "PUB-SANSHA-001"
         original = registry.ruleset.by_id[rid]
         verified = dc_replace(
             original,
@@ -347,10 +368,10 @@ class TestAdr0013SourceAudit:
         problems = _check_required_set(reg)
         assert any("required_set_controversial" in p for p in problems), problems
 
-    def test_xiuzao_required_set_eight_rules(self, registry) -> None:
-        """修造必需集 10 → 8（移出三煞占向、太岁占山）。"""
+    def test_xiuzao_required_set_four_rules(self, registry) -> None:
+        """修造必需集 8 → 4（2026-11-04 证据分级：仅收 A 级）。"""
         build = registry.required_for("修造")
-        assert len(build) == 8, build
+        assert len(build) == 4, build
         for rid in self.BANNED:
             assert rid not in build
 
@@ -434,19 +455,19 @@ class TestAdr0014EvidenceCap:
         """T6：待考证+禁用 → cap 为慎用、只渲染不计入；双向验证渲染层仍生成文案。"""
         from tests.conftest import deep_merge
 
-        ctx = deep_merge(golden_ctx, {"facts": {"wuhuang": {"year": {"hit_mountain": True}}}})
+        ctx = deep_merge(golden_ctx, {"facts": {"yuepo": {"hit_mountain": True}}})
         ev = evaluate(ctx, registry, EvalConfig(task_kind="修造", strictness="strict", allow_unverified=True))
-        hits = self._hits(ev, "demo_hits", "PUB-WUHUANG-001")
+        hits = self._hits(ev, "demo_hits", "PUB-YUEPO-001")
         assert hits, "演示命中应入 demo_hits 桶（渲染恒开）"
         j = hits[0]
         assert j.source_status == "unverified" and j.doubt is False
         assert j.declared_severity == "禁用" and j.severity == "慎用", "cap：待考证的禁用按慎用生效"
-        assert not self._hits(ev, "vetoes", "PUB-WUHUANG-001")
-        assert not self._hits(ev, "cautions", "PUB-WUHUANG-001")
+        assert not self._hits(ev, "vetoes", "PUB-YUEPO-001")
+        assert not self._hits(ev, "cautions", "PUB-YUEPO-001")
         from core_rule.severity_cap import cap_warning
 
-        assert cap_warning(j and registry.ruleset.by_id["PUB-WUHUANG-001"]) is not None
-        assert "未考证，无引文可核" in (cap_warning(registry.ruleset.by_id["PUB-WUHUANG-001"]) or "")
+        assert cap_warning(j and registry.ruleset.by_id["PUB-YUEPO-001"]) is not None
+        assert "未考证，无引文可核" in (cap_warning(registry.ruleset.by_id["PUB-YUEPO-001"]) or "")
         from app_zeri.verifier import VerifyResult
         from core_eval import detect_structure
 
@@ -455,7 +476,7 @@ class TestAdr0014EvidenceCap:
                          structure=detect_structure(zhis=["未", "未", "卯", "未"], gans=["丁", "丁", "辛", "乙"])),
             registry=registry,
         )
-        assert "声明/生效严重度差异" in md and "PUB-WUHUANG-001" in md, "审计链双显示（渲染层）"
+        assert "声明/生效严重度差异" in md and "PUB-YUEPO-001" in md, "审计链双显示（渲染层）"
 
     def test_controversial_hit_changes_nothing(self, golden_ctx, registry) -> None:
         """T7+T12+T17：甲案不变式（单元级）——存疑命中不改 tier/state/publishable/blockers。"""
@@ -683,7 +704,8 @@ class TestAdr0014EvidenceCap:
         assert proc.returncode == 0, proc.stdout[-800:]
         groups: dict[str, list] = {}
         for line in proc.stdout.splitlines():
-            for name in ("cap_applied", "unverified_progress", "quote_unsigned", "coverage_gaps"):
+            for name in ("cap_applied", "unverified_progress", "quote_unsigned",
+                         "data_integrity_broken", "coverage_gaps"):
                 if line.startswith(name + ":"):
                     groups[name] = _json.loads(line.split(":", 1)[1])
         assert set(groups.get("cap_applied", [])) == {
@@ -691,7 +713,20 @@ class TestAdr0014EvidenceCap:
             "PUB-SANSHA-002", "PUB-SIJUE-001", "PUB-SILI-001", "PUB-SUIPO-001",
             "PUB-WUHUANG-001", "PUB-YUEPO-001", "DG-JINSHEN-001", "DG-DASHA-001",
         }, groups.get("cap_applied")
-        assert set(groups.get("quote_unsigned", [])) == {"PUB-SANSHA-003", "PUB-TAISUI-001"}
+        assert set(groups.get("quote_unsigned", [])) == {
+            "PUB-SANSHA-003", "PUB-TAISUI-001",
+            # 2026-11-03 卷五义例四规则已按浙图藏四库影印逐字补 quote，但尚无人类签名，
+            # 仍为待考证（quote 已填 + verified_by 空 → 正好落入本组，是预期状态不是回归）
+            "PUB-TIANDE-001", "PUB-YUEDE-001", "PUB-YUEDE-HE-001", "PUB-TIANSHE-001",
+            # 2026-11-04 四离四绝按卷十原文补 quote（影印叶次待补），签名仍待师傅
+            "PUB-SILI-001", "PUB-SIJUE-001",
+            # 六合同：卷六影印（06056507.cn 叶五十三）已逐字核，签名待师傅
+            "SH-LIUHE-001",
+        }, groups.get("quote_unsigned")
+        # 查表数据与起例不符的规则（2026-11-03）：修正前命中不得作为证据
+        assert set(groups.get("data_integrity_broken", [])) == {
+            "DG-SANXING-001",
+        }, groups.get("data_integrity_broken")
         # cap_applied（全库 scope）⊇ unverified_progress（必需集 scope）——DG 规则入 cap 但不在修造必需集
         assert set(groups.get("unverified_progress", [])) < set(groups.get("cap_applied", [])), (
             "unverified_progress 必须是 cap_applied 的真子集（DG 规则入 cap 但不在修造必需集）"
@@ -1029,14 +1064,14 @@ class TestAdr0014EvidenceCap:
                    for res in ev_a.per_school.values() for j in res.unknowns), (
             "非必需 unknown 仍必须出现在 unknowns 桶（可见性）"
         )
-        # 场景 B：必需集含一条 unknown（把 YUEPO 改回待考证）→ publishable=False
-        mixed = [r for r in verified_rules if r.rule_id != "PUB-YUEPO-001"] + [
-            registry.ruleset.by_id["PUB-YUEPO-001"]
+        # 场景 B：必需集含一条 unknown（把 PUB-SILI-001 改回待考证）→ publishable=False
+        mixed = [r for r in verified_rules if r.rule_id != "PUB-SILI-001"] + [
+            registry.ruleset.by_id["PUB-SILI-001"]
         ]
         reg_b = _registry_with(registry, *mixed)
         ev_b = evaluate(golden_ctx, reg_b, EvalConfig(task_kind="修造", strictness="normal"))
         assert ev_b.publishable is False, "必需规则 unknown 必须阻塞 publishable"
-        assert any(b["rule_id"] == "PUB-YUEPO-001" for b in ev_b.required_blockers)
+        assert any(b["rule_id"] == "PUB-SILI-001" for b in ev_b.required_blockers)
 
     def test_evaluable_false_required_admission(self, registry) -> None:
         """产物二第 3 小点：evaluable=false 规则进必需集 → lint 拦截（准入新条件）。"""

@@ -4,10 +4,18 @@
 
 排序键（字典序，全部"越小越好"）
 ------------------------------
-``(tier_rank, hard_fail_count, strong_avoid_count, conflict_count, unknown_count, -positive_count, candidate)``
+``(tier_rank, consensus_direction, voter_grade, -favorable_votes,
+conflict_count, hard_fail_count, strong_avoid_count, unknown_count,
+-positive_count, candidate)``
 
-- ``tier_rank``：REJECTED > NEEDS_REVIEW > ACCEPTABLE > PREFERRED（REJECTED 排最后）
-- ``positive_count`` 是**整数计数**（正向命中条数），不是分值。
+- ``tier_rank``：REJECTED > NEEDS_REVIEW > ACCEPTABLE > PREFERRED（REJECTED 排最后），
+  承担「硬闸门是否通过」这一维；
+- ``consensus_direction``：POSITIVE_STRONG(0) < POSITIVE_CONFLICTED(1) <
+  MIXED/NEUTRAL(2) < NEGATIVE(3)——先看方向，再看票数；
+- ``voter_grade``：全 A(0) < 含 disputed(1) < 含 B/C/未登记(2) < 无票(3)；
+- ``-favorable_votes``：同向派数（整数计数，多者优先）；
+- ``conflict_count``：冲突数，少者优先；
+- 其余坏计数与 ``-positive_count`` 为既有回退项，不做任何加权求和。
 
 为什么末位是计数而不是分均（ADR-0015）
 --------------------------------------
@@ -44,13 +52,58 @@ TIER_RANK: dict[str, int] = {
 }
 
 
+def _consensus_detail(ev: Evaluation) -> dict:
+    # 测试替身（SimpleNamespace）可能没有 manifest；缺省按"无共识明细"处理，
+    # 排序退化为既有回退项，而不是让整个排序崩溃。
+    manifest = getattr(ev, "manifest", None) or {}
+    fso = manifest.get("five_school_output") or {}
+    detail = fso.get("_consensus_detail")
+    return detail if isinstance(detail, dict) else {}
+
+
+def _consensus_direction_rank(ev: Evaluation) -> int:
+    """POSITIVE_STRONG(0) / POSITIVE_CONFLICTED(1) / MIXED(2) / NEGATIVE(3)。"""
+    detail = _consensus_detail(ev)
+    consensus = detail.get("consensus")
+    votes = detail.get("votes") or {}
+    has_unfavorable = bool(votes.get("unfavorable"))
+    if consensus == "favorable":
+        return 1 if has_unfavorable else 0
+    if consensus == "unfavorable":
+        return 3
+    return 2
+
+
+def _voter_grade_rank(ev: Evaluation) -> int:
+    """全 A(0) < 含 disputed(1) < 含 B/C/未登记(2) < 无票(3)。"""
+    detail = _consensus_detail(ev)
+    voters = detail.get("voters") or []
+    if not voters:
+        return 3
+    grades = detail.get("voter_evidence_grades") or {}
+    flat = [g for name in voters for g in (grades.get(name) or ["unrecorded"])]
+    if flat and all(g == "A" for g in flat):
+        return 0
+    if "disputed" in flat:
+        return 1
+    return 2
+
+
 def sort_key(ev: Evaluation) -> tuple:
     v = ev.vectors
+    detail = _consensus_detail(ev)
+    favorable = (detail.get("votes") or {}).get("favorable") or []
     return (
+        # ① 硬闸门与分层（REJECTED 排最后）
         TIER_RANK.get(ev.tier, 9),
+        # ② 共识方向；③ 投票证据等级；④ 同向派数；⑤ 冲突数
+        _consensus_direction_rank(ev),
+        _voter_grade_rank(ev),
+        -len(favorable),
+        v.get("conflict_count", 0),
+        # 既有回退项：坏计数越少越好
         v.get("hard_fail_count", 0),
         v.get("strong_avoid_count", 0),
-        v.get("conflict_count", 0),
         v.get("unknown_count", 0),
         # 整数计数：正向命中条数。**不是**分值的聚合（ADR-0015 / 禁聚合总分 lint）
         -v.get("positive_count", 0),

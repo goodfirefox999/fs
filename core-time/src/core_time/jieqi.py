@@ -3,7 +3,8 @@
 节气定义：太阳视黄经每 15° 一个节气，共 24 个。
 其中"节"（12 个）用于月柱换月，"气"（12 个，含中气）用于农历置闰。
 
-精度：见 ``ephemeris``，节气时刻误差 < 2 分钟（实测与权威历书差 15 s 量级）。
+精度：见 ``ephemeris``。Skyfield/DE440s 路径的节气时刻 TT 误差由求解器
+控制（< 0.01 s）；无星历时的 VSOP87 后备路径与 DE440s 相差约 7 s（2026 实测）。
 """
 
 from __future__ import annotations
@@ -12,18 +13,24 @@ import math
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from functools import lru_cache
-from typing import Literal
+from typing import Any, Literal
 from zoneinfo import ZoneInfo
 
 from .ephemeris import (
     datetime_from_julian_day,
+    delta_t_from_jd_ut,
+    jd_tt_from_jd_ut,
     julian_day_from_datetime,
+    resolved_backend,
     solve_solar_longitude,
+    solar_longitude_deg,
 )
 
 __all__ = [
     "SOLAR_TERMS",
     "SolarTerm",
+    "JIE_BOUNDARY_WINDOW_S",
+    "jie_boundary_risk",
     "terms_of_year",
     "terms_between",
     "jie_before",
@@ -84,7 +91,11 @@ JIE_TO_MONTH_BRANCH: dict[str, int] = {
 
 @dataclass(frozen=True)
 class SolarTerm:
-    """一个节气时刻。``jd_ut`` 为 UT 儒略日，``utc``/``local`` 为双份时刻。"""
+    """一个节气时刻。
+
+    ``jd_ut`` 为 UTC 儒略日，``jd_tt`` 为 TT 儒略日；``utc``/``local`` 为双份时刻。
+    ``backend`` 记录计算所用星历，``delta_t_s`` 为求解时的 TT−UT1（秒）。
+    """
 
     name: str
     longitude: int
@@ -92,17 +103,28 @@ class SolarTerm:
     jd_ut: float
     utc: datetime
     local: datetime
+    jd_tt: float | None = None
+    backend: str = "vsop87"
+    delta_t_s: float | None = None
 
     @property
     def local_date(self) -> "datetime.date":  # noqa: F821 - 仅作类型标注
         return self.local.date()
 
 
-def _term_time(name: str, longitude: int, year: int, tz: ZoneInfo) -> SolarTerm:
+def _term_time(name: str, longitude: int, year: int, tz: ZoneInfo, backend: str) -> SolarTerm:
     month, day = next((m, d) for n, _, _, m, d in SOLAR_TERMS if n == name)
     guess = datetime(year, month, day, 12, tzinfo=timezone.utc)
-    jd_ut = solve_solar_longitude(longitude, julian_day_from_datetime(guess))
-    utc = datetime_from_julian_day(jd_ut)
+    guess_jd = julian_day_from_datetime(guess)
+    if backend == "skyfield":
+        from .skyfield_ephemeris import solve_term_time
+
+        jd_ut, jd_tt, utc, dt_s = solve_term_time(longitude, jd_tt_from_jd_ut(guess_jd))
+    else:
+        jd_ut = solve_solar_longitude(longitude, guess_jd)
+        jd_tt = jd_tt_from_jd_ut(jd_ut)
+        utc = datetime_from_julian_day(jd_ut)
+        dt_s = delta_t_from_jd_ut(jd_ut)
     kind: TermKind = next(k for n, _, k, _, _ in SOLAR_TERMS if n == name)
     return SolarTerm(
         name=name,
@@ -111,22 +133,31 @@ def _term_time(name: str, longitude: int, year: int, tz: ZoneInfo) -> SolarTerm:
         jd_ut=jd_ut,
         utc=utc,
         local=utc.astimezone(tz),
+        jd_tt=jd_tt,
+        backend=backend,
+        delta_t_s=dt_s,
     )
 
 
 # C19-exempt: 单一不可变参数（进程常量数据/日历换算），键由解释器按参数构造，无复合串味面
 @lru_cache(maxsize=512)
-def terms_of_year(year: int, tz_name: str = "Asia/Shanghai") -> tuple[SolarTerm, ...]:
+def terms_of_year(
+    year: int,
+    tz_name: str = "Asia/Shanghai",
+    backend: str | None = None,
+) -> tuple[SolarTerm, ...]:
     """返回 ``year`` 公历年内（本地时区）的全部 24 个节气，按时刻升序。
 
-    结果按 (year, tz) 缓存；纯函数语义，缓存不影响可复现性。
+    ``backend`` 为 None 时用 ``resolved_backend()``；显式传 ``vsop87``/``skyfield``
+    仅供对拍与测试。结果按 (year, tz, backend) 缓存；纯函数语义，缓存不影响可复现性。
     """
+    backend = backend or resolved_backend()
     tz = ZoneInfo(tz_name)
     terms: list[SolarTerm] = []
     for name, lon, _, _, _ in SOLAR_TERMS:
         # 小寒/大寒落在 1 月，其余按公历年内锚点求解，跨年由锚点自然处理
         for candidate_year in (year, year - 1, year + 1):
-            term = _term_time(name, lon, candidate_year, tz)
+            term = _term_time(name, lon, candidate_year, tz, backend)
             if term.local.year == year:
                 terms.append(term)
                 break
@@ -168,6 +199,61 @@ def month_branch_index(dt: datetime, tz_name: str = "Asia/Shanghai") -> int:
     return JIE_TO_MONTH_BRANCH[jie_before(dt, tz_name).name]
 
 
+#: 秒级边界窗口。VSOP87 后备路径与 DE440s 相差约 7 s（2026 实测），15 s 留 2 倍余量。
+JIE_BOUNDARY_WINDOW_S = 15.0
+
+
+def jie_boundary_risk(
+    dt: datetime,
+    tz_name: str = "Asia/Shanghai",
+    backend: str | None = None,
+    *,
+    window_s: float = JIE_BOUNDARY_WINDOW_S,
+) -> dict[str, Any]:
+    """候选时刻距「节」交界是否近到月柱可能翻转（事实层，不做吉凶判断）。
+
+    ``second_precision_required=True`` 的条件：星历为降级后端（VSOP87，与
+    DE440s 相差约 7 s）**且**候选时刻距最近「节」不足 ``window_s`` 秒。
+    此时月柱在两种星历下可能不同，依赖该柱的判定不得当作已判定。
+    Skyfield/DE440s 路径不触发——亚秒级精度下 15 s 窗口没有意义。
+    """
+    if dt.tzinfo is None:
+        raise ValueError("jie_boundary_risk 需要带时区的时间")
+    backend = backend or resolved_backend()
+    if backend == "skyfield":
+        return {
+            "second_precision_required": False,
+            "second_precision_reason": None,
+            "nearest_jie": None,
+            "nearest_jie_at": None,
+            "distance_to_jie_s": None,
+            "boundary_window_s": window_s,
+        }
+    moments = [
+        term
+        for year in (dt.year - 1, dt.year, dt.year + 1)
+        for term in terms_of_year(year, tz_name)
+        if term.kind == "jie"
+    ]
+    nearest = min(moments, key=lambda t: abs((t.local - dt).total_seconds()))
+    distance = abs((nearest.local - dt).total_seconds())
+    required = distance < window_s
+    reason = (
+        f"星历降级（{backend}，与 DE440s 相差约 7 s），距「{nearest.name}」"
+        f"仅 {distance:.1f} s，月柱可能翻转"
+        if required
+        else None
+    )
+    return {
+        "second_precision_required": required,
+        "second_precision_reason": reason,
+        "nearest_jie": nearest.name,
+        "nearest_jie_at": nearest.local.isoformat(),
+        "distance_to_jie_s": round(distance, 3),
+        "boundary_window_s": window_s,
+    }
+
+
 def zhongqi_of_year(year: int, tz_name: str = "Asia/Shanghai") -> tuple[SolarTerm, ...]:
     """返回某公历年内的 12 个中气（用于农历置闰）。"""
     return tuple(t for t in terms_of_year(year, tz_name) if t.kind == "qi")
@@ -194,10 +280,8 @@ def _angle_diff(a: float, b: float) -> float:
 
 
 def solar_longitude_at(dt: datetime) -> float:  # 便利函数，避免上层直接依赖 ephemeris
-    """返回 ``dt``（任意时区）时刻的太阳视黄经。"""
-    from .ephemeris import apparent_solar_longitude, jd_tt_from_jd_ut
-
-    return apparent_solar_longitude(jd_tt_from_jd_ut(julian_day_from_datetime(dt)))
+    """返回 ``dt``（任意时区）时刻的太阳视黄经，按当前星历后端。"""
+    return solar_longitude_deg(jd_tt_from_jd_ut(julian_day_from_datetime(dt)))
 
 
 def next_term_after(dt: datetime, tz_name: str = "Asia/Shanghai") -> SolarTerm:

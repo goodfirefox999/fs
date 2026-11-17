@@ -1,0 +1,90 @@
+# 已撤回（2026-11-04）：本 patch 的前提「四离四绝原文只忌出行」经卷十·用事宜忌
+# 核实不成立。卷十铺注明写「止不忌祭祀解除沐浴……餘事皆忌」，按语「故诸事不宜」，
+# 安葬在「餘事皆忌」内。本文件仅作为「方案 A：显式偏离原文」的实现草稿保留，
+# 未获师傅师承口径前不得应用。裁定入口：docs/QUESTIONS.md Q-027（建议 C 维持安葬）。
+diff --git a/core-rule/config/required_rules.yaml b/core-rule/config/required_rules.yaml
+index 8a31646..083b895 100644
+--- a/core-rule/config/required_rules.yaml
++++ b/core-rule/config/required_rules.yaml
+@@ -41,8 +41,8 @@ default:
+     - PUB-WUHUANG-001     # 五黄占山（mountain）
+     - PUB-YUEPO-001       # 月破占山（mountain）
+     - PUB-CHONGSHAN-001   # 日冲山（day）
+-    - PUB-SILI-001        # 四离日（day）
+-    - PUB-SIJUE-001       # 四绝日（day）
++    # Q-027（待师傅裁定）：四离/四绝原典只引「忌出行征伐／忌出軍遠行」，
++    # 卷十一用事宜忌的安葬、破土、行幸遣使（出行同）忌列均未列 → 移出安葬必需集。
+   # 依赖命主：未提供 person.year_zhi 时不进必需集（避免永久 unknown）
+   person_dependent:
+     - PUB-CHONGMING-001   # 日冲命（person）
+@@ -76,6 +76,8 @@ overrides:
+       - PUB-YUEPO-001
+       - PUB-CHONGSHAN-001
+   出行:
++    # Q-027：四离/四绝按原文只忌出行，随出行事项进入必需集（仍待签名）。
++    add: [PUB-SILI-001, PUB-SIJUE-001]
+     remove: [PUB-SUIPO-001, PUB-SANSHA-001, PUB-SANSHA-002,
+              PUB-WUHUANG-001, PUB-YUEPO-001, PUB-CHONGSHAN-001]
+   签约:
+diff --git a/core-rule/rules/public/PUB-SIJUE-001.yaml b/core-rule/rules/public/PUB-SIJUE-001.yaml
+index 5d59607..af7e40b 100644
+--- a/core-rule/rules/public/PUB-SIJUE-001.yaml
++++ b/core-rule/rules/public/PUB-SIJUE-001.yaml
+@@ -12,7 +12,8 @@ severity: 禁用
+ target: day
+ verdict_type: gate
+ applies_to:
+-  task_kinds: []
++  task_kinds:
++  - 出行
+   node_kinds: []
+   strictness_min: normal
+ condition:
+@@ -38,4 +39,4 @@ tests:
+ - RT-PUB-SIJUE-001-MISS
+ explanation: 用事日为四绝日（四立前一日），按本规则判为禁用。
+ supersedes: null
+-notes: 待考证：取前一日还是当日；是否只忌出行。
++notes: 待考证：取前一日还是当日。2026-11-04 核四库本：卷六义例四（06056507.cn n149）李鼎祚只言「此日忌出軍遠行」；卷十一用事宜忌的安葬（n51）、破土（n50）、行幸遣使·出行同（n22）忌列均无四离四绝。Q-027 未裁前收窄为出行，并移出安葬必需集。
+diff --git a/core-rule/rules/public/PUB-SILI-001.yaml b/core-rule/rules/public/PUB-SILI-001.yaml
+index 847ab27..31f014a 100644
+--- a/core-rule/rules/public/PUB-SILI-001.yaml
++++ b/core-rule/rules/public/PUB-SILI-001.yaml
+@@ -12,7 +12,8 @@ severity: 禁用
+ target: day
+ verdict_type: gate
+ applies_to:
+-  task_kinds: []
++  task_kinds:
++  - 出行
+   node_kinds: []
+   strictness_min: normal
+ condition:
+@@ -38,4 +39,4 @@ tests:
+ - RT-PUB-SILI-001-MISS
+ explanation: 用事日为四离日（二分二至前一日），按本规则判为禁用。
+ supersedes: null
+-notes: 待考证：取前一日还是当日；是否只忌出行、不忌修造。
++notes: 待考证：取前一日还是当日。2026-11-04 核四库本：卷六义例四（06056507.cn n148–149）李鼎祚只言「此日忌出行征伐」；卷十一用事宜忌的安葬（n51）、破土（n50）、行幸遣使·出行同（n22）忌列均无四离四绝。Q-027 未裁前收窄为出行，并移出安葬必需集。
+diff --git a/tools/gen_rules.py b/tools/gen_rules.py
+index 7c9a7bf..9fd881a 100644
+--- a/tools/gen_rules.py
++++ b/tools/gen_rules.py
+@@ -181,13 +181,13 @@ RULES_SPEC: list[dict] = [
+     rule("PUB-SILI-001", "四离日", severity="禁用", hard_veto=True, target="day",
+          condition=fact("facts.sili_sijue.has_sili", "eq", True),
+          explanation="用事日为四离日（二分二至前一日），按本规则判为禁用。",
+-         notes="待考证：取前一日还是当日；是否只忌出行、不忌修造。",
+-         source=SANSHA),
++         notes="待考证：取前一日还是当日。2026-11-04 核四库本：卷六义例四（06056507.cn n148–149）李鼎祚只言「此日忌出行征伐」；卷十一用事宜忌的安葬（n51）、破土（n50）、行幸遣使·出行同（n22）忌列均无四离四绝。Q-027 未裁前收窄为出行，并移出安葬必需集。",
++         source=SANSHA, task_kinds=["出行"]),
+     rule("PUB-SIJUE-001", "四绝日", severity="禁用", hard_veto=True, target="day",
+          condition=fact("facts.sili_sijue.has_sijue", "eq", True),
+          explanation="用事日为四绝日（四立前一日），按本规则判为禁用。",
+-         notes="待考证：取前一日还是当日；是否只忌出行。",
+-         source=SANSHA),
++         notes="待考证：取前一日还是当日。2026-11-04 核四库本：卷六义例四（06056507.cn n149）李鼎祚只言「此日忌出軍遠行」；卷十一用事宜忌的安葬（n51）、破土（n50）、行幸遣使·出行同（n22）忌列均无四离四绝。Q-027 未裁前收窄为出行，并移出安葬必需集。",
++         source=SANSHA, task_kinds=["出行"]),
+     rule("PUB-YANGGONG-001", "杨公忌日", severity="慎用", hard_veto=False, target="day",
+          condition=fact("facts.yangongji.value", "exists"),
+          explanation="用事日可能为杨公忌日，但本系统未内置该表，需人工复核。",

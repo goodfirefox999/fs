@@ -12,38 +12,77 @@
       "unfavorable": []
     },
     "voters": [],
+    "voter_evidence_grades": {},
+    "conflicts": [],
     "non_voters": [
       {
         "school": "public",
         "layer": "reject",
-        "reason": "layer_reject"
+        "reason": "layer_reject",
+        "detail": "闸门层只做否决，不参与计票"
       },
       {
         "school": "zhengwuxing",
         "layer": "scoring",
-        "reason": "demo_only_not_voting"
+        "reason": "demo_only_not_voting",
+        "detail": "仅有未考证规则的演示命中，不构成票（有判断、无票权）"
       },
       {
         "school": "sanhe",
         "layer": "scoring",
-        "reason": "demo_only_not_voting"
+        "reason": "demo_only_not_voting",
+        "detail": "仅有未考证规则的演示命中，不构成票（有判断、无票权）"
       },
       {
         "school": "donggong",
         "layer": "scoring",
-        "reason": "demo_only_not_voting"
+        "reason": "demo_only_not_voting",
+        "detail": "仅有未考证规则的演示命中，不构成票（有判断、无票权）"
       },
       {
         "school": "xuankong_dagua",
         "layer": "scoring",
-        "reason": "demo_only_not_voting"
+        "reason": "demo_only_not_voting",
+        "detail": "仅有未考证规则的演示命中，不构成票（有判断、无票权）"
       },
       {
         "school": "tianxing",
         "layer": "scoring",
-        "reason": "no_verdict"
+        "reason": "no_verdict",
+        "detail": "本轮无任何规则形成判定（沉默派不进分母）"
       }
     ],
+    "undetermined": {
+      "required_total": 4,
+      "undetermined_required_count": 4,
+      "evidence_insufficient_count": 0,
+      "input_insufficient_count": 0,
+      "pending_ruling_count": 4,
+      "pending_verification_count": 0,
+      "not_applicable_count": 0,
+      "rules": [
+        {
+          "rule_id": "PUB-SANSHA-001",
+          "kind": "pending_ruling",
+          "reason": "待裁定 Q-002/Q-020"
+        },
+        {
+          "rule_id": "PUB-SANSHA-002",
+          "kind": "pending_ruling",
+          "reason": "待裁定 Q-002/Q-020"
+        },
+        {
+          "rule_id": "PUB-SILI-001",
+          "kind": "pending_ruling",
+          "reason": "待裁定 Q-027"
+        },
+        {
+          "rule_id": "PUB-SIJUE-001",
+          "kind": "pending_ruling",
+          "reason": "待裁定 Q-027"
+        }
+      ]
+    },
     "gate_veto_schools": [],
     "threshold": {
       "min_agree_num": 3,
@@ -51,6 +90,6 @@
       "description": "五派全部表态时，等价于旧口径\"三派及以上 favorable\"。"
     },
     "task_kind": "修造",
-    "convention": "favorable/voters >= min_agree_num/min_agree_den（整数交叉相乘）；闸门层与参考层不计票，沉默派不进分母"
+    "convention": "favorable/voters >= min_agree_num/min_agree_den（整数交叉相乘）；闸门层与参考层不计票，沉默派不进分母；共识比只反映已判定规则，未判定清单见 undetermined"
   }
 }

@@ -47,6 +47,48 @@ def test_valid_rule_loads(tmp_path: Path) -> None:
     assert rule.is_participating is False
 
 
+class TestNotApplicableDeclaration:
+    """「不适用」必须由规则显式声明，且条件与理由成对出现。"""
+
+    def test_valid_declaration_loads(self, tmp_path: Path) -> None:
+        rule = load_rule(
+            _write(
+                tmp_path,
+                not_applicable_when={"fact": "site.mountain", "op": "eq", "value": "乾"},
+                not_applicable_reason="四维山正针无地支",
+            )
+        )
+        assert rule.not_applicable_when == {
+            "fact": "site.mountain",
+            "op": "eq",
+            "value": "乾",
+        }
+        assert rule.not_applicable_reason == "四维山正针无地支"
+
+    def test_condition_without_reason_rejected(self, tmp_path: Path) -> None:
+        with pytest.raises(DSLValidationError, match="not_applicable_reason"):
+            load_rule(
+                _write(
+                    tmp_path,
+                    not_applicable_when={"fact": "site.mountain", "op": "eq", "value": "乾"},
+                )
+            )
+
+    def test_reason_without_condition_rejected(self, tmp_path: Path) -> None:
+        with pytest.raises(DSLValidationError, match="not_applicable_reason"):
+            load_rule(_write(tmp_path, not_applicable_reason="无条件的理由"))
+
+    def test_non_mapping_condition_rejected(self, tmp_path: Path) -> None:
+        with pytest.raises(DSLValidationError, match="not_applicable_when"):
+            load_rule(
+                _write(
+                    tmp_path,
+                    not_applicable_when=["site.mountain"],
+                    not_applicable_reason="类型错误",
+                )
+            )
+
+
 @pytest.mark.parametrize(
     "field",
     ["rule_id", "version", "school", "category", "status", "severity", "target",
@@ -124,6 +166,7 @@ def test_verified_with_full_citation_ok(tmp_path: Path) -> None:
         **BASE,
         "status": "已考证",
         "citation": {"source": "《协纪辨方书》", "quote": "某句原文", "quote_kind": "原文", "pian": "义例一", "verified_by": "考证者"},
+        "evidence": {"grade": "A", "source_tier": "primary_scan", "quote_verified": True},
     }
     path = tmp_path / "r.yaml"
     path.write_text(yaml.safe_dump(data, allow_unicode=True), encoding="utf-8")

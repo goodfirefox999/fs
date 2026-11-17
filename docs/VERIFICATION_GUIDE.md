@@ -133,3 +133,28 @@ oracle 算法差异的登记，供考证人复核；**禁止多数票仲裁**（
 
 `直引率 = 已签名原文 quote 的断言级规则数 / 断言级规则总数`——lint/报告持续亮牌；
 当前基线为 0（42 条断言级全部待考证/有争议），P0 考证的过程就是直引率爬升的过程。
+
+## 七、天文精度验证（2026-11-04）
+
+天文层不属于文献考证，但同样是「不得凭感觉」的验证对象。判据与证据见
+**ADR-0016**，本节只留可执行入口：
+
+| 项 | 判据 | 当前实测 |
+|---|---|---|
+| 节气 TT | 与 Swiss Ephemeris 官方数据差 < 0.1 秒 | 24×9 年最大 0.060 秒 |
+| 节气 UTC | 2000-2030 与 Swiss 官方输出差 < 1 秒 | 最大 0.060 秒 |
+| 均时差 | 与 Swiss `swe.time_equ` 差 < 1 秒 | 最大 0.43 秒 |
+| VSOP87 后备 | 必须显式 `backend=vsop87` + `precision=degraded` | 2026 最大约 7 秒 |
+
+```bash
+ZERI_EPHEMERIS_BACKEND=skyfield \
+  PYTHONPATH=core-rule/src:core-symbol/src:core-time/src:core-eval/src:app-zeri/src \
+  .venv/bin/python -m pytest tests/golden/test_ephemeris_precision.py -q
+```
+
+报告侧必须在 `manifest.ephemeris` 全字段回显 `backend / precision / ephemeris_file /
+valid_range / delta_t_s / fallback_reason`，并附「节」交界窗口字段
+（`second_precision_required / nearest_jie / distance_to_jie_s / boundary_window_s`）。
+`precision=degraded` 的报告不得作为签名或对外结论的依据；降级后端下候选距「节」
+不足 15 秒时，`second_precision_required=true`，引擎把所有非定义级命中降为
+「证据不足」并阻塞 `publishable`（已签规则也不得投票）。

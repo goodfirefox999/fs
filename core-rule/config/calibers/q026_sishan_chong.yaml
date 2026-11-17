@@ -1,0 +1,40 @@
+api_version: 1
+caliber_set: q026_sishan_chong
+description: 四维山（乾/坤/艮/巽）正针无地支时，日冲山如何判定（QUESTION Q-026）。
+default: undecided
+
+calibers:
+  undecided:
+    status: 有争议
+    description: 未裁定——保持「输入不足」，不得自行视为不忌
+    note: |
+      site.shan_jia_zhi 为空（四维山正针无地支），PUB-CHONGSHAN-001 判「输入不足」。
+      这是诚实状态：既不假装「不犯」，也不擅自判「不适用」。
+    requires:
+      - Q-026 师傅裁定（双山取支 / 四维不忌 / 另有取法）
+
+  not_taboo:
+    status: 待考证
+    description: 四维山不忌日冲山——相关规则标「不适用」，不阻塞 publishable
+    note: |
+      仅在师傅明确裁定「四维山不忌日冲山」后启用。
+      启用后 PUB-CHONGSHAN-001 在四维山案例中判「不适用」，而非「输入不足」；
+      规则本身仍是待考证，命中时照常只登记，不会因本口径获得投票权。
+    requires:
+      - Q-026 师傅裁定原文依据
+
+  dual_zhi:
+    status: 待考证
+    description: 双山取支（乾取戌亥、坤取未申、艮取丑寅、巽取辰巳）——需先改 facts 层
+    note: |
+      单值 site.shan_jia_zhi 无法表达两支；启用本口径前须先把山家事实扩为列表，
+      并重定义日冲山的命中条件（日支冲其中任一支）。当前引擎未实现，选了也不生效。
+    requires:
+      - Q-026 师傅裁定
+      - 山家事实由单支改为双支（core-symbol）
+
+  other:
+    status: 待考证
+    description: 另有取法——待补原文后再实现
+    requires:
+      - Q-026 师傅裁定原文

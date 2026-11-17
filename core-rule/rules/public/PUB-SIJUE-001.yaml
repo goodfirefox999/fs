@@ -20,22 +20,27 @@ condition:
   op: eq
   value: true
 score_weight: null
+evidence:
+  grade: A
+  source_tier: primary_scan
+  quote_verified: true
+  blocking_ruling: "Q-027"
 citation:
   kind: classic
   source: 《协纪辨方书》
-  edition: null
-  juan: null
-  pian: null
-  entry: null
-  quote_kind: null
-  quote: null
+  edition: 欽定四庫全書·子部七·術數類（影印本）
+  juan: 十
+  pian: 用事宜忌
+  entry: 四絕
+  quote_kind: 原文
+  quote: 止不忌祭祀解除沐浴……餘事皆忌
   url_or_path: null
   verified_by: null
   verified_at: null
-  confidence: 低
+  confidence: 中
 tests:
 - RT-PUB-SIJUE-001-HIT
 - RT-PUB-SIJUE-001-MISS
 explanation: 用事日为四绝日（四立前一日），按本规则判为禁用。
 supersedes: null
-notes: 待考证：取前一日还是当日；是否只忌出行。
+notes: 待考证：取前一日还是当日。2026-11-04 核四库本：卷十·用事宜忌铺注「止不忌祭祀解除沐浴……餘事皆忌」，按语「四离四绝……故诸事不宜」，安葬在「餘事皆忌」内；卷六义例四（06056507.cn n148–n149）李鼎祚「忌出軍遠行」是义例溯源，不是完整适用范围。卷十影印叶次待补。

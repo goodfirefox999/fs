@@ -10,6 +10,9 @@
 - 扫描域 = 当前启用派别（ZWX/DS/XK 默认关闭 → 不参与死规则判据）。
 - 命中定义 = 任一命中桶出现判定（vetoes/cautions/controversial/demo_hits/reference/
   positives/notes/structural；演示与仅登记均算——v1 用 matched 过滤把演示命中全数漏计，已修正）。
+  另计两类"可达"证据：``not_applicable``（规则显式裁定本类输入不适用，说明规则已进入评估）
+  与 ``unknown_reason=evidence_insufficient`` 的 unknown（条件已命中、被证据闸门拦下）。
+  其余 unknown（缺输入/口径）**不**算可达——否则死规则扫描会被"永远 unknown"整体失效。
 - 统计量：命中候选数/参与评估候选数，按（规则 × 年份）分组分别统计——
   年支类规则天然只在特定年命中，"全年零命中"不是死规则判据。
 - 判据：适用域内零命中 = 规则在其声明的全部适用 task_kind × 全部年份上均零命中。
@@ -41,7 +44,7 @@ for _p in ("core-time/src", "core-symbol/src", "core-rule/src", "core-eval/src",
 sys.path.insert(0, str(ROOT))
 
 from app_zeri.schemas import CourseSpec, PersonSpec, SiteSpec, TaskSpec, build_context  # noqa: E402
-from core_eval import EvalConfig, evaluate  # noqa: E402
+from core_eval import EvalConfig, UNKNOWN_EVIDENCE_INSUFFICIENT, evaluate  # noqa: E402
 from core_rule.registry import default_registry  # noqa: E402
 from core_time import CalendarConfig  # noqa: E402
 
@@ -212,6 +215,12 @@ def run_scan():
                 # （引擎尚无 reference 桶），扫描应退化为"该桶无命中"，而不是 AttributeError——
                 # 否则分片提交就无法独立检出。
                 for j in getattr(res, bucket, ()):
+                    stats[j.rule_id][year] += 1
+            # 可达性补证：不适用是显式裁定，证据不足说明条件已命中
+            for j in getattr(res, "not_applicable", ()):
+                stats[j.rule_id][year] += 1
+            for j in getattr(res, "unknowns", ()):
+                if getattr(j, "unknown_reason", None) == UNKNOWN_EVIDENCE_INSUFFICIENT:
                     stats[j.rule_id][year] += 1
 
     out = {}

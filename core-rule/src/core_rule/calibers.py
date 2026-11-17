@@ -42,6 +42,7 @@ __all__ = [
     "CALIBER_ZIBAI_FLY",
     "CALIBER_TIANDE_GUA",
     "CALIBER_JIANXIANG",
+    "CALIBER_Q026_SISHAN_CHONG",
 ]
 
 CALIBER_SANSHA = "sansha"
@@ -54,6 +55,8 @@ CALIBER_ZIBAI_FLY = "zibai_fly"
 CALIBER_TIANDE_GUA = "tiande_guaxiang"
 #: 兼向阈值（正针带半宽）：3.0°（正针 6°）或 4.5°（正针 9°）——数值口径，QUESTION Q-021
 CALIBER_JIANXIANG = "jianxiang"
+#: 四维山正针日冲山取法——QUESTION Q-026。默认 undecided = 保持「输入不足」
+CALIBER_Q026_SISHAN_CHONG = "q026_sishan_chong"
 
 DEFAULT_CALIBERS_DIR = Path(__file__).resolve().parents[2] / "config" / "calibers"
 

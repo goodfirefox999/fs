@@ -9,34 +9,35 @@ hard_veto: false
 severity: 可用
 target: day
 evaluable: true
+verdict_type: vote
 applies_to:
   task_kinds:
   - 安葬
-  - 修造
   - 嫁娶
   node_kinds: []
   strictness_min: normal
 condition:
-  fact: facts.structure.liuhe_pairs
-  op: exists
+  fact: facts.liuhe.is_day
+  op: eq
+  value: true
 score_weight: null
 citation:
   kind: classic
   source: 《协纪辨方书》
-  edition: null
-  juan: null
-  pian: 卷二·本原
+  edition: 欽定四庫全書·子部七·術數類（浙江大学图书馆藏影印本，Internet Archive 06056507.cn）
+  juan: 六
+  pian: 义例四·六合
   entry: 六合
-  quote_kind: null
-  quote: null
-  url_or_path: null
+  quote_kind: 原文
+  quote: 神樞經曰六合者日月合宿之辰也其日宜會賓客結婚姻立契券合交易○李鼎祚曰正月在亥逆行十二辰○考原曰六合者月建與月將相合也
+  url_or_path: https://archive.org/details/06056507.cn#page/n53
   verified_by: null
   verified_at: null
   book_authenticity: authentic
-  confidence: 低
+  confidence: 高
 tests:
 - RT-SH-LIUHE-001-HIT
 - RT-SH-LIUHE-001-MISS
-explanation: 日课地支与坐山/主命构成六合（子丑/寅亥/卯戌/辰酉/巳申/午未）。facts.structure.liuhe_pairs 由 core-symbol 产出。
+explanation: 用事日支值本月月建六合（正月在亥，逆行十二辰；如未月值午日），按本规则记为正向证据。
 supersedes: null
-notes: 六合加分逻辑需要判断"哪一对六合"以及"是与坐山还是与主命"，当前 DSL 只判存在性。
+notes: 2026-11-03 已对浙江大学图书馆藏四库本影印卷六叶五十三（Internet Archive 06056507.cn 第 n53 叶）逐字核对，原文见 citation.quote；尚缺人类签名，故 status 仍为待考证。本条曾以 facts.structure.liuhe_pairs 为条件，但 structure_facts 从不产出该键，规则恒降级「输入不足」；原引「卷二·本原」亦有误，六合实在卷六义例四。今按原文改为月建六合日，并显式声明偏离：原 explanation 所述「日与坐山/主命六合」不是本条所据原文，如师傅要保留该口径，应另立新规则。适用范围依卷十一用事宜忌收窄为安葬（「宜天徳月徳天徳合月徳合天赦天願六合鳴吠」）与嫁娶（「宜天徳月徳天徳合月徳合天赦天願三合天喜六合不將」）；卷十·六合「宜宴㑹結婚姻嫁娶進人口經絡醞釀立劵交易納財納畜安葬」，修倉庫仅限「与月恩四相时德併」，故不再泛化到修造。

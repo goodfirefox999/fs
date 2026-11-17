@@ -11,6 +11,9 @@ dependencies = ["pyyaml>=6.0"]
 [project.optional-dependencies]
 # 天星派真实星历（Moshier，无需数据文件）为可选依赖：未安装时相关 facts 降级 unknown。
 astro = ["pyswisseph>=2.10"]
+# 节气/太阳位置高精度后端：skyfield + JPL DE440s（星历文件不随包分发，见 core_time.skyfield_ephemeris）。
+# 未安装或星历缺失时自动回退 VSOP87，manifest 标注 ephemeris_backend=vsop87。
+high-precision = ["skyfield>=1.49"]
 # coverage 锁死：ratchet 地板取 floor(实测)，coverage 版本漂移会改变分支计数。
 # 7.17.0 是本地与 CI 共同验证的版本；升级需同时重跑 10 次 make cov 对比。
 dev = ["pytest>=8", "pytest-cov>=5", "coverage==7.17.0", "hypothesis>=6", "ruff>=0.5", "mypy>=1.10"]

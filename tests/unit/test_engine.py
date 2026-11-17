@@ -269,14 +269,17 @@ class TestStructureDetector:
 # 辅助：构造不同命中的 ctx
 # --------------------------------------------------------------------------- #
 def _with_veto(ctx: dict) -> dict:
-    """注入**断言级**否决命中（岁破占山，PUB-SUIPO-001，severity=禁用）。
+    """注入**断言级**否决命中（月破占山，PUB-YUEPO-001，severity=禁用）。
+
+    2026-11-04 起岁破为 B 级（参考层、永不投票），三煞 A 级但未签名
+    （证据不足、不投票）；演示否决路径改用仍属 C 级待考证的月破。
 
     注意：自刑（DEF-ZIXING-001）现在是**定义级**结构事实，只判"存疑"，
     不再产生 REJECTED —— 见 ADR-0007。
     """
     from tests.conftest import deep_merge
 
-    return deep_merge(ctx, {"facts": {"suipo": {"hit_mountain": True}}})
+    return deep_merge(ctx, {"facts": {"yuepo": {"hit_mountain": True}}})
 
 
 def _with_caution(ctx: dict) -> dict:

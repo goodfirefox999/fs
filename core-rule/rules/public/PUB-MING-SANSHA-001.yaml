@@ -36,6 +36,11 @@ condition:
     path: facts.sansha.year.mountains.0
     kind: sanhe
 score_weight: null
+evidence:
+  grade: C
+  source_tier: unlocated
+  quote_verified: false
+  blocking_ruling: null
 citation:
   kind: classic
   source: 《协纪辨方书》

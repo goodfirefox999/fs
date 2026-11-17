@@ -376,6 +376,12 @@ def cmd_rules_lint(args: argparse.Namespace) -> int:
     print(f"cap_applied: {json.dumps(groups['cap_applied'], ensure_ascii=False)}")
     print(f"unverified_progress: {json.dumps(groups['unverified_progress'], ensure_ascii=False)}")
     print(f"quote_unsigned: {json.dumps(groups['quote_unsigned'], ensure_ascii=False)}")
+    print(f"data_integrity_broken: {json.dumps(groups['data_integrity_broken'], ensure_ascii=False)}")
+    if groups["data_integrity_broken"]:
+        warnings.append(
+            "查表数据与起例不符（修正前命中不得作为证据）："
+            + ", ".join(groups["data_integrity_broken"])
+        )
     print(f"book_authenticity_review: {json.dumps(groups['book_authenticity_review'], ensure_ascii=False)}")
     # 已知未覆盖的原文硬禁（coverage_gaps.yaml，Q-012/C18；机器可读闭环）
     gaps_path = Path("core-rule/config/coverage_gaps.yaml")
@@ -443,6 +449,7 @@ def _lint_groups(reg) -> dict[str, list[str]]:
     - cap_applied：全库 scope，声明 severity 高于 status 上限（ADR-0014 决策 1）
     - unverified_progress：必需集内待考证规则（考证进度面板，语义与 cap 无关）
     - quote_unsigned：已录引文未经人类签名（status=有争议/待考证）
+    - data_integrity_broken：查表数据与起例不符、修正前命中不可作为证据的规则
     """
     rs = reg.ruleset
     return {
@@ -454,6 +461,10 @@ def _lint_groups(reg) -> dict[str, list[str]]:
         "quote_unsigned": sorted(
             rule.rule_id for rule in rs.rules
             if rule.status != "定义级" and rule.citation.has_quote and not rule.citation.verified_by
+        ),
+        "data_integrity_broken": sorted(
+            rule.rule_id for rule in rs.rules
+            if (rule.raw or {}).get("data_integrity") == "broken"
         ),
     }
 
@@ -689,6 +700,21 @@ def _check_required_set(reg) -> list[str]:
                     f"required_set_not_evaluable: {where} 的 {rid} evaluable=false"
                     "（起例未实现挂起，Q-014）——必需集规则必须可评估"
                 )
+            # 证据准入（2026-11-04）：B 级永不投票、C 级不得进必需集。
+            # A 级但 quote_verified=false 允许留在必需集——判定时记
+            # EVIDENCE_INSUFFICIENT（pending_verification），阻塞 publishable。
+            if rule.status != "定义级":
+                ev = getattr(rule, "evidence", None)
+                if ev is None:
+                    problems.append(
+                        f"required_set_evidence_insufficient: {where} 的 {rid} 无 evidence 等级"
+                        "（断言级缺省按 C 处理，不得进必需集）"
+                    )
+                elif ev.grade != "A":
+                    problems.append(
+                        f"required_set_evidence_insufficient: {where} 的 {rid} "
+                        f"evidence.grade={ev.grade}（B 级永不投票、C 级不得进必需集）"
+                    )
             roots = _fact_roots(rule)
             if group == "core" and "person" in roots:
                 problems.append(

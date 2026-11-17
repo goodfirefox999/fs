@@ -8,8 +8,10 @@
 
 三层验证
 --------
-1. **锚点比对**：2024-2026 年 10 个节气与权威历书对照（容差 2 分钟）。
-2. **求解器自检**：把求得的时刻代回 ``apparent_solar_longitude``，必须回到目标黄经
+1. **锚点比对**：见 ``test_ephemeris_precision.py``（Swiss Ephemeris 官方数据，
+   TT 容差 0.1 秒、UTC 容差 1 秒）。本文件不再保存秒级“历书锚点”——旧表的
+   秒数来自低精度转述，实测比 DE440/Swiss 早约 15 秒，保留会制造假精度。
+2. **求解器自检**：把求得的时刻代回 ``solar_longitude_deg``，必须回到目标黄经
    （容差 1e-4°）。这验证迭代收敛，不验证绝对正确性。
 3. **回归年线性**：1900-2100 每年立春的儒略日差必须落在 365.2422±0.2 天内。
    若某年算法失稳，该年与其相邻年的差会显著偏离。
@@ -27,46 +29,22 @@ import pytest
 
 from core_time import (
     CalendarConfig,
-    apparent_solar_longitude,
     compute_four_pillars,
-    jd_tt_from_jd_ut,
     julian_day_from_datetime,
+    solar_longitude_deg,
     term_datetime,
     terms_of_year,
 )
 
 CST = ZoneInfo("Asia/Shanghai")
-TOL = timedelta(minutes=2)
 TROPICAL_YEAR = 365.2422
-
-#: (节气, 年, 权威时刻, 容差分钟) —— 取自公开历书（紫金山天文台口径）
-ANCHORS = [
-    ("立春", 2024, datetime(2024, 2, 4, 16, 26, 53, tzinfo=CST), 2),
-    ("春分", 2024, datetime(2024, 3, 20, 11, 6, 21, tzinfo=CST), 2),
-    ("夏至", 2024, datetime(2024, 6, 21, 4, 50, 46, tzinfo=CST), 2),
-    ("秋分", 2024, datetime(2024, 9, 22, 20, 43, 45, tzinfo=CST), 2),
-    ("冬至", 2024, datetime(2024, 12, 21, 17, 20, 34, tzinfo=CST), 2),
-    ("立春", 2025, datetime(2025, 2, 3, 22, 10, 13, tzinfo=CST), 2),
-    ("春分", 2025, datetime(2025, 3, 20, 17, 1, 15, tzinfo=CST), 2),
-    ("夏至", 2025, datetime(2025, 6, 21, 10, 42, 0, tzinfo=CST), 2),
-    ("秋分", 2025, datetime(2025, 9, 23, 2, 19, 4, tzinfo=CST), 2),
-    ("冬至", 2025, datetime(2025, 12, 21, 23, 2, 48, tzinfo=CST), 2),
-    ("立春", 2026, datetime(2026, 2, 4, 4, 1, 51, tzinfo=CST), 2),
-]
-
-
-@pytest.mark.parametrize("name,year,expected,tol_min", ANCHORS, ids=[f"{a[1]}{a[0]}" for a in ANCHORS])
-def test_anchor_against_almanac(name: str, year: int, expected: datetime, tol_min: int) -> None:
-    got = term_datetime(name, year, "Asia/Shanghai")
-    delta = abs(got - expected)
-    assert delta <= timedelta(minutes=tol_min), f"{year}{name}: 得到 {got}，权威 {expected}，偏差 {delta}"
 
 
 @pytest.mark.parametrize("year", list(range(1900, 2101, 10)) + [1900, 2100])
 def test_solver_converges_all_terms(year: int) -> None:
     """1900-2100 每 10 年：24 节气求解后必须精确回到目标黄经。"""
     for term in terms_of_year(year, "Asia/Shanghai"):
-        lon = apparent_solar_longitude(jd_tt_from_jd_ut(term.jd_ut))
+        lon = solar_longitude_deg(term.jd_tt if term.jd_tt is not None else term.jd_ut)
         diff = abs((lon - term.longitude + 180) % 360 - 180)
         assert diff < 1e-4, f"{year}{term.name}: 代回黄经偏差 {diff:.6f}°"
 

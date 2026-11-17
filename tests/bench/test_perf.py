@@ -18,10 +18,12 @@ from __future__ import annotations
 import json
 import os
 import statistics
+import subprocess
 import sys
 import time
 from datetime import date, datetime
 from pathlib import Path
+from typing import Any
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -75,6 +77,63 @@ def _is_ci() -> bool:
 CI_BUDGET_SEC = 13.0
 BUDGET_SEC = CI_BUDGET_SEC if _is_ci() else 3.5
 
+#: 低负载阈值与连续次数：只有连续 N 次低负载仍超预算，才登记「需要重新评估基线」。
+#: **不改判定逻辑**——标记只进历史，不改变 passed 与断言。
+LOW_LOAD_THRESHOLD = 2.0
+BASELINE_REVIEW_STREAK = 5
+
+
+def _env_load_snapshot() -> dict[str, Any]:
+    """采集 1 分钟负载与高 CPU 进程名；失败不影响测试判定。"""
+    try:
+        load1: float | None = round(os.getloadavg()[0], 2)
+    except (OSError, AttributeError):
+        load1 = None
+    top_cpu: list[dict[str, Any]] = []
+    try:
+        proc = subprocess.run(
+            ["ps", "-Ao", "pcpu=,comm="],
+            capture_output=True,
+            text=True,
+            timeout=2,
+            check=False,
+        )
+        rows: list[tuple[float, str]] = []
+        for line in proc.stdout.splitlines():
+            parts = line.strip().split(None, 1)
+            if len(parts) != 2:
+                continue
+            try:
+                cpu = float(parts[0])
+            except ValueError:
+                continue
+            rows.append((cpu, parts[1]))
+        rows.sort(key=lambda item: item[0], reverse=True)
+        top_cpu = [{"cpu": round(cpu, 1), "comm": comm} for cpu, comm in rows[:3]]
+    except (OSError, subprocess.SubprocessError):
+        pass
+    return {"loadavg_1m": load1, "top_cpu": top_cpu}
+
+
+def _low_load_over_budget_streak(records: list[dict[str, Any]], elapsed: float) -> int:
+    """当前样本 + 历史连续低负载超预算样本数（缺快照即中断）。"""
+    if elapsed < BUDGET_SEC:
+        return 0
+    streak = 1
+    for record in reversed(records):
+        snap = record.get("env_load_snapshot") or {}
+        load = snap.get("loadavg_1m")
+        if load is None or load >= LOW_LOAD_THRESHOLD:
+            break
+        try:
+            prior_elapsed = float(record.get("elapsed", 0.0))
+        except (TypeError, ValueError):
+            break
+        if prior_elapsed < BUDGET_SEC:
+            break
+        streak += 1
+    return streak
+
 
 def _record_and_check(elapsed: float, pareto_size: int | None = None) -> None:
     """记录本次耗时，并与历史中位数比较（防止"每次改一点"的渐进劣化）。
@@ -83,7 +142,7 @@ def _record_and_check(elapsed: float, pareto_size: int | None = None) -> None:
     消除"历史只含存活者"的系统性偏差；相对门禁（下一批）不得建立在幸存者中位数上。
     """
     history = (HISTORY.parent / "bench_history.ci.jsonl") if _is_ci() else HISTORY
-    samples: list[float] = []
+    records: list[dict[str, Any]] = []
     if history.exists():
         # 必须读本次实际写入的那个文件：CI 写 bench_history.ci.jsonl，本地写
         # bench_history.jsonl。原实现 exists() 查 history、read_text() 读 HISTORY，
@@ -93,15 +152,29 @@ def _record_and_check(elapsed: float, pareto_size: int | None = None) -> None:
             if not line.strip():
                 continue
             try:
-                samples.append(float(json.loads(line)["elapsed"]))
-            except (json.JSONDecodeError, KeyError, ValueError):
+                record = json.loads(line)
+                float(record["elapsed"])
+            except (json.JSONDecodeError, KeyError, TypeError, ValueError):
                 continue
+            records.append(record)
+    samples = [float(record["elapsed"]) for record in records]
     median = statistics.median(samples) if len(samples) >= 3 else None
     passed = median is None or elapsed <= median * REGRESSION_FACTOR
+    snapshot = _env_load_snapshot()
     record = {"ts": datetime.now().isoformat(timespec="seconds"),
-              "candidates": 4380, "elapsed": round(elapsed, 4), "passed": passed}
+              "candidates": 4380, "elapsed": round(elapsed, 4), "passed": passed,
+              "env_load_snapshot": snapshot}
     if pareto_size is not None:
         record["pareto_size"] = pareto_size  # u 的下游代理（front 规模），监控分组收益退化
+    load1 = snapshot.get("loadavg_1m")
+    if load1 is not None and load1 < LOW_LOAD_THRESHOLD:
+        streak = _low_load_over_budget_streak(records, elapsed)
+        if streak >= BASELINE_REVIEW_STREAK:
+            record["baseline_review"] = "needs_reevaluation"
+            print(
+                f"警告：连续 {streak} 次低负载（loadavg<{LOW_LOAD_THRESHOLD}）"
+                f"仍超预算 {BUDGET_SEC}s，已登记需要重新评估基线"
+            )
     with history.open("a", encoding="utf-8") as fh:
         fh.write(json.dumps(record) + "\n")
     if median is not None:
@@ -243,3 +316,28 @@ def test_history_reads_the_same_file_it_writes(tmp_path, monkeypatch) -> None:
     _perf._record_and_check(1.0)
     tail = history.read_text(encoding="utf-8").strip().splitlines()[-1]
     assert '"elapsed": 1.0' in tail
+
+
+def test_env_load_snapshot_shape() -> None:
+    """每条历史必须带环境快照；采集失败也只能降级，不得中断测试。"""
+    snapshot = _perf._env_load_snapshot()
+    assert set(snapshot) == {"loadavg_1m", "top_cpu"}
+    assert snapshot["loadavg_1m"] is None or isinstance(snapshot["loadavg_1m"], float)
+    assert isinstance(snapshot["top_cpu"], list)
+    for item in snapshot["top_cpu"]:
+        assert "cpu" in item and "comm" in item
+
+
+def test_low_load_streak_only_counts_consecutive_low_load_over_budget() -> None:
+    over = _perf.BUDGET_SEC + 0.5
+    under = _perf.BUDGET_SEC - 0.5
+    records = [
+        {"elapsed": over, "env_load_snapshot": {"loadavg_1m": 1.0}},
+        {"elapsed": over, "env_load_snapshot": {"loadavg_1m": 1.5}},
+        {"elapsed": under, "env_load_snapshot": {"loadavg_1m": 1.0}},  # 未超预算 → 中断
+        {"elapsed": over, "env_load_snapshot": {"loadavg_1m": 1.0}},
+    ]
+    assert _perf._low_load_over_budget_streak(records, over) == 2
+    assert _perf._low_load_over_budget_streak(records, under) == 0
+    # 缺快照（旧历史）立即中断，不能把无法判断负载的旧样本算进连续低负载
+    assert _perf._low_load_over_budget_streak([{"elapsed": over}], over) == 1

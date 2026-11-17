@@ -47,7 +47,8 @@ class TestNoticeContent:
         text = "\n".join(zero_voter_notice(ev))
         assert "0/0" in text
         assert "不构成择日结论" in text
-        assert "无参与投票的已考证规则" in text
+        assert "无参与投票的已判定规则" in text
+        assert "以下仅为参考层展示" in text
 
     def test_gate_veto_line_follows_main_notice(self) -> None:
         ev = _ev(voters=[], gate=["public"], per_school={"public": _res(verdicts=2)})
@@ -89,8 +90,7 @@ class TestNoFalsePositive:
 
 
 class TestPositionInReport:
-    def test_notice_precedes_all_sections(self) -> None:
-        """集成：真报告里提示必须在「结论」之后、「派别判定明细」之前。"""
+    def _report(self) -> str:
         from datetime import datetime
         from zoneinfo import ZoneInfo
 
@@ -106,9 +106,21 @@ class TestPositionInReport:
             person=PersonSpec(),
             allow_unverified=True,
         )
-        text = render_markdown(result)
+        return render_markdown(result)
+
+    def test_notice_precedes_all_sections(self) -> None:
+        """集成：真报告里提示必须在「结论」之后、「派别判定明细」之前。"""
+        text = self._report()
         pos_conclusion = text.find("## 结论")
         pos_notice = text.find("不构成择日结论")
         pos_schools = text.find("## 派别判定明细")
         assert pos_notice > pos_conclusion >= 0
         assert 0 < pos_notice < pos_schools, "提示必须出现在任何分节之前"
+
+    def test_conclusion_heading_is_not_a_vote_claim(self) -> None:
+        """0/0 时结论标题本身不得写成「可用」——首行必须是无票声明。"""
+        heading = next(
+            line for line in self._report().splitlines() if line.startswith("## 结论")
+        )
+        assert "无参与投票的已判定规则" in heading
+        assert "可用" not in heading

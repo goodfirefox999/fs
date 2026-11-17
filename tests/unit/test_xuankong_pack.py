@@ -3,7 +3,9 @@ import json
 from pathlib import Path
 
 import pytest
+import yaml
 
+from core_rule.errors import DSLValidationError
 from core_rule.loader import load_rule
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -338,6 +340,38 @@ class TestDeriveXuankongFacts:
         )
         assert fx["guayun_current"] is None
         assert fx["wangqi"] is None and fx["guaqi"] is None and fx["chouyao"] is None
+
+
+class TestVotingEligibility:
+    """玄空大卦只做事实层：算法可复现 ≠ 有投票资格。
+
+    四条规则缺的是一手影印原典（``primary_source_missing``），不是"不评估"：
+    ``evaluable`` 保持 true，事实照常算；但不得创建 ``verdict_type: vote``。
+    """
+
+    EXPECTED = ["XK-GUAYUN-001", "XK-CHOUYAO-001", "XK-GUAQI-001", "XK-WANGQI-001"]
+
+    def test_all_rules_declare_primary_source_missing(self) -> None:
+        for rid in self.EXPECTED:
+            rule = load_rule(RULES / f"{rid}.yaml")
+            assert rule.blocked_by == "primary_source_missing", rid
+            assert rule.evaluable is True, f"{rid} 仍应参与事实计算"
+            assert rule.status == "待考证", rid
+
+    def test_no_xuankong_rule_is_a_vote(self) -> None:
+        for rid in self.EXPECTED:
+            rule = load_rule(RULES / f"{rid}.yaml")
+            assert rule.verdict_type != "vote", f"{rid} 不得在无原典时创建投票规则"
+            assert rule.effective_verdict_type != "vote", rid
+
+    def test_loader_rejects_other_blockers_while_evaluable(self, tmp_path: Path) -> None:
+        """仍在评估的规则只能因「缺一手原典」标阻塞；其他原因必须 evaluable=false。"""
+        data = yaml.safe_load((RULES / "XK-GUAYUN-001.yaml").read_text(encoding="utf-8"))
+        data["blocked_by"] = "awaiting_translation"
+        path = tmp_path / "XK-BAD.yaml"
+        path.write_text(yaml.safe_dump(data, allow_unicode=True), encoding="utf-8")
+        with pytest.raises(DSLValidationError, match="primary_source_missing"):
+            load_rule(path)
 
 
 class TestDingCaiScores:

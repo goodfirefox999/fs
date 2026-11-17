@@ -24,6 +24,7 @@ from .models import (
     STRICTNESS_ORDER,
     TARGETS,
     AppliesTo,
+    Evidence,
     Rule,
 )
 from .provenance import Citation, stable_hash
@@ -210,12 +211,44 @@ def load_rule(path: Path) -> Rule:
     if depth > 4:  # pragma: no cover - validate_condition 已保证
         raise DSLValidationError(f"条件树深度 {depth} 超过上限 4", rule_id=rule_id)
 
+    # 「不适用」声明条件（可选）：必须与理由成对出现，禁止只给条件不给理由。
+    # 该字段只允许由规则内容声明；引擎不会内置任何默认不适用判定（Q-026）。
+    not_applicable_when = raw.get("not_applicable_when")
+    not_applicable_reason = raw.get("not_applicable_reason")
+    if not_applicable_when is not None:
+        if not isinstance(not_applicable_when, dict):
+            raise DSLValidationError("not_applicable_when 必须是条件映射", rule_id=rule_id)
+        validate_condition(not_applicable_when, rule_id=rule_id)
+        if condition_depth(not_applicable_when) > 4:  # pragma: no cover - validate_condition 已保证
+            raise DSLValidationError("not_applicable_when 条件树深度超过上限 4", rule_id=rule_id)
+        if not not_applicable_reason or not str(not_applicable_reason).strip():
+            raise DSLValidationError(
+                "not_applicable_when 必须同时给出 not_applicable_reason（禁止无理由地把规则标不适用）",
+                rule_id=rule_id,
+            )
+    elif not_applicable_reason:
+        raise DSLValidationError(
+            "not_applicable_reason 只能在给出 not_applicable_when 时使用", rule_id=rule_id
+        )
+
     citation_raw = raw["citation"]
     if not isinstance(citation_raw, dict):
         raise DSLValidationError("citation 必须是映射", rule_id=rule_id)
     citation = Citation.from_dict(citation_raw)
     if not citation.source:
         raise DSLValidationError("citation.source 不得为空（至少写明书名）", rule_id=rule_id)
+
+    # 证据等级（2026-11-04）：A=影印原文 / B=权威转述 / C=出处未定位。
+    # 断言级缺省按 C 处理——"没写 evidence"不等于"证据充分"。
+    evidence_raw = raw.get("evidence")
+    try:
+        evidence = None if status == "定义级" else Evidence.from_dict(evidence_raw)
+    except ValueError as exc:
+        raise DSLValidationError(str(exc), rule_id=rule_id) from exc
+    if status == "定义级" and evidence_raw is not None:
+        raise DSLValidationError(
+            "定义级规则不使用 evidence A/B/C（出处是内核规格，不是古籍）", rule_id=rule_id
+        )
 
     if status == "已考证":
         if citation.kind != "classic":
@@ -239,6 +272,12 @@ def load_rule(path: Path) -> Rule:
         if not citation.pian and not citation.juan:
             raise DSLValidationError(
                 "status=已考证 时必须至少给出 pian（篇次）或 juan（卷次）", rule_id=rule_id
+            )
+        if evidence is None or evidence.grade != "A" or not evidence.quote_verified:
+            raise DSLValidationError(
+                "status=已考证 要求 evidence.grade=A 且 quote_verified=true"
+                "（转述或未逐字核对不得签为已考证）",
+                rule_id=rule_id,
             )
 
     if status == "定义级":
@@ -318,6 +357,13 @@ def load_rule(path: Path) -> Rule:
             raise DSLValidationError(
                 "evaluable=false 必须带 blocked_by（阻塞项：Q-xxx/起例实现等）", rule_id=rule_id
             )
+    elif blocked_by and blocked_by != "primary_source_missing":
+        # 仍在评估的规则只能因「缺一手原典」被标阻塞；其他阻塞项必须走 evaluable=false，
+        # 否则 blocked_by 会变成既评估又声称没评估的模糊状态。
+        raise DSLValidationError(
+            f"evaluable=true 时 blocked_by 只允许 primary_source_missing（得到 {blocked_by!r}）",
+            rule_id=rule_id,
+        )
 
     # C 第一批（2026-11-02）：判定类型 / 参考层 / 是否允许进结论强度。
     # 三条约束都是"防止把未裁定口径写成结论"的机器抓手：
@@ -355,6 +401,14 @@ def load_rule(path: Path) -> Rule:
         raise DSLValidationError(
             "engine_eligible=true 却给了 ineligible_reason（状态自相矛盾）", rule_id=rule_id
         )
+    # B 级=权威转述：只展示、不投票、不否决（2026-11-04 证据分级映射）。
+    if evidence is not None and evidence.grade == "B":
+        if layer != "reference" or engine_eligible or verdict_type != "reference":
+            raise DSLValidationError(
+                "evidence.grade=B 只能进参考层：需 layer=reference、"
+                "verdict_type=reference、engine_eligible=false",
+                rule_id=rule_id,
+            )
 
     return Rule(
         rule_id=rule_id,
@@ -368,6 +422,7 @@ def load_rule(path: Path) -> Rule:
         applies_to=applies_to,
         condition=condition,
         citation=citation,
+        evidence=evidence,
         explanation=explanation,
         tests=tuple(tests),
         score_weight=score_weight,
@@ -378,10 +433,13 @@ def load_rule(path: Path) -> Rule:
         source_path=str(path),
         raw=raw,
         evaluable=evaluable,
+        blocked_by=blocked_by,
         verdict_type=verdict_type,
         layer=layer,
         engine_eligible=engine_eligible,
         ineligible_reason=ineligible_reason,
+        not_applicable_when=not_applicable_when,
+        not_applicable_reason=not_applicable_reason,
     )
 
 
@@ -428,4 +486,6 @@ def all_fact_paths(rules: Iterable[Rule]) -> set[str]:
     paths: set[str] = set()
     for rule in rules:
         paths.update(collect_fact_paths(rule.condition))
+        if rule.not_applicable_when is not None:
+            paths.update(collect_fact_paths(rule.not_applicable_when))
     return paths

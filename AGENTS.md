@@ -155,6 +155,21 @@
     「带警告通过」失效。测试锚点：`tests/unit/test_gate_wiring.py` +
     `tests/unit/test_determinism_gate.py`。
 
+18. **`skip` 不算 `pass`；门禁判定（`tools/gate_verdict.py`）三态退出码固定为 `0` / `1` / `4`。**
+    `tools/gate_verdict.py` 的判据：`0` = 所有套件通过且无跳过/缺失；
+    `1` = 硬失败（failed/errors、PRODUCT_FAIL 等）；`4` = 无硬失败但存在
+    「判不了」（pytest skip、OUTPUT_FAIL/ENV_SUSPECT、junit 缺失或损坏、
+    未登记套件）。只要门禁里有 skip 且无 violation，**退出码必须是 4**：
+    - 不得把 4 改写成 0，不得用 `|| true` 吞掉，不得以「只有 1 个 skip」为由放行；
+    - 每个 skip 的测试名与原因必须出现在 `out/undetermined.json`（CI 上传），
+      验收报告必须逐项登记，不得只报「全绿」；
+    - 对外只能说「无失败、N 项未判定（exit 4）」。**「全绿」的唯一含义是退出码 0。**
+    - `make` 会把任何失败 recipe 收敛成进程退出码 `2`（`make: *** [gate] Error 4`）。
+      因此本地复验以 `make gate` 的**文本判定**与 `tools/gate_verdict.py` 的退出码为准；
+      CI 直接调用 `python tools/gate_verdict.py`，`0/1/4` 原样保留。
+    测试锚点：`tests/unit/test_skip_not_passed.py`、`tests/unit/test_gate_wiring.py`、
+    `tests/unit/test_gate_verdict.py`。
+
 ## 必须停下提问的情形
 
 - 规格自相矛盾、算子不足、fact 白名单缺项

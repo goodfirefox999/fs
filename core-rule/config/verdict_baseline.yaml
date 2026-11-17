@@ -7,12 +7,13 @@
 generated: 2026-11-03
 # C 第二批 D 桶（2026-11-03）：12 条 hard_veto+禁用 规则补显式 verdict_type: gate。
 # 零行为变更——effective_verdict_type 本来就把这一组合推断为 gate，补显式只把推断变声明。
-unlabeled_count: 63
+# 2026-11-03：SH-LIUHE-001 补 verdict_type: vote（评分层六合，签名后进投票），63→62。
+unlabeled_count: 62
 per_school:
   donggong: 3
   doushou: 6
   public: 37
-  sanhe: 4
+  sanhe: 3
   tianxing: 4
   xuankong_dagua: 4
   zhengwuxing: 5

@@ -18,6 +18,7 @@ from core_rule.calibers import (
     CALIBER_DOUSHO,
     CALIBER_JIANXIANG,
     CALIBER_NAYIN,
+    CALIBER_Q026_SISHAN_CHONG,
     CALIBER_SANSHA,
     CALIBER_TIANDE_GUA,
     CALIBER_ZIBAI_FLY,
@@ -27,7 +28,13 @@ from core_rule.calibers import (
 from core_symbol.ganzhi import ZHI
 from core_symbol.mountain import Mountain, facing_of, fenjin_of_azimuth, jian_xiang, mountain_of_azimuth
 from core_symbol.registry import derive_facts, overlay_hour_facts
-from core_time import CalendarConfig, compute_four_pillars, terms_of_year
+from core_time import (
+    CalendarConfig,
+    backend_audit,
+    compute_four_pillars,
+    jie_boundary_risk,
+    terms_of_year,
+)
 from core_time.hashing import stable_cache_key  # C19：统一缓存键
 
 #: 日级事实缓存：只存**与时辰无关**的部分（节气/三煞/五黄/玄空/天星/董公/调候…）。
@@ -100,6 +107,9 @@ class SiteSpec:
     fenjin: str | None = None
     measure_method: str = "unspecified"
     angle_uncertainty_deg: float = 0.0
+    #: 入首龙五行（木火土金水）。仅用于补龙**结构**事实，不判吉凶；
+    #: 缺失时 facts.zhengwuxing.bulong 显式为「输入不足」，不得默认任何五行。
+    long_element: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -111,6 +121,7 @@ class SiteSpec:
             "fenjin": self.fenjin,
             "measure_method": self.measure_method,
             "angle_uncertainty_deg": self.angle_uncertainty_deg,
+            "long_element": self.long_element,
         }
 
 
@@ -231,6 +242,7 @@ def build_context(
         creg.chosen(CALIBER_DOUSHO),
         creg.chosen(CALIBER_ZIBAI_FLY), creg.chosen(CALIBER_TIANDE_GUA),
         creg.chosen(CALIBER_JIANXIANG),
+        creg.chosen(CALIBER_Q026_SISHAN_CHONG),
         creg.alternatives(CALIBER_NAYIN),
     )
     base_facts = _FACTS_CACHE.get(_day_key)
@@ -254,6 +266,7 @@ def build_context(
             doushou_tu_changsheng=creg.chosen(CALIBER_DOUSHO),
             zibai_fly=creg.chosen(CALIBER_ZIBAI_FLY),
             tiande_caliber=creg.chosen(CALIBER_TIANDE_GUA),
+            q026_sishan_chong=creg.chosen(CALIBER_Q026_SISHAN_CHONG),
         )
         if len(_FACTS_CACHE) >= _FACTS_CACHE_MAX:
             _FACTS_CACHE.clear()
@@ -268,6 +281,8 @@ def build_context(
         mountain_name=mountain.name,
         doushou_tu_changsheng=creg.chosen(CALIBER_DOUSHO),
         zibai_fly=creg.chosen(CALIBER_ZIBAI_FLY),
+        long_element=site.long_element,
+        person_ganzhi=person.year_gz if person is not None else None,
     )
 
     person_ctx: dict[str, Any] = {}
@@ -280,6 +295,12 @@ def build_context(
             "gender": person.gender,
             "provided": person.provided,
         }
+
+    # 星历审计必须全字段透传（backend/precision/ephemeris_file/valid_range/
+    # delta_t_s/fallback_reason）；降级后端下再叠加「节」交界秒级窗口判定，
+    # 由引擎把该窗口内的断言降为证据不足（Layer 5）。
+    ephemeris = backend_audit(dt)
+    ephemeris.update(jie_boundary_risk(dt, cal.timezone, ephemeris["backend"]))
 
     return {
         "course": {
@@ -339,6 +360,8 @@ def build_context(
             "calibers": creg.to_manifest(),
             "person_provided": person.provided if person else False,
             "shan_jia_derivation": "兼向取兼山" if jian in ZHI else "本山为地支",
+            # 精度必须可回显：VSOP87 后备约 7 s，不能与 Skyfield/DE440s 混为一谈。
+            "ephemeris": ephemeris,
         },
     }
 
@@ -394,6 +417,8 @@ EVALUATION_SCHEMA: dict[str, Any] = {
         "structural": {"type": "array"},
         "required_rule_ids": {"type": "array"},
         "required_blockers": {"type": "array"},
+        "required_blocked_kinds": {"type": "object"},
+        "required_not_applicable": {"type": "array"},
         "required_satisfied_count": {"type": "integer", "minimum": 0},
         "conflicts": {"type": "array"},
         "unknowns": {"type": "array"},
@@ -406,6 +431,26 @@ EVALUATION_SCHEMA: dict[str, Any] = {
                 "rule_lib_version": {"type": "string"},
                 "engine_version": {"type": "string"},
                 "config": {"type": "object"},
+                # Layer 5：星历审计全字段强制透传，缺一即契约失败。
+                "ephemeris": {
+                    "type": "object",
+                    "required": [
+                        "backend",
+                        "precision",
+                        "ephemeris_file",
+                        "valid_range",
+                        "delta_t_s",
+                        "fallback_reason",
+                        "second_precision_required",
+                    ],
+                    "properties": {
+                        "backend": {"type": "string", "enum": ["skyfield", "vsop87"]},
+                        "precision": {"type": "string", "enum": ["high", "degraded"]},
+                        "valid_range": {"type": "array"},
+                        "delta_t_s": {"type": "number"},
+                        "second_precision_required": {"type": "boolean"},
+                    },
+                },
             },
         },
     },

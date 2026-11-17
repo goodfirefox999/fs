@@ -10,7 +10,10 @@ status: 待考证
 hard_veto: true
 severity: 禁用
 target: mountain
-verdict_type: gate
+verdict_type: reference
+layer: reference
+engine_eligible: false
+ineligible_reason: evidence_grade_b_secondary_transcription
 applies_to:
   task_kinds:
   - 动土
@@ -34,6 +37,11 @@ condition:
   op: eq
   value: true
 score_weight: null
+evidence:
+  grade: B
+  source_tier: secondary_transcription
+  quote_verified: false
+  blocking_ruling: "ADR-0013-D3"
 citation:
   kind: classic
   source: 《鳌头通书》

@@ -22,6 +22,7 @@ from typing import Any, Callable
 
 from .ganzhi import (
     GAN,
+    LIUHE,
     SANHE,
     ZHI,
     all_relations_between_zhi,
@@ -32,6 +33,11 @@ from .ganzhi import (
 )
 from .mountain import MOUNTAINS_24, Mountain, mountain_of_azimuth
 from .doushou import derive_doushou_facts
+from .zhengwuxing import (
+    derive_bulong_facts,
+    derive_xiangzhu_facts,
+    derive_zhengwuxing_facts,
+)
 from .huangdao import derive_huangdao_fact, huangdao_index, huangdao_of
 from .jianchu import derive_jianchu_fact, jianchu_index, jianchu_of
 from .jishen import derive_jishen_facts
@@ -61,6 +67,7 @@ __all__ = [
     "structure_facts",
     "tongguan_facts",
     "sanhe_ju_facts",
+    "liuhe_day_facts",
     "fact_status_summary",
     "unavailable_facts",
 ]
@@ -121,6 +128,11 @@ FACT_REGISTRY: tuple[FactSpec, ...] = (
     FactSpec("jianchu.hour", "待考证", "建除十二神（时家；位次=时支−月建）", "本系统提供"),
     FactSpec("huangdao.day", "待考证", "十二黄黑道（日家；青龙起例顺行十二神）", "本系统提供"),
     FactSpec("huangdao.hour", "待考证", "十二黄黑道（时家，即黄道吉时）", "本系统提供"),
+    FactSpec("liuhe.is_day", "待考证", "月建六合日（正月在亥，逆行十二辰）", "本系统提供"),
+    # 正五行扶山（事实层）：只给生克关系与月令旺衰，不断吉凶；档位分界待 Q-029
+    FactSpec("zhengwuxing.fushan", "待考证", "正五行扶山：四柱与山家的生克关系（不判吉凶）", "本系统提供"),
+    FactSpec("zhengwuxing.bulong", "待考证", "补龙结构：三合局是否齐全、月令临官帝旺（不判吉凶）", "本系统提供"),
+    FactSpec("xiangzhu", "待考证", "相主关系：主命干支与四柱冲合生克（不判吉凶）", "本系统提供"),
 )
 
 
@@ -281,6 +293,22 @@ def sanhe_ju_facts(*, zhis: list[str], shan_jia_zhi: str | None) -> dict[str, An
     return {"result": result, "day_ju": sorted(day_ju), "shan_ju": shan_ju, "status": "待考证"}
 
 
+def liuhe_day_facts(*, month_zhi: str, day_zhi: str) -> dict[str, Any]:
+    """月建六合日：日支取月建的六合支（正月在亥，逆行十二辰）。"""
+    partner = next(
+        (next(iter(pair - {month_zhi})) for pair in LIUHE if month_zhi in pair),
+        None,
+    )
+    return {
+        "month_zhi": month_zhi,
+        "day_zhi": day_zhi,
+        "partner": partner,
+        "is_day": partner is not None and day_zhi == partner,
+        "status": "待考证",
+        "note": "《协纪辨方书》卷六义例四六合条：李鼎祚曰正月在亥逆行十二辰",
+    }
+
+
 def overlay_hour_facts(
     base: dict[str, Any],
     *,
@@ -292,6 +320,8 @@ def overlay_hour_facts(
     mountain_name: str,
     doushou_tu_changsheng: str,
     zibai_fly: str = "shun",
+    long_element: str | None = None,
+    person_ganzhi: str | None = None,
 ) -> dict[str, Any]:
     """把「日级事实」叠加成「候选级事实」。
 
@@ -309,6 +339,31 @@ def overlay_hour_facts(
     }
     facts["tongguan"] = tongguan_facts(gans=gans, zhis=zhis)
     facts["sanhe_ju"] = sanhe_ju_facts(zhis=zhis, shan_jia_zhi=shan_jia_zhi)
+    # 正五行扶山含**时柱**，必须在候选级重算：日级缓存不含时柱，
+    # 沿用日级结果会把首个子时的生克关系带给其余时辰。
+    facts["zhengwuxing"] = {
+        "fushan": derive_zhengwuxing_facts(
+            mountain=mountain_name, gans=gans, zhis=zhis, month_zhi=month_zhi
+        ),
+        "bulong": (
+            derive_bulong_facts(long_element=long_element, zhis=zhis, month_zhi=month_zhi)
+            if long_element
+            else {
+                "long": None,
+                "status": "输入不足",
+                "note": "未提供入首龙五行（SiteSpec.long_element），补龙结构不展开；不判吉凶",
+            }
+        ),
+    }
+    facts["xiangzhu"] = (
+        derive_xiangzhu_facts(person_ganzhi=person_ganzhi, gans=gans, zhis=zhis)
+        if person_ganzhi
+        else {
+            "person": None,
+            "status": "输入不足",
+            "note": "未提供主命干支（PersonSpec.year_gz），相主关系不展开；不判吉凶",
+        }
+    )
     facts["doushou"] = derive_doushou_facts(
         mountain_name=mountain_name,
         gans=list(gans),
@@ -378,6 +433,7 @@ def derive_facts(
     doushou_tu_changsheng: str = "shen",
     zibai_fly: str = "shun",
     tiande_caliber: str = "gong_union",
+    q026_sishan_chong: str = "undecided",
 ) -> dict[str, Any]:
     """展开 ``facts.*`` 命名空间。
 
@@ -502,6 +558,9 @@ def derive_facts(
     # ---- 结构检测（纯关系，不含吉凶） ----
     facts["structure"] = structure_facts(gans=gans, zhis=zhis, shan_jia_zhi=shan_jia_zhi)
 
+    # ---- 月建六合日（义例：正月在亥，逆行十二辰） ----
+    facts["liuhe"] = liuhe_day_facts(month_zhi=month_zhi, day_zhi=day_ganzhi[1])
+
     # ---- 玄空大卦 facts（Phase 7 收尾：先天圆图 384 爻 + 两元八运 + 卦气/抽爻）----
     facts["xuankong"] = derive_xuankong_facts(mountain=mountain, facing=facing, local_date=local_date)
 
@@ -573,6 +632,12 @@ def derive_facts(
         "doushou_tu_changsheng": doushou_tu_changsheng,
         "zibai_fly": zibai_fly,
         "tiande_guaxiang": tiande_caliber,
+        "q026_sishan_chong": q026_sishan_chong,
+        # 取法是否已裁定（None = 未裁定，依赖它的规则必须报「输入不足」，
+        # 不得以 False 冒充「不冲」）。见 Q-026。
+        "q026_sishan_chong_resolved": (
+            True if q026_sishan_chong != "undecided" else None
+        ),
     }
 
     # ---- 建除十二神 / 十二黄黑道（一等事实，不依赖任何派别数据文件）----
@@ -665,6 +730,16 @@ def derive_facts(
 
     # ---- 正五行通关 facts（Phase 4 收尾：四柱五行计数 + 相战检测）----
     facts["tongguan"] = tongguan_facts(gans=gans, zhis=zhis)
+
+    # ---- 正五行扶山 facts（只算生克关系与旺衰，不判吉凶；档位见 Q-029）----
+    facts["zhengwuxing"] = {
+        "fushan": derive_zhengwuxing_facts(
+            mountain=mountain.name,
+            gans=gans,
+            zhis=zhis,
+            month_zhi=month_zhi,
+        )
+    }
 
     # ---- 三合局判定 facts（Phase 5）----
     facts["sanhe_ju"] = sanhe_ju_facts(zhis=zhis, shan_jia_zhi=shan_jia_zhi)

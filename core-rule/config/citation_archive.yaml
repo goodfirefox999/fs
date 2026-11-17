@@ -1,0 +1,849 @@
+# A 级影印「实物档案」——把可追溯性从代码层落到叶面层
+#
+# 为什么单独建这份档案：规则 YAML 里的 citation 只回答「引了哪本书、哪一卷」，
+# 回答不了「哪一叶、哪张图、谁逐字看过」。电子文本（识典／维基文库／ctext）
+# 互相转抄时会一起错，只有影印叶面 + 图片哈希能证明「我们确实看过这一页」。
+#
+# 纪律（不可协商）：
+#   1. 只有人眼逐字读过叶面才可登记 quote_verbatim；没读过的不写，进 gaps。
+#   2. agent 只能填 agent_checked_by，**绝不能填 verified_by**。
+#   3. verified_by 为 null 时，该条不得被规则 loader 当作「已考证」依据；
+#      人工复核签名后才可把 status 改为 human_countersigned。
+#   4. 图片哈希按 page_url 原样下载计算；换 scale／换镜像都必须重算并改记录。
+#
+# 本档案不新增门禁，只做「可追溯层」的数据源；校验见
+# tests/unit/test_citation_archive.py（schema 与「agent 不得签名」）。
+
+schema_version: 1
+updated_at: "2026-11-04"
+
+edition:
+  book: 欽定協紀辨方書
+  edition: 欽定四庫全書·子部七·術數類（浙江大學圖書館藏本影印，Internet Archive universallibrary）
+  archive_collection: https://archive.org/details/06056501.cn
+  image_variant: jpeg@scale=4
+  note: >-
+    叶次 leaf 一律指 archive.org 扫描件内的 0 基页序（page/n{leaf}.jpg），
+    不是原书刻本的「叶几」。刻本叶次需另据卷首目录换算，尚未完成。
+
+policy:
+  human_signature_field: verified_by
+  agent_must_not_sign: true
+  status_values:
+    - pending_human_countersign
+    - human_countersigned
+  levels:
+    agent_visual_read: AI 逐字读影印叶面并抄录；未经人类复核，不得作为签名依据。
+    human_countersigned: 人类复核过叶面与逐字引文，verified_by 非空。
+
+# 事实纠正账（不可删改；如再纠正，追加新条目并引用旧 id）
+# 目的：防止下一轮 agent/人再次把 n92 当五黄引文、再去卷三十五找 L187。
+correction_log:
+  - id: CORR-001
+    corrected_at: "2026-11-04"
+    subject: 五黄引文的出处归属
+    prior_belief: 卷三 n92「三煞总论」被当作 PUB-WUHUANG-001 的引文出处。
+    actual: >-
+      PUB-WUHUANG-001 的 citation.source 是《鳌头通书》，不是协纪；
+      卷三 n92 是三煞总论，与五黄无关。ARC-018（卷三 n31）只有
+      「月忌日為中宮五黃」的日禁忌旁证，不构成占山依据。
+    basis: >-
+      PUB-WUHUANG-001.yaml（citation.source）；ARC-018 / ARC-022；
+      docs/signoff-2026-11-04.md §0 第 5 行。
+    status: closed
+
+  - id: CORR-002
+    corrected_at: "2026-11-04"
+    subject: 卷三十五的页数边界与叶次口径
+    prior_belief: 卷三十五存在 L187 / L285 叶次，可据以定位「本命對衝日」。
+    actual: >-
+      卷三十五 item 06056526.cn 的 imagecount 为 126，0 基页序只到 n125；
+      L 编号不是本档案的叶次口径。「凡合壽木…本命對衝日」实际在 n53。
+    basis: >-
+      ARC-023；archive.org item 06056526.cn metadata（imagecount=126）；
+      docs/signoff-2026-11-04.md §0 第 4 行。
+    status: closed
+
+  - id: CORR-003
+    corrected_at: "2026-11-04"
+    subject: 「本命對衝日」的语境与适用范围
+    prior_belief: 卷三十五「本命對衝日」可直接作为安葬「日冲命」的通例依据。
+    actual: >-
+      该条在附錄·事類總集「凡合壽木」条下，语境是做寿材（合壽木），
+      不是通葬事通则；能否外推到安葬日冲命属建模跳跃，待 M4 人类裁定。
+    basis: >-
+      ARC-023 notes；GAP-005；docs/signoff-2026-11-04.md §0.5 M4。
+    status: open_pending_M4
+
+entries:
+  - id: ARC-001
+    rule_ids: [SH-LIUHE-001]
+    relation: primary
+    juan: "六"
+    pian: 義例四·六合
+    archive_item: "06056507.cn"
+    leaf: 53
+    page_url: https://archive.org/download/06056507.cn/page/n53.jpg?scale=4
+    viewer_url: https://archive.org/details/06056507.cn#page/n53
+    image_sha256: 4877a29f76549dad560817f04889b5cba5f52acd85868495bf59804e681c01bb
+    quote_kind: 原文
+    quote_verbatim: >-
+      神樞經曰六合者日月合宿之辰也其日宜會賓客結婚姻立契券合交易○李鼎祚曰正月在亥逆行十二辰○考原曰六合者月建與月將相合也○天寶曆曰
+    quote_scope: 节选
+    quote_confidence: 高
+    uncertain_glyphs: []
+    agent_checked_by: qoder-agent
+    agent_checked_at: "2026-11-04"
+    verified_by: null
+    verified_at: null
+    status: pending_human_countersign
+    notes: >-
+      叶面上「六合」条起于本叶右首，quote 止于「天寶曆曰」，其后转入无翘（翹猶首翹婦人之飾也）
+      等释文，未抄入。rule YAML 的 url_or_path 用 #page/n53，与本条 viewer_url 同源。
+
+  - id: ARC-002
+    rule_ids: [SH-LIUHE-001]
+    relation: supplementary
+    juan: "十"
+    pian: 宜忌·六合
+    archive_item: "06056510.cn"
+    leaf: 120
+    page_url: https://archive.org/download/06056510.cn/page/n120.jpg?scale=4
+    viewer_url: https://archive.org/details/06056510.cn#page/n120
+    image_sha256: ef0b3bf4f997624842f82f3e70f62e6b85da0e10761c873b3e4135cd6df47e73
+    quote_kind: 原文
+    quote_verbatim: >-
+      六合 宜宴會結婚姻嫁娶進人口經絡醞釀立券交易納財納畜安葬
+      與月恩四相時德併宜修倉庫
+      按六合之吉不減三合舊本止宜宴會結婚姻立券交易今以義推之所宜當如此
+    quote_scope: 节选
+    quote_confidence: 高
+    uncertain_glyphs: []
+    agent_checked_by: qoder-agent
+    agent_checked_at: "2026-11-04"
+    verified_by: null
+    verified_at: null
+    status: pending_human_countersign
+    notes: >-
+      这是「六合宜安葬」的唯一直接依据，且原书明说是「以義推之」——旧本只写宴會／結婚姻／
+      立券交易，安葬是编者推论。SH-LIUHE-001 把适用范围收窄为安葬／嫁娶时，必须把这句
+      推论性质一起呈给师傅，不能当作旧本原有之义。本叶末行「宜葬事見天願宜修」被裁切。
+
+  - id: ARC-003
+    rule_ids: [PUB-SILI-001, PUB-SIJUE-001]
+    relation: primary
+    juan: "六"
+    pian: 義例四·四離四絕
+    archive_item: "06056507.cn"
+    leaf: 148
+    page_url: https://archive.org/download/06056507.cn/page/n148.jpg?scale=4
+    viewer_url: https://archive.org/details/06056507.cn#page/n148
+    image_sha256: b4d491748465057297cec6e8dda2f95b9d553a4e7ac948bd51fccad3d20ba0f7
+    quote_kind: 原文
+    quote_verbatim: >-
+      四離 四絕
+      玉門經曰離者陰陽分至前一辰也謂建卯之月陽氣出陰氣入建子之月陰氣降陽氣升
+      建酉之月陰氣出陽氣入建午之月陽氣降陰氣升故先一日為四離辰也
+      ○李鼎祚曰此日忌出行征伐
+      ○曹震圭曰四離者冬至前一日水離夏至前一日火離春分前一日陽體分而木亦離也
+      秋分前一日陰體分而金亦離也故名曰四離
+    quote_scope: 全文
+    quote_confidence: 高
+    uncertain_glyphs: []
+    agent_checked_by: qoder-agent
+    agent_checked_at: "2026-11-04"
+    verified_by: null
+    verified_at: null
+    status: pending_human_countersign
+    notes: >-
+      义例只给定义与「忌出行征伐」，**没有提安葬**。安葬禁忌的唯一依据是卷十宜忌的
+      「餘事皆忌」（ARC-005/006），两者层级不同，裁定 Q-027 时必须分开看。
+
+  - id: ARC-004
+    rule_ids: [PUB-SIJUE-001]
+    relation: primary
+    juan: "六"
+    pian: 義例四·四離四絕
+    archive_item: "06056507.cn"
+    leaf: 149
+    page_url: https://archive.org/download/06056507.cn/page/n149.jpg?scale=4
+    viewer_url: https://archive.org/details/06056507.cn#page/n149
+    image_sha256: fc45589066fadd49955213dc0276ac3261ca02adb0b4c94150272cdb37e0eceb
+    quote_kind: 原文
+    quote_verbatim: >-
+      玉門經曰四絕者四立前一辰也○李鼎祚曰此日忌出軍遠行
+      ○曹震圭曰立春木旺水絕立夏火旺木絕立秋金旺土絕立冬水旺金絕故先一日為絕也
+    quote_scope: 节选
+    quote_confidence: 高
+    uncertain_glyphs: []
+    agent_checked_by: qoder-agent
+    agent_checked_at: "2026-11-04"
+    verified_by: null
+    verified_at: null
+    status: pending_human_countersign
+    notes: >-
+      本叶下半转入「月忌日」，与四絕无关，未抄入。四絕同样只忌出軍遠行，未提安葬。
+
+  - id: ARC-005
+    rule_ids: [PUB-SILI-001, PUB-SIJUE-001]
+    relation: primary
+    juan: "十"
+    pian: 宜忌·上朔四離四絕晦日
+    archive_item: "06056510.cn"
+    leaf: 213
+    page_url: https://archive.org/download/06056510.cn/page/n213.jpg?scale=4
+    viewer_url: https://archive.org/details/06056510.cn#page/n213
+    image_sha256: 395d172ec19e33e37412e7e3cf8829572f50f2f3c063f3d1365050ce90759492
+    quote_kind: 原文
+    quote_verbatim: >-
+      上朔 四離 四絕 晦日
+      止不忌祭祀解除沐浴整容剃頭整手足甲補垣塞穴掃舍宇修飾垣牆平治道塗破屋壞垣伐木
+      餘事皆忌
+      與德合赦願併猶忌以下並同
+    quote_scope: 全文
+    quote_confidence: 高
+    uncertain_glyphs: []
+    agent_checked_by: qoder-agent
+    agent_checked_at: "2026-11-04"
+    verified_by: null
+    verified_at: null
+    status: pending_human_countersign
+    notes: >-
+      这就是 PUB-SILI-001／PUB-SIJUE-001 现有 quote「止不忌祭祀解除沐浴……餘事皆忌」
+      的出处叶。原文为「止不忌…」，语义是「这些事不禁，其余皆忌」；安葬不在豁免清单内。
+      此前 citation 缺叶次，本轮补齐。
+
+  - id: ARC-006
+    rule_ids: [PUB-SILI-001, PUB-SIJUE-001]
+    relation: supplementary
+    juan: "十"
+    pian: 宜忌·上朔四離四絕晦日（按語）
+    archive_item: "06056510.cn"
+    leaf: 214
+    page_url: https://archive.org/download/06056510.cn/page/n214.jpg?scale=4
+    viewer_url: https://archive.org/details/06056510.cn#page/n214
+    image_sha256: ffc2ba34f95e87b4ae8bb4ac4d2c81b9cd48f945f61a2d7199620c2723864d3c
+    quote_kind: 原文
+    quote_verbatim: >-
+      按上朔為陰陽與歲德俱盡之日四離四絕為二氣五行分判之日晦為月盡之日故諸事不宜
+      惟祭祀解除等事或以事神而不敢禁或以除舊而不為嫌故遇有所宜之神則不忌
+      晦日雖不與上朔同凶然亦止宜祭祀等事餘事雖不忌亦不註宜也
+      又上朔以年干取義晦日反支以月朔取義四離四絕以節氣取義皆與德合赦願義不相屬故與併猶忌也下倣此
+    quote_scope: 全文
+    quote_confidence: 高
+    uncertain_glyphs: []
+    agent_checked_by: qoder-agent
+    agent_checked_at: "2026-11-04"
+    verified_by: null
+    verified_at: null
+    status: pending_human_countersign
+    notes: >-
+      按語把四離四絕定性为「諸事不宜」，并说明豁免祭祀／解除的理由是「事神」「除舊」。
+      这是 Q-027 选 C（维持安葬属「餘事皆忌」）的最强原文支撑；选 A（只忌出行征伐）
+      需要师承依据，因为与本按语直接冲突。
+
+  - id: ARC-007
+    rule_ids: [PUB-YUEPO-001]
+    relation: primary
+    juan: "十"
+    pian: 宜忌·月破
+    archive_item: "06056510.cn"
+    leaf: 132
+    page_url: https://archive.org/download/06056510.cn/page/n132.jpg?scale=4
+    viewer_url: https://archive.org/details/06056510.cn#page/n132
+    image_sha256: 2ae0744cf34b97601f390d0a23200591f757fc49d4097b62f715611e2bd6224f
+    quote_kind: 原文
+    quote_verbatim: >-
+      月破 大耗
+      忌祈福求嗣上冊進表章頒詔施恩封拜詔命公卿招賢舉正直宣布政事慶賜賞賀宴會冠帶行幸
+      遣使安撫邊境選將訓兵出師上官赴任臨政親民結婚姻納采問名嫁娶進人口般移安床整容剃頭整
+    quote_scope: 节选
+    quote_confidence: 高
+    uncertain_glyphs: []
+    agent_checked_by: qoder-agent
+    agent_checked_at: "2026-11-04"
+    verified_by: null
+    verified_at: null
+    status: pending_human_countersign
+    notes: >-
+      月破条跨 n132–n133 两叶，本叶止于「整」字（下接 n133「手足甲…」）。
+      Q-028 要求补月破出处，卷十宜忌的禁忌清单即其「用」的出处；「义」的出处
+      （月建之冲／气绝之地）见 ARC-009 按语。
+
+  - id: ARC-008
+    rule_ids: [PUB-YUEPO-001]
+    relation: primary
+    juan: "十"
+    pian: 宜忌·月破大耗
+    archive_item: "06056510.cn"
+    leaf: 133
+    page_url: https://archive.org/download/06056510.cn/page/n133.jpg?scale=4
+    viewer_url: https://archive.org/details/06056510.cn#page/n133
+    image_sha256: 1637e745be933836b94353e58d8c01f11efc4888529b931290924ab258b24bbf
+    quote_kind: 原文
+    quote_verbatim: >-
+      手足甲裁製營建宮室修宮室繕城郭築隄防興造動土豎柱上梁修倉庫鼓鑄經絡醞釀開市立券交易
+      納財開倉庫出貨財修置產室開渠穿井安碓磑補垣塞穴修飾垣牆伐木栽種牧養納畜破土安葬啟攢
+      又為大耗忌修倉庫開市立券交易納財開倉庫出貨財
+      與天德月德天德合月德合併得與月破併猶忌之
+      天赦天願不得與月破併猶忌之
+    quote_scope: 全文
+    quote_confidence: 高
+    uncertain_glyphs: []
+    agent_checked_by: qoder-agent
+    agent_checked_at: "2026-11-04"
+    verified_by: null
+    verified_at: null
+    status: pending_human_countersign
+    notes: >-
+      「破土安葬啟攢」明列于月破忌内，且「天赦天願不得與月破併，猶忌之」——
+      即吉神不能解月破。这条直接支持月破维持硬禁（hard_veto）的取向，
+      但 Q-028 已把 PUB-YUEPO-001 移出必需集，是否恢复须师傅裁。
+
+  - id: ARC-009
+    rule_ids: [PUB-YUEPO-001]
+    relation: supplementary
+    juan: "十"
+    pian: 宜忌·月破（按語）
+    archive_item: "06056510.cn"
+    leaf: 135
+    page_url: https://archive.org/download/06056510.cn/page/n135.jpg?scale=4
+    viewer_url: https://archive.org/details/06056510.cn#page/n135
+    image_sha256: eb9042c95c23096ffaf68fe7f67c458302ccd9d9c2e1c08ef1b4b67a888755a8
+    quote_kind: 原文
+    quote_verbatim: >-
+      按 月破為月建之衝又為月建氣絕之地故所忌如此
+    quote_scope: 节选
+    quote_confidence: 高
+    uncertain_glyphs: []
+    agent_checked_by: qoder-agent
+    agent_checked_at: "2026-11-04"
+    verified_by: null
+    verified_at: null
+    status: pending_human_countersign
+    notes: >-
+      只抄首句。「月建之衝／氣絕之地」是月破的义理定义，可直接补进
+      PUB-YUEPO-001 的 citation。本叶后半讨论德神、災煞、月厭与月破并临，字迹可辨
+      但断句需人复核，未抄入。
+
+  - id: ARC-010
+    rule_ids: [PUB-SUIPO-001]
+    relation: supplementary
+    juan: "三十四"
+    pian: 辨訛·黃幡豹尾
+    archive_item: "06056525.cn"
+    leaf: 58
+    page_url: https://archive.org/download/06056525.cn/page/n58.jpg?scale=4
+    viewer_url: https://archive.org/details/06056525.cn#page/n58
+    image_sha256: 90595fa8fcd2f2dfe914f78d07e0170fe54ba3b02ebecf7b9412e29cd388b678
+    quote_kind: 原文
+    quote_verbatim: >-
+      按子午卯酉年黃幡即官符豹尾即弔客寅申巳亥年黃幡即白虎豹尾即喪門辰戌丑未年黃幡即太歲豹尾即歲破
+      當從各神以為制化
+      豹尾尤輕嫁娶非忌其方惟上轎下轎忌向之凡凶煞皆然豹尾卻不足忌也
+    quote_scope: 节选
+    quote_confidence: 高
+    uncertain_glyphs: []
+    agent_checked_by: qoder-agent
+    agent_checked_at: "2026-11-04"
+    verified_by: null
+    verified_at: null
+    status: pending_human_countersign
+    notes: >-
+      **裁定要点**：此处说「辰戌丑未年豹尾即歲破」，随后说「豹尾尤輕，嫁娶非忌其方，
+      惟上轎下轎忌向之…豹尾卻不足忌也」。注意后半句限定在「方／向」与嫁娶场景，
+      并没有说岁破坐山可犯；不能据此断定岁破非硬禁。但它确实说明岁破的「向」禁忌
+      远轻于「坐」，与 ADR-0013「太歲可坐不可向」的方向性论述需要分开处理。
+      PUB-SUIPO-001 是「岁破占山」，本条不足以为其升级，只能作背景。
+      本叶末列「巡山羅睺／病符／死符／小耗」四目，其释文从 n59 起、续于 n60（见 ARC-011）。
+
+  - id: ARC-011
+    rule_ids: [PUB-SUIPO-001]
+    relation: supplementary
+    juan: "三十四"
+    pian: 辨訛·四餘
+    archive_item: "06056525.cn"
+    leaf: 60
+    page_url: https://archive.org/download/06056525.cn/page/n60.jpg?scale=4
+    viewer_url: https://archive.org/details/06056525.cn#page/n60
+    image_sha256: 13c44e0a6737c272c1e54ef41416e62248ce4c7b76c6489ed29420d6575ad702
+    quote_kind: 原文
+    quote_verbatim: >-
+      病符為舊太歲故亦忌立向死符為舊歲破故亦忌開山
+      然皆小煞子午卯酉年猶與太歲歲破同行餘年則性情迴別各取山向三合月吉星蓋照便自可用
+      但日時勿干犯本年太歲歲破耳
+    quote_scope: 节选
+    quote_confidence: 高
+    uncertain_glyphs: []
+    agent_checked_by: qoder-agent
+    agent_checked_at: "2026-11-04"
+    verified_by: null
+    verified_at: null
+    status: pending_human_countersign
+    notes: >-
+      「日時勿干犯本年太歲歲破」说明岁破的禁忌至少落在日时层面，与「坐山」禁忌并行。
+      本条只作旁证，不能替代岁破义例条的逐字引文（见 gaps）。
+
+  - id: ARC-012
+    rule_ids: [PUB-SANSHA-001]
+    relation: supplementary
+    juan: "三十四"
+    pian: 辨訛·火星（附制三煞法）
+    archive_item: "06056525.cn"
+    leaf: 65
+    page_url: https://archive.org/download/06056525.cn/page/n65.jpg?scale=4
+    viewer_url: https://archive.org/details/06056525.cn#page/n65
+    image_sha256: 99e28859f40ddf3cc1ea58707cb0114088ee45c5e5dd8b07df2fe20a92ec26af
+    quote_kind: 原文
+    quote_verbatim: >-
+      子午卯酉年疊歲君不可犯其餘年分做上制三煞法以三合局制之
+      通書忌用寅午戌局非是若巳酉丑年打頭火在酉不用寅午戌火局何以制金之旺氣乎
+      此煞與天官符俱可吉可凶不與三煞比三合制矣
+      再得年月一白水星或年月壬癸水德本命貴祿尤妙四柱忌用丙丁至八節之丙丁奇則又吉而不忌也
+    quote_scope: 节选
+    quote_confidence: 中
+    uncertain_glyphs: ["不與三煞比三合制矣（断句存疑，或当作「不與三煞比，三合制矣」）"]
+    agent_checked_by: qoder-agent
+    agent_checked_at: "2026-11-04"
+    verified_by: null
+    verified_at: null
+    status: pending_human_countersign
+    notes: >-
+      这是「三煞可制」的影印依据：除子午卯酉疊歲君年不可犯外，其余年份用三合局制。
+      与 ADR-0013 的「三煞可向不可坐，占方则可制而修」方向一致，但本条只论制方，
+      未直接说「可向不可坐」。三煞义例条仍未定位（见 gaps），不能凭本条升 A。
+
+  - id: ARC-013
+    rule_ids: [PUB-TIANDE-001]
+    relation: primary
+    juan: "五"
+    pian: 義例三·天德
+    archive_item: "06056506.cn"
+    leaf: 9
+    page_url: https://archive.org/download/06056506.cn/page/n9.jpg?scale=4
+    viewer_url: https://archive.org/details/06056506.cn#page/n9
+    image_sha256: 7586fe92089481c395dcd0c7e07700aa4eb17fe6c49a8bc761d94c50f183cf5b
+    quote_kind: 原文
+    quote_verbatim: >-
+      乾坤寶典曰天德者天之福德也所理之方所值之日可以興土功營宮室
+      ○堪輿經曰天德者正月丁二月坤三月壬四月辛五月乾六月甲七月癸八月艮九月丙十月乙十一月巽十二月庚
+    quote_scope: 节选
+    quote_confidence: 高
+    uncertain_glyphs: []
+    agent_checked_by: qoder-agent
+    agent_checked_at: "2026-11-04"
+    verified_by: null
+    verified_at: null
+    status: pending_human_countersign
+    notes: >-
+      本叶前半为「天道」条（乾坤寶典曰天道者…／廣聖曆曰…／考原曰…），天德条自中段起。
+      rule 的 quote 与本条逐字一致；叶面上天德条后还有曹震圭释文，未抄入。
+
+  - id: ARC-014
+    rule_ids: [PUB-YUEDE-001]
+    relation: primary
+    juan: "五"
+    pian: 義例三·月德
+    archive_item: "06056506.cn"
+    leaf: 21
+    page_url: https://archive.org/download/06056506.cn/page/n21.jpg?scale=4
+    viewer_url: https://archive.org/details/06056506.cn#page/n21
+    image_sha256: 8e8438a8d1194ea6e5145775e6194acc7dc60068b83bbd02325084016fe5ef54
+    quote_kind: 原文
+    quote_verbatim: >-
+      天寶曆曰月德者月之德神也取土修營宜向其方宴樂上官利用其日
+      ○曆例曰月德者正五九月在丙二六十月在甲三七十一月在壬四八十二月在庚
+    quote_scope: 节选
+    quote_confidence: 高
+    uncertain_glyphs: []
+    agent_checked_by: qoder-agent
+    agent_checked_at: "2026-11-04"
+    verified_by: null
+    verified_at: null
+    status: pending_human_countersign
+    notes: >-
+      叶面自右向左依次为天寶曆、曆例、曹震圭释文（月德者月中之陽德也…）。rule quote 止于曆例。
+
+  - id: ARC-015
+    rule_ids: [PUB-YUEDE-HE-001]
+    relation: primary
+    juan: "五"
+    pian: 義例三·月德合
+    archive_item: "06056506.cn"
+    leaf: 29
+    page_url: https://archive.org/download/06056506.cn/page/n29.jpg?scale=4
+    viewer_url: https://archive.org/details/06056506.cn#page/n29
+    image_sha256: 12769b0afee48f8640c81d509c2cf5ba766740343405b4a7e7608268808cdd74
+    quote_kind: 原文
+    quote_verbatim: >-
+      五行論曰月德合者五行之精符會為合也所理之地衆惡皆消所值之日百福並集
+      利以出師命將上冊受封祠祀星辰營建宮室
+      ○曆例曰月德合者正五九月在辛二六十月在己三七十一月在丁四八十二月在乙
+      ○考原曰月德合者即各以月德所合之干為之
+    quote_scope: 全文
+    quote_confidence: 高
+    uncertain_glyphs: []
+    agent_checked_by: qoder-agent
+    agent_checked_at: "2026-11-04"
+    verified_by: null
+    verified_at: null
+    status: pending_human_countersign
+    notes: >-
+      叶面其后接「按甲丙壬庚為月德，則己辛丁乙為月德合矣…」按语，未抄入。
+
+  - id: ARC-016
+    rule_ids: [PUB-TIANSHE-001]
+    relation: primary
+    juan: "五"
+    pian: 義例三·天赦
+    archive_item: "06056506.cn"
+    leaf: 41
+    page_url: https://archive.org/download/06056506.cn/page/n41.jpg?scale=4
+    viewer_url: https://archive.org/details/06056506.cn#page/n41
+    image_sha256: ce51ebbd32fd00a74689ab9213e95e75575f3b9259123d6575b5aa2b6e790dd8
+    quote_kind: 原文
+    quote_verbatim: >-
+      天寶曆曰天赦者赦過宥罪之辰也天之生育甲與戊地之成立子午寅申故以甲戊配成天赦
+      其日可以緩刑獄雪寃枉施恩惠若與德神會合尤宜興造
+      ○曆例曰春戊寅夏甲午秋戊申冬甲子是也
+    quote_scope: 节选
+    quote_confidence: 高
+    uncertain_glyphs: []
+    agent_checked_by: qoder-agent
+    agent_checked_at: "2026-11-04"
+    verified_by: null
+    verified_at: null
+    status: pending_human_countersign
+    notes: >-
+      叶面其后为曹震圭释文（天赦者乃天之赦過宥罪之神也…），未抄入。
+
+  - id: ARC-017
+    rule_ids: [PUB-SUIPO-001]
+    relation: primary
+    juan: "三"
+    pian: 義例一·歲破（附大耗）
+    archive_item: "06056504.cn"
+    leaf: 33
+    page_url: https://archive.org/download/06056504.cn/page/n33.jpg?scale=4
+    viewer_url: https://archive.org/details/06056504.cn#page/n33
+    image_sha256: 60cb66e2fc52b33979f2d86d31437b8867d1ee0e9edb98edb29db08ee449da8c
+    quote_kind: 原文
+    quote_verbatim: >-
+      廣聖曆曰歲破者太歲所衝之辰也其地不可興造移徙嫁娶遠行犯者主損財物及害家長惟戰伐向之吉
+      ○明時總要曰歲破者子年在午順行十二辰是也
+      按歲破為最凶之神而廣聖曆云戰伐向之吉者蓋向歲破即坐太歲而敵人乃居歲破之位也然則仍是坐太歲非用歲破也
+    quote_scope: 节选
+    quote_confidence: 高
+    uncertain_glyphs: []
+    agent_checked_by: qoder-agent
+    agent_checked_at: "2026-11-04"
+    verified_by: null
+    verified_at: null
+    status: pending_human_countersign
+    notes: >-
+      **GAP-002 已定位**：本条即岁破义例条。原文说「其地不可興造移徙嫁娶遠行」，
+      直接支持「岁破占山／方位」的 target；但按语同时说「向歲破即坐太歲…
+      然則仍是坐太歲非用歲破也」，即禁忌的实质落在「坐太岁」一侧。
+      本条只解决「出处定位 + 逐字引文」，**不自动把规则从 B 升 A**：
+      B→A、reference→scoring、engine_eligible 是否恢复，仍是人类裁定（见 signoff 第 9 项）。
+      同叶后半为大耗条（「曆例曰大耗者歲中虛耗之神也…」），未抄入。
+
+  - id: ARC-018
+    rule_ids: [PUB-WUHUANG-001]
+    relation: supplementary
+    juan: "三"
+    pian: 義例一·太歲（条末）
+    archive_item: "06056504.cn"
+    leaf: 31
+    page_url: https://archive.org/download/06056504.cn/page/n31.jpg?scale=4
+    viewer_url: https://archive.org/details/06056504.cn#page/n31
+    image_sha256: 8a9fa37db3cfea80be4ae0c9c34fb409b15810880bee9937fbfe2dbbc971067d
+    quote_kind: 原文
+    quote_verbatim: >-
+      太歲君象其方固上古之方而非下民之所敢用猶月忌日為中宮五黃民間須避是日同一義也
+      故又謂之堆黃煞古人謂之歲下對刀則亦曰歲破
+    quote_scope: 节选
+    quote_confidence: 中
+    uncertain_glyphs: ["對刀（或作「對刃」，字形小）", "堆黃煞（術語罕見，斷句待复核）"]
+    agent_checked_by: qoder-agent
+    agent_checked_at: "2026-11-04"
+    verified_by: null
+    verified_at: null
+    status: pending_human_countersign
+    notes: >-
+      这是卷三太岁条末的五黄旁证：把「月忌日為中宮五黃，民間須避是日」与太岁禁忌并提。
+      它只证明清代官修本已把五黄当作**日**禁忌来谈，**不能**为「五黄占山」或
+      ADR-0013 D3 的 cutoff 提供直接依据；GAP-003 仍未解决。quote 止于「則亦曰歲破」，
+      其后接王充《論衡》移徙法，未抄入。
+
+  - id: ARC-019
+    rule_ids: [PUB-SANSHA-001]
+    relation: primary
+    juan: "三"
+    pian: 義例一·劫煞（三煞分条之一）
+    archive_item: "06056504.cn"
+    leaf: 87
+    page_url: https://archive.org/download/06056504.cn/page/n87.jpg?scale=4
+    viewer_url: https://archive.org/details/06056504.cn#page/n87
+    image_sha256: 31fb6e6365072deb964e7417d7941006e34962d3b3557d05def439c13fb5ee3f
+    quote_kind: 原文
+    quote_verbatim: >-
+      神樞經曰劫煞者歲之陰氣也主有殺害所理之方忌有興造犯之主有劫盜傷殺之事
+      ○李鼎祚曰寅午戌歲在亥亥卯未歲在申申子辰歲在巳巳酉丑歲在寅是也
+    quote_scope: 节选
+    quote_confidence: 高
+    uncertain_glyphs: []
+    agent_checked_by: qoder-agent
+    agent_checked_at: "2026-11-04"
+    verified_by: null
+    verified_at: null
+    status: pending_human_countersign
+    notes: >-
+      三煞分条之一：只说「所理之方忌有興造」，是方位禁忌，未直接给「可向不可坐」
+      或「占山」的表述。前叶 n86 为劫煞圆图；本条与 ARC-020（災煞 n89）、
+      ARC-021（歲煞 n91）、ARC-022（三煞总论 n92）合成完整三煞义例。
+      注意：PUB-SANSHA-002 的 citation.source 是《象吉通书》，不是《协纪辨方书》；
+      本组影印不能用于给 002 补 quote，故本组只挂 001。
+
+  - id: ARC-020
+    rule_ids: [PUB-SANSHA-001]
+    relation: primary
+    juan: "三"
+    pian: 義例一·災煞（三煞分条之二）
+    archive_item: "06056504.cn"
+    leaf: 89
+    page_url: https://archive.org/download/06056504.cn/page/n89.jpg?scale=4
+    viewer_url: https://archive.org/details/06056504.cn#page/n89
+    image_sha256: e615d438cf6af6d4ef1194e25b28b95f3c260a96b2c172ff9629e5f6804efc2c
+    quote_kind: 原文
+    quote_verbatim: >-
+      神樞經曰災煞者五行陰氣之位也常居劫煞前一辰主災病疾厄之事所理之方不可抵向營造犯之者當有疾患
+      ○曹震圭曰災煞者三合五行胎神也洞源經曰劫煞起於絕災煞起於尅假令申子辰年合水局水絕於巳故劫煞在巳胎於午又水與午火相尅故災煞在午也巳酉丑年合金局金絕於寅故劫煞在寅胎於卯又金與卯木相尅故災煞在卯也餘倣此
+    quote_scope: 节选
+    quote_confidence: 高
+    uncertain_glyphs: []
+    agent_checked_by: qoder-agent
+    agent_checked_at: "2026-11-04"
+    verified_by: null
+    verified_at: null
+    status: pending_human_countersign
+    notes: >-
+      **裁定要点**：「所理之方不可抵向營造」断句有两种读法：
+      (a)「不可抵向、營造」＝不可冲对、不可营造；
+      (b)「不可抵向營造」＝不可朝着该方营造。
+      若取 (a)，与 ARC-022「宜向不宜坐」表面冲突；若取 (b)，则只禁营建朝向、不禁「向首」。
+      本条不替师傅消解，只如实登记。前叶 n88 为災煞圆图。
+      已与 Wikisource 四库本电子文逐字比对一致（异体字「尅／克」写法相同；
+      「絶／絕」「夘／卯」等刻本异体不计），可作二级互证。
+
+  - id: ARC-021
+    rule_ids: [PUB-SANSHA-001]
+    relation: primary
+    juan: "三"
+    pian: 義例一·歲煞（三煞分条之三）
+    archive_item: "06056504.cn"
+    leaf: 91
+    page_url: https://archive.org/download/06056504.cn/page/n91.jpg?scale=4
+    viewer_url: https://archive.org/details/06056504.cn#page/n91
+    image_sha256: 40972d1953f48a7ee9d53f5ca01d8d02f6b9aafd8f68786a71bb8876dbbec5aa
+    quote_kind: 原文
+    quote_verbatim: >-
+      神樞經曰歲煞者陰氣尤毒謂之煞也常居四季謂四季之陰氣能遊天上
+      ○李鼎祚曰寅午戌煞在丑巳酉丑煞在辰申子辰煞在未亥卯未煞在戌
+      ○廣聖曆曰歲煞之地不可穿鑿修營移徙犯之者傷子孫六畜
+      ○曹震圭曰月煞者三合五行成形之位所謂養是也大抵物之成形母必有傷故曰煞
+      ○考原曰劫煞災煞歲煞是為三煞如曹氏說則三合五行絕胎養之位也絕胎養者墓庫以後長生以前神樞經所謂陰氣是也或
+    quote_scope: 节选
+    quote_confidence: 高
+    uncertain_glyphs: []
+    agent_checked_by: qoder-agent
+    agent_checked_at: "2026-11-04"
+    verified_by: null
+    verified_at: null
+    status: pending_human_countersign
+    notes: >-
+      「歲煞之地不可穿鑿修營移徙」是明确的方位禁忌，比劫煞「忌有興造」更全。
+      末字「或」是下叶按语「或謂三煞者…」的起字，跨叶断句；逐字引文不含下叶。
+      前叶 n90 为歲煞圆图。本条同时给出「三煞＝绝胎养之位」的曹氏说，
+      与 ARC-022 的「当旺之冲」说并列，两说并存于原书，不可只取一说。
+
+  - id: ARC-022
+    rule_ids: [PUB-SANSHA-001, PUB-SANSHA-003]
+    relation: primary
+    juan: "三"
+    pian: 義例一·三煞总论（考原按语，续 ARC-021 末字「或」）
+    archive_item: "06056504.cn"
+    leaf: 92
+    page_url: https://archive.org/download/06056504.cn/page/n92.jpg?scale=4
+    viewer_url: https://archive.org/details/06056504.cn#page/n92
+    image_sha256: 3dc830a56ede5c6a07b2b414862b1c0fed35e1e4563d0aa82e99435c51d9d176
+    quote_kind: 原文
+    quote_verbatim: >-
+      謂三煞者三合五行當旺之衝故有宜向不宜坐之說如申子辰合水局水旺於北方南方其衝也故三煞在南方巳午未餘倣此
+    quote_scope: 全文
+    quote_confidence: 高
+    uncertain_glyphs: []
+    agent_checked_by: qoder-agent
+    agent_checked_at: "2026-11-04"
+    verified_by: null
+    verified_at: null
+    status: pending_human_countersign
+    notes: >-
+      **这是「三煞可向不可坐」在四库本里的直接出处**，但冠以「或謂」，属《考原》
+      转述的一种说法，不是《协纪辨方书》编者的最终定论；且它把三煞定义为
+      「当旺之冲」，与 ARC-021 所引曹震圭「绝胎养之位」是两种取法（冲 vs 养），
+      相差一位。ADR-0013 D1／PUB-SANSHA-003（有争议）须据此两说重裁，
+      不能把本条当作单一定论直接给 003 解禁。
+      本叶仅三行，以下留白，三煞义例至此结束；无后续释文。
+      已与 Wikisource 四库本电子文逐字比对一致（唯「説／說」「衝／冲」等异体不同）。
+
+  - id: ARC-023
+    rule_ids: [PUB-CHONGMING-001]
+    relation: supplementary
+    juan: "三十五"
+    pian: 附錄·事類總集「凡合壽木」条
+    archive_item: "06056526.cn"
+    leaf: 53
+    page_url: https://archive.org/download/06056526.cn/page/n53.jpg?scale=4
+    viewer_url: https://archive.org/details/06056526.cn#page/n53
+    image_sha256: 0967d0b67f688164388d168932a77cc5e175fb003774f5651ec52046f63799d0
+    quote_kind: 原文
+    quote_verbatim: >-
+      凡合壽木宜木建日正月庚寅二月辛卯二月戊辰四月己巳五月壬午六月癸未七月庚申八月辛酉九月戊戌十月己亥十一月壬子十二月癸丑及四廢日本命納音生旺日忌本命日本命對衝日建日破日重日日辰納音尅本命納音日
+    quote_scope: 全文
+    quote_confidence: 高
+    uncertain_glyphs: []
+    agent_checked_by: qoder-agent
+    agent_checked_at: "2026-11-04"
+    verified_by: null
+    verified_at: null
+    status: pending_human_countersign
+    notes: >-
+      **语境是「合壽木」（做寿材），不是通葬事通则**；且属附錄·事類總集，
+      不在「雜用宜忌」小节下。原文只教「合壽木」择日避本命日、本命對衝日等，
+      是否可外推到「安葬日冲命」须师傅裁（GAP-005／signoff M4）。
+      木建日十二月列表中「二月」出现两次、无「三月」——影印与 Wikisource 电子文一致，
+      属底本原文，照录不改，不得由 agent 静默改成「三月」。
+      「對衝」不作「對沖」，「尅」不作「克」，均按影印字形录。
+      已与 Wikisource 四库本卷35电子文逐字比对（异体字差异：辛卯／辛夘）。
+
+gaps:
+  - id: GAP-001
+    rule_ids: [PUB-SANSHA-001, PUB-SANSHA-002]
+    missing:
+      - PUB-SANSHA-001：人类复核四条影印引文并把 quote_verified 置 true（agent 已抄录，未签）
+      - PUB-SANSHA-002：其 citation.source 为《象吉通书》，与协纪影印不是同一部书，出处仍未定位
+      - 「抵向營造」断句与「宜向不宜坐」的方向性冲突，须与 ADR-0013 D1 一并裁定
+    current_state: >-
+      卷三义例一的三煞四叶已全部取到并逐字抄录：劫煞 n87（ARC-019）、災煞 n89（ARC-020）、
+      歲煞 n91（ARC-021）、三煞总论 n92（ARC-022）；圆图 n88／n90 已核，无释文。
+      原书并存两说：曹震圭「绝胎养之位」与《考原》「或谓当旺之冲，故宜向不宜坐」。
+      四条均 status=pending_human_countersign、verified_by=null，未改任何规则状态。
+    next_step: >-
+      师傅核对 n87／n89／n91／n92 四叶后，方可把 PUB-SANSHA-001 的 quote_verified 置 true；
+      002 需另找《象吉通书》影印（待查清单见 GAP-009），不能用本组协纪引文顶替。
+      方向性（可向不可坐 vs 不可抵向）须先裁，再决定 PUB-SANSHA-003 是否解除有争议。
+
+  - id: GAP-002
+    rule_ids: [PUB-SUIPO-001]
+    missing:
+      - 岁破义例条已定位（ARC-017：卷三 n33），但 B→A 重评与签名未完成
+      - 「其地不可興造…」与按语「向歲破即坐太歲」的适用范围裁定
+    current_state: >-
+      影印原文已逐字录入 ARC-017；ARC-010／ARC-011 仍作旁证。
+      PUB-SUIPO-001 目前仍是 B 级／reference／engine_eligible=false，未改。
+    next_step: 师傅在 signoff 第 9 项裁定：是否据 ARC-017 升 A、恢复投票，以及坐山/向首如何分判。
+
+  - id: GAP-003
+    rule_ids: [PUB-WUHUANG-001]
+    missing:
+      - 五黄四库原文的卷次、叶次、逐字引文
+    current_state: >-
+      B 级／参考层，engine_eligible=false，blocking_ruling=ADR-0013-D3。
+      ARC-018（卷三 n31）只找到「月忌日為中宮五黃」的**日**禁忌旁证，
+      不构成五黄占山规则的原典依据。
+    next_step: 待 ADR-0013 D3 裁定；未定位占山原文前不得升 A。
+
+  - id: GAP-004
+    rule_ids: [PUB-CHONGSHAN-001]
+    missing:
+      - 日冲山条出处（含四维山取法）
+    current_state: >-
+      Q-026 未决，四维山默认 input_insufficient。
+      电子文交叉检索（Wikisource《欽定協紀辨方書（四庫全書本）》insource）未见「沖山」「日沖」专条；
+      卷33 唯一的「冲山」是「止用寅戌二字，切忌午字冲山」，讲坐山财局取支，与本规则无关。
+      故不能假定协纪存在「日冲山」条，需另找通书类出处或由师傅说明师承来源。
+    next_step: 师傅在 Q-026 选项 A/B/C 中裁定后，再按裁定结果定位对应原文；若协纪确无此条，应改 source 或维持 C。
+
+  - id: GAP-005
+    rule_ids: [PUB-CHONGMING-001]
+    missing:
+      - 影印已定位（ARC-023），但「合壽木」语境能否外推到安葬、是否等同「日冲命」仍待师傅裁
+    current_state: >-
+      影印已定位：06056526.cn n53（0 基页序），附錄·事類總集「凡合壽木」条，
+      逐字见 ARC-023。原文语境是「合壽木」（做寿材），不是通葬事通则；
+      外推到「安葬日冲命」属建模跳跃。
+      原文作「本命對衝日」，是否等同「日冲命」、是否含纳音条件，须师傅裁。
+      另：该 item imagecount=126，0 基页序只到 n125；
+      不存在「L187/L285」这种叶次写法（见 GAP-008）。
+    next_step: >-
+      师傅在 signoff M4 裁定是否采用该条、是否外推到安葬；采用时还要定
+      「本命對衝日」是否等同「日支冲年命支」、是否含纳音条件。
+      裁定前 PUB-CHONGMING-001 维持 C 级，不得升级。
+
+  - id: GAP-006
+    rule_ids: [PUB-MING-SANSHA-001]
+    missing:
+      - 年命三煞条出处
+    current_state: >-
+      电子文检索未见「年命三煞」「本命三煞」；「年命」在协纪中出现处均为禄马贵人、
+      合婚、造葬主命吉方，不含「年命三煞」禁忌。
+      现有规则把「命主年支三合局」映射到「三煞所临之方」，原书未见对应条文，
+      存在「以年三煞推命」的建模跳跃。
+    next_step: 先由师傅确认此口诀的师承出处（可能来自通书／象吉，而非协纪）；无出处则维持 C 或出必需集。
+
+  - id: GAP-007
+    rule_ids: [SH-SANHEJU-001]
+    missing:
+      - 语义与出处不符的裁定（Q-025）
+    current_state: 卷六 三合条叶次已定位（n9），但现有规则语义与原文不一致，属裁定问题而非定位问题。
+    next_step: 师傅在 Q-025 选项 A/B/C 中裁定；建议 B（拆两条）。
+
+  - id: GAP-008
+    rule_ids: []
+    missing:
+      - 各卷刻本叶次与原书目录的换算表
+    current_state: 本档案 leaf 一律为 archive.org 0 基页序。
+    next_step: 若需引用「原书叶次」，另建换算表；不得在未换算时把 n 值写成刻本叶次。
+
+  - id: GAP-009
+    rule_ids: [PUB-SANSHA-002]
+    missing:
+      - 《象吉通书》三煞占山／占向条：版本、卷次、叶次、逐字引文
+    current_state: >-
+      PUB-SANSHA-002 的 citation.source 为《象吉通书》，与协纪四库本不是同一部书；
+      ARC-019～022 只能给 PUB-SANSHA-001 作证，不能顶替本条。
+      待查版本（均未在本机核到影印，不得写成已核）：
+      ① 宣统元年效经山房／文瑞楼合资印行本；② 民国上海广益书局增补本。
+      卷次须以实际影印目录确认（《时用集》相关卷为候选），未核目录前不得写死。
+    next_step: >-
+      师傅提供可核的《象吉通书》影印或说明所用版本；定位到「三煞占山」条后
+      逐字抄录 quote、补本档案记录，才可把 PUB-SANSHA-002 的 quote_verified 置 true。
+      未定位前维持 quote_verified=false，不投票。
+
+  - id: GAP-010
+    rule_ids: [DS-HUAQI-001, DS-LIANZHEN-001, DS-POJUN-001, DS-SANYUAN-001, DS-SANWU-001, DS-DEWEI-001]
+    missing:
+      - 卷三十六·辨讹「斗首五行」条的影印 item、叶次、逐字引文与 SHA-256
+    current_state: >-
+      四库总目提要载本书「附录、辨讹各一卷」，辨讹为卷三十六；多源转述均指向
+      卷三十六「斗首五行，不知其所自起……其为伪托可知」一段。
+      但本轮网络代理不可用（archive.org 直连超时），未取到卷三十六影印叶面，
+      故**不登记 quote_verbatim、不计算 image_sha256**，也不得把转述当逐字引文。
+      代码侧 literature_status=disputed_by_xieji 仅表示「文献正当性有争议」这一
+      分类事实，不构成任何规则依据，且不影响投票资格（斗首仍为参考层）。
+    next_step: >-
+      代理恢复后：定位卷三十六 item → 找「辨讹·斗首」叶 → 逐字抄录 → 算 SHA-256
+      → 补 ARC 记录 → 人类复核。补齐前，报告中的斗首提示须保留「影印叶次待取」
+      字样，不得写成「已核」。另：卷三十六 item 编号未核，禁止按卷三十五 item
+      推算（06056526.cn 的编号规律不适用于卷三十六）。

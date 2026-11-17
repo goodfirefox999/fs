@@ -1,5 +1,5 @@
 # 本文件由 tools/gen_rules_phase11.py 生成，结构统一；规则内容（条件/解释/出处）需人类考证者复核。
-# status: 待考证 = 口诀常见但原文未核，默认不参与正式判定，命中时仅登记为 unknown。
+# status: 待考证 = 原文已核影印，但尚无人类签名，默认不参与正式判定，命中时仅登记为 unknown。
 # citation.quote 为 null 表示「尚未核对原文」，不是缺漏，禁止为填满字段而编造引文。
 api_version: 1
 rule_id: PUB-YUEDE-001
@@ -21,22 +21,28 @@ condition:
   op: eq
   value: true
 score_weight: 1.0
+evidence:
+  grade: A
+  source_tier: primary_scan
+  quote_verified: true
+  blocking_ruling: null
 citation:
   kind: classic
   source: 《协纪辨方书》
-  edition: null
-  juan: null
-  pian: null
+  edition: 欽定四庫全書·子部七·術數類（浙江大学图书馆藏影印本，Internet Archive 06056506.cn）
+  juan: 五
+  pian: 义例三·月德
   entry: 义例·月德
-  quote_kind: null
-  quote: null
-  url_or_path: null
+  quote_kind: 原文
+  quote: 天寶曆曰月德者月之德神也取土修營宜向其方宴樂上官利用其日○曆例曰月德者正五九月在丙二六十月在甲三七十一月在壬四八十二月在庚
+  url_or_path: https://archive.org/details/06056506.cn#page/n21
   verified_by: null
   verified_at: null
-  confidence: 低
+  confidence: 高
+  book_authenticity: authentic
 tests:
 - RT-PUB-YUEDE-001-HIT
 - RT-PUB-YUEDE-001-MISS
 explanation: 用事日干为月德（{facts.jishen.yue_de.gan}），按本规则记为正向证据。
 supersedes: null
-notes: 待考证：月德取三合局阳干，起例诸本一致（寅午戌丙、亥卯未甲、申子辰壬、巳酉丑庚），但「值月德即百事大吉」是断言，本规则只作正向证据、不进否决层。
+notes: 待考证：月德取三合局阳干，起例诸本一致（寅午戌丙、亥卯未甲、申子辰壬、巳酉丑庚），但「值月德即百事大吉」是断言，本规则只作正向证据、不进否决层。2026-11-03 已对浙江大学图书馆藏四库本影印卷五叶二十一逐字核对，原文见 citation.quote；尚缺人类签名，故 status 仍为待考证。

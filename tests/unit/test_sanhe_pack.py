@@ -59,3 +59,35 @@ class TestChongshanMarker:
         rule = load_rule(RULES / "SH-CHONGSHAN-MARKER-001.yaml")
         assert rule.severity == "慎用", "标记规则 severity 应为慎用（不参与否决/tier 但非定义级）"
         assert rule.hard_veto is False, "标记规则不得为硬否决"
+
+
+class TestLiuheDay:
+    """月建六合日：正月在亥，逆行十二辰（《协纪辨方书》卷六义例四）。"""
+
+    EXPECTED = {
+        "寅": "亥", "卯": "戌", "辰": "酉", "巳": "申", "午": "未", "未": "午",
+        "申": "巳", "酉": "辰", "戌": "卯", "亥": "寅", "子": "丑", "丑": "子",
+    }
+
+    def test_twelve_months_partner(self) -> None:
+        from core_symbol.registry import liuhe_day_facts
+
+        for month, partner in self.EXPECTED.items():
+            facts = liuhe_day_facts(month_zhi=month, day_zhi=partner)
+            assert facts["partner"] == partner, f"{month}月六合应在{partner}"
+            assert facts["is_day"] is True
+
+    def test_non_liuhe_day(self) -> None:
+        from core_symbol.registry import liuhe_day_facts
+
+        facts = liuhe_day_facts(month_zhi="未", day_zhi="巳")
+        assert facts["partner"] == "午"
+        assert facts["is_day"] is False
+
+    def test_rule_condition_uses_liuhe_fact(self) -> None:
+        rule = load_rule(RULES / "SH-LIUHE-001.yaml")
+        assert rule.condition["fact"] == "facts.liuhe.is_day", (
+            "条件必须指向已实现的 facts.liuhe.is_day；旧的 facts.structure.liuhe_pairs 不存在"
+        )
+        assert rule.verdict_type == "vote", "评分层吉日规则应标 vote（签名后进投票）"
+        assert rule.engine_eligible is True

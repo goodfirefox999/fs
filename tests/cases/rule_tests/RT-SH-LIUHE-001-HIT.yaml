@@ -2,8 +2,11 @@ case_id: RT-SH-LIUHE-001-HIT
 kind: rule_test
 rule_id: SH-LIUHE-001
 expected: hit
-note: 六合 HIT：liuhe_pairs 非空。
+note: 六合 HIT：未月六合日在午，日支为午。
 overrides:
   facts:
-    structure:
-      liuhe_pairs: [{"a": "子", "b": "丑"}]
+    liuhe:
+      month_zhi: 未
+      day_zhi: 午
+      partner: 午
+      is_day: true

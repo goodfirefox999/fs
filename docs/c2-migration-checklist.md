@@ -63,7 +63,7 @@
 - [ ] `DG-GOUCHEN-001`
 - [ ] `DG-JIANCHU-001` —— **等 Q-024**（条件性 verdict_type，方向随命中变）
 - [x] `DG-JINSHEN-001`
-- [ ] `DG-SANXING-001`
+- [ ] `DG-SANXING-001`（2026-11-03：数据 `data_integrity: broken`，固定三循环表与月建分组起例不符；修正前命中不可作证据）
 
 ### doushou（6 条）
 
@@ -127,9 +127,9 @@
 ### sanhe（4 条）
 
 - [ ] `SH-CHONGSHAN-MARKER-001`
-- [ ] `SH-LIUHE-001`
+- [x] `SH-LIUHE-001`（2026-11-03：评分层六合，verdict_type: vote）
 - [ ] `SH-LUMAGUIREN-001`
-- [ ] `SH-SANHEJU-001`
+- [ ] `SH-SANHEJU-001`（2026-11-03：出处与实现语义不符，不可签；处置待裁定，见 Q-025）
 
 ### tianxing（4 条）
 

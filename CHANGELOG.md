@@ -2,6 +2,130 @@
 
 遵循 [Keep a Changelog](https://keepachangelog.com/)；版本号遵循语义化版本。
 
+## [Unreleased] 天文底座升级：Skyfield/DE440s 节气与均时差，及四离四绝证据链更正（2026-11-04）
+
+### 节气精度：VSOP87 后备 → Skyfield/DE440s 可选高精度后端（ADR-0016）
+
+新增 `core_time.skyfield_ephemeris`，`ZERI_EPHEMERIS_BACKEND=auto|vsop87|skyfield`
+（默认 `auto`）；星历文件不入包，缺 `de440s.bsp` 时回落 VSOP87 并在报告标注
+`precision: degraded`。报告 `manifest.ephemeris` 现输出
+`{backend, precision, delta_t_s}`。
+
+- 对拍基准：Swiss Ephemeris 2.10.03 + 官方 `sepl_18.se1`（SHA-256 记账），
+  参考事实存 `tests/golden/data/solar_terms_swisseph.json`；
+- 实测（2000–2100 × 24 节气）：TT 最大 **0.060 s**；2000–2030 UTC 最大 **0.060 s**
+  （2050/2100 UTC 差 5.7/24.4 s 来自 ΔT 预测，TT 仍 <0.05 s）；
+- 均时差 vs `swe.time_equ` 最大 **0.43 s**，仍走视黄经公式，未引入 Spencer 近似；
+- ΔT 锚点改为 IERS/Skyfield 值（修正旧表在 2020 年代约 2 s 的系统偏差）；
+- 修复求解器在 0°/360° 附近的差分未解缠问题（春分前后假导数约 −3600°/日）。
+
+### 删除低精度历书锚点
+
+`test_solar_terms_regression.py` 原 2024–2026 节气锚点系统性偏早 3–17 s
+（2026 立春旧值 04:01:51，权威 04:02:07.9），整组移除；绝对精度改由
+`test_ephemeris_precision.py` 对 Swiss 参考集验证，边界交叉测试保留。
+
+### 四离四绝：Q-027 证据链更正，撤回「只忌出行」前提
+
+重核四库本：卷十·用事宜忌「止不忌祭祀解除沐浴……餘事皆忌」+ 按语「故諸事不宜」，
+安葬在「餘事皆忌」内；卷六义例四仅引李鼎祚「忌出行征伐」，是义例溯源不是完整适用范围；
+卷十一安葬忌列未列四离四绝，不构成「不忌」。结论改为 **Q-027 建议 C（维持安葬硬否决）**，
+方案 A 仅作显式偏离（需师承口径）。`docs/patches/0001-sili-sijue-scope.patch` 更名
+`.withdrawn`，不得应用。签名核对单同步重算：A 级 5 条、B 级 1 条、C 级 4 条，
+最少签 5 条、现实 6–7 条；「最少 3 条」撤回。
+
+## [Unreleased] 阶段〇续：按评审登记三合的处置、三星的数据缺陷与签名边界（2026-11-03）
+
+### SH-SANHEJU-001：出处与实现语义不符，登记待裁定（Q-025）
+
+逐字核对浙图藏四库本影印（Internet Archive `06056507.cn`，卷六叶五 `#page/n9`）：
+三合条原文是**月建三合日**——「曾門經曰三合者異位而同氣也…其日宜結會親姻和合交易
+修營起土立木上梁○歷例曰正月在午戌二月在未亥…○考原曰三合者各與其月建會成三合局也」；
+而 `SH-SANHEJU-001` 实现的是「日课三合局 vs 坐山/入首龙」，原引「卷二·本原」也不是
+三合条目。**补 quote 修不好，语义裁定前不可签**。
+
+- 规则 `citation.pian` 撤下错误的「卷二·本原」，暂不挂任何卷次（不拿卷六冒充对上）；
+- `docs/QUESTIONS.md` 新增 **Q-025**，三选一：A 改语义为月建三合日 / B 拆成
+  「月建三合日」+「坐山三合局」两条（后者需另找出处）/ C 降参考或弃用；建议 B；
+- 影印文本边界一并登记：历例「十二月在丑巳」与三合局推演（丑月三合为巳酉）不符，
+  走 A/B 时不得照抄，须按考原「各與其月建會成三合局」推演并记录版本差异。
+
+### DG-SANXING-001：`data_integrity: broken`
+
+`donggong_sanxing_60jiazi.json` 是固定三循环表，不随月建变化；董公/金符经三星按四季月
+分组，甲午日在四季月应为卜木而非人专。故**全年所有三星命中都不可信**（不只是未月甲午）。
+规则加 `data_integrity: broken` + 影响面说明；`rules lint` 新增 `data_integrity_broken`
+机器可读组（当前精确集合 `{DG-SANXING-001}`），反证见
+`test_donggong_pack.py::TestSanxingDataIntegrity`（broken 数据不得标已考证/定义级）。
+
+### 月德合定字：把「不从文库本」的理由写进规则
+
+`PUB-YUEDE-HE-001.notes` 补齐三条判据：① 影印字形与同书天德合「六月己」（卷五叶二十五）
+同形，与同叶「戊在巳為金母」的闭口「巳」不同；② 甲己五合；③ 同叶考原「則己辛丁乙」。
+维基文库该页自标「請根據四庫全書掃描版校對本頁」，不作定字依据。
+
+### 给师傅的签名核对单
+
+新增 `docs/signoff-2026-11-03.md`：可签 `SH-LIUHE-001` / 不可签 `SH-SANHEJU-001` /
+数据待修 `DG-SANXING-001`，并强调「签名前提是原文、起例、适用范围三者都对上；
+链路通 ≠ 可签」。签名后同一真实案例应得至少 1 票（sanhe），`publishable` 仍可能为 False。
+
+## [Unreleased] 阶段〇续：评分层第一条「六合」补齐卷六影印原文（2026-11-03）
+
+### SH-LIUHE-001 从死路径到可签规则
+
+`facts.structure.liuhe_pairs` 从未在 `structure_facts` 中产出，规则恒降级「输入不足」；
+原引「卷二·本原」也有误。今按影印原文改为**月建六合日**：
+`core-symbol` 新增 `liuhe_day_facts`（正月在亥，逆行十二辰）并登记
+`FactSpec("liuhe.is_day")`；规则条件改为 `facts.liuhe.is_day eq true`，
+`verdict_type: vote`、`engine_eligible: true`（沿用默认）。
+
+依据：浙江大学图书馆藏《欽定四庫全書·子部七·術數類》《協紀辨方書》卷六影印
+（Internet Archive item `06056507.cn`，叶五十三
+`https://archive.org/details/06056507.cn#page/n53`）：
+「神樞經曰六合者日月合宿之辰也其日宜會賓客結婚姻立契券合交易○李鼎祚曰正月在亥
+逆行十二辰○考原曰六合者月建與月將相合也」。适用范围依卷十一用事宜忌收窄为
+安葬（「宜天徳月徳天徳合月徳合天赦天願六合鳴吠」）与嫁娶（「宜…六合不將」）；
+卷十·六合「宜宴㑹結婚姻嫁娶…安葬」，修倉庫仅限与月恩四相时德併，故不泛化到修造。
+原 explanation 的「日与坐山/主命六合」非本条原文，已在 notes 显式声明偏离，
+如师傅要保留该口径应另立规则。
+
+**仍为 `待考证`**：影印原文已核（A 级），`verified_by: null`，等师傅签名 +
+`Verified-By:` trailer。**未签名前不投票**：真实案例（2027-07-14T09:00，未月甲午日，
+坐山乾，安葬/破土）共识仍为 `0/0`；内存模拟签名（不落库）后为 `1/1`，
+投票派 `['sanhe']`，正向证据 `SH-LIUHE-001`。
+
+### 其它
+
+- `dead_rule_baseline.yaml`：SH-LIUHE-001 已可命中，移出零命中集（非豁免）；
+  未验证零命中 12→11 条。
+- `test_verified_rules_have_citation.py`：新增卷六六合 quote 逐字锁定，
+  并把 SH-LIUHE-001 纳入「已填 quote 不得投票」「升格须签名」两组测试。
+- `test_sanhe_pack.py`：新增 `TestLiuheDay`（十二月支→六合支全表 + 条件/投票类型断言）。
+
+## [Unreleased] 阶段〇：天德/月德/月德合/天赦 补齐卷五影印原文（2026-11-03）
+
+### 四条规则从「只有转述」到「逐字核影印」
+
+依据：浙江大学图书馆藏《欽定四庫全書·子部七·術數類》《協紀辨方書》卷五影印
+（Internet Archive item `06056506.cn`，`https://archive.org/details/06056506.cn#page/nN`）。
+逐叶核到：天德 叶九→叶十、月德 叶二十一、月德合 叶二十九、天赦 叶四十一。
+`citation.quote` 现为影印原文（`quote_kind: 原文`），卷次「五」、篇名「义例三·…」、
+`confidence: 高`、`book_authenticity: authentic`。
+
+月德合「二六十月在?」定字：维基文库四库本作「巳」，影印本作「己」。判据三条：
+① 争议字形与同书天德合「六月己」（叶二十五）同形（开口形），而与同叶「戊在巳為金母」
+的闭口「巳」不同；② 月德合为月德之五合，甲→己；③ 同叶考原「則己辛丁乙」。
+本规则从影印作「己」，差异与判据写入规则 notes；维基文库该页明确标注「請根據四庫
+全書掃描版校對本頁」，属未校对文本，不作定字依据。
+
+**四条仍为 `待考证`**：影印原文已核（A 级），但 `verified_by` 需人类签名 +
+`Verified-By:` commit trailer，Agent 不得自行升格（AGENTS.md 硬禁 #1）。
+新增 `tests/unit/test_verified_rules_have_citation.py`（8 用例）：锁住四条 quote
+逐字等于影印转录、`已考证` 规则的 citation 完整性与签名齐备、已填 quote 的待考证
+规则不得进 `select(include_unverified=False)`、定字从影印不从文库本。
+`rules lint` 的 `quote_unsigned` 组按预期从 2 条增至 6 条（不是回归）。
+
 ## [Unreleased] 评审回路（十三）：Step Summary 汇总全部失败 + 登记相对门禁债务（2026-11-03）
 
 ### 失败项不再只活在 job log
@@ -36,7 +160,9 @@ workflow 扫描同一套语义）；判定行的套件名单从实际核对记�
 1256（scope 三种行为 +3）→ 1257（替换 2 个旧用例、新增 CI 调用点反查，
 净 +1）→ 1260（本地清单解析 +1、本地 CLI 只核对 cov/perf-smoke +1、
 workflow 全扫反证 +1）→ 1263（等号写法反证 +1、Makefile 解析失败反证 +1、
-判定行动态拼接 +1）→ 1265（部分不可解析反证 +1、注释/续行反证 +1），
+判定行动态拼接 +1）→ 1265（部分不可解析反证 +1、注释/续行反证 +1）→
+1273（卷五义例四规则逐字核影印、`test_verified_rules_have_citation.py` +8）→
+1274（unknown 补救文案按「缺原文/缺签名」分流 +1），
 不是口径漂移。
 
 ### CI 性能档补上回归线口径

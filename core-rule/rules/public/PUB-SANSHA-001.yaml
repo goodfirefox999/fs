@@ -34,6 +34,11 @@ condition:
   op: eq
   value: true
 score_weight: null
+evidence:
+  grade: A
+  source_tier: primary_scan
+  quote_verified: false
+  blocking_ruling: "Q-002/Q-020"
 citation:
   kind: classic
   source: 《协纪辨方书》

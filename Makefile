@@ -34,7 +34,7 @@ help:
 	@echo "make rules      重新生成规则库与测试向量（会覆盖，慎用）"
 	@echo "make mutation   变异测试抽查（验证测试是否真的能抓住错误）"
 	@echo "make determinism 确定性探针（原始退出码：3 = OUTPUT_FAIL，仍返回 3）"
-	@echo "make determinism-gate 确定性门禁 CI 适配层（只把 3 降级为带警告通过）"
+	@echo "make determinism-gate 确定性门禁适配层（三态：pass/1=违规/4=无法判定）"
 	@echo "make check-proxy push 前代理预检（区分环境变量丢失 vs 上游故障）"
 	@echo "make push       代理预检后 git push"
 
@@ -99,13 +99,14 @@ mutation:
 determinism:
 	@if [ "$${CI:-}" = "true" ]; then \
 		echo "❌ CI 中禁止直接调用 make determinism：它会绕过 OUTPUT_FAIL 适配层。"; \
-		echo "   请改用 make gate（内部走 tools/determinism_gate.py）。"; \
+		echo "   请改用 make gate（内部走 tools/gate_verdict.py → tools/determinism_gate.py）。"; \
 		exit 64; \
 	fi
 	$(PYTHON) tools/determinism_probe.py --gate
 
-# CI 适配层（AGENTS.md 确定性门禁第 15 条）：只把 3 降级成 0 + out/output-fail.flag。
-# 1/2 仍阻断；这样「可带警告发布」不会退化成「所有失败都放过」。
+# CI 适配层（AGENTS.md 确定性门禁第 15 条）：三态——
+# 0 = 通过；1 = PRODUCT_FAIL（阻断）；2/3/未知码 = 无法判定（退出 4，写 out/output-fail.flag）。
+# 「带警告通过」已废止：OUTPUT_FAIL 不得再折叠成 0（2026-11-04 第五层）。
 determinism-gate:
 	$(PYTHON) tools/determinism_gate.py
 
@@ -122,12 +123,7 @@ gate: check-yaml cov lint
 	$(PYTHON) tools/no_network_scan.py
 	$(PYTHON) tools/check_status_signature.py --offline
 	$(PYTHON) tools/check_no_aggregate_score.py
-	$(PYTHON) tools/determinism_gate.py
-	@if [ -f out/output-fail.flag ]; then \
-		echo "⚠️ gate 完成（带 OUTPUT_FAIL 警告：out/output-fail.flag）"; \
-	else \
-		echo "✅ gate 完成"; \
-	fi
+	$(PYTHON) tools/gate_verdict.py --scope local --dir out
 
 rules:
 	$(PYTHON) tools/gen_rules.py

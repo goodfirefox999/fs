@@ -2,16 +2,24 @@
 
 实现依据
 --------
-1. 太阳几何黄经：VSOP87D 地球 L 序列截断（Meeus, *Astronomical Algorithms* 2nd ed.,
-   Appendix III；第 25 章 "Solar Coordinates"）。截断到 L0 前 64 项 / L1 前 34 项 /
-   L2 前 10 项 / L3 前 6 项 / L4 前 3 项 / L5 前 1 项，理论误差 < 1"。
+1. 太阳几何黄经（后备路径）：VSOP87D 地球 L 序列截断（Meeus, *Astronomical
+   Algorithms* 2nd ed., Appendix III；第 25 章 "Solar Coordinates"）。
+   截断到 L0 前 64 项 / L1 前 34 项 / L2 前 10 项 / L3 前 6 项 / L4 前 3 项 /
+   L5 前 1 项。
 2. 章动：Meeus 第 22 章低精度公式（误差 0.5"）。
 3. 光行差：-20.4898"/R（Meeus 25.10）。
-4. ΔT：Espenak & Meeus 锚点线性插值（见 ``delta_t``），并在返回值上附带不确定度。
+4. ΔT：Espenak & Meeus 锚点线性插值（见 ``delta_t``），2015 年后改用
+   IERS/Skyfield 实测与短期外推锚点。
 
 精度声明
 --------
-太阳视黄经误差目标 < 5"（对应节气时刻 < 2 分钟）；ΔT 模型误差 <= 40 s（1900-2100）。
+- **Skyfield/DE440s 路径**：太阳视黄经直接取 JPL DE440s，节气时刻 TT 误差
+  由求解器控制（默认 < 0.01 s）；UT/UTC 还受 ΔT 与 DUT1 影响，报告须分开标注。
+- **VSOP87 后备路径**：与 DE440s 实测差约 0.3″，2026 年 24 节气最大约 7 s
+  （TT）；仅用于无星历环境，manifest 必须标注 ``ephemeris_backend=vsop87``。
+- ΔT 模型误差：2020-2030 年约 2 s 以内（旧锚点外推曾高估 1.9 s，已修）；
+  历史/远未来仍按模型不确定性处理。
+
 本模块所有函数返回 UTC 或 TT，绝不返回本地民用时；本地化由 ``calendar``/``jieqi`` 负责。
 
 本模块不产生任何"吉/凶/宜/忌"字段（铁律 3）。
@@ -20,22 +28,39 @@
 from __future__ import annotations
 
 import math
+import os
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
+from functools import lru_cache
 
 __all__ = [
     "J2000",
+    "DE440S_VALID_RANGE_UTC",
+    "VSOP87_VALID_RANGE",
+    "backend_audit",
     "delta_t",
+    "delta_t_from_jd_ut",
+    "ensure_backend_range",
     "jd_tt_from_jd_ut",
     "jd_ut_from_jd_tt",
     "julian_day_from_datetime",
     "datetime_from_julian_day",
     "apparent_solar_longitude",
+    "solar_longitude_deg",
+    "resolved_backend",
     "sun_distance_au",
     "solve_solar_longitude",
     "equation_of_time_minutes",
     "obliquity_deg",
 ]
+
+#: DE440s 覆盖范围（UTC）。越界必须显式报错，不能静默外推。
+DE440S_VALID_RANGE_UTC = (
+    datetime(1849, 12, 26, tzinfo=timezone.utc),
+    datetime(2150, 1, 22, tzinfo=timezone.utc),
+)
+#: VSOP87D 截断级数的近似有效范围（Meeus；远离 J2000 时精度下降）。
+VSOP87_VALID_RANGE = ("-2000", "6000")
 
 #: J2000.0 历元（2000-01-01 12:00 TT）的儒略日
 J2000 = 2451545.0
@@ -101,8 +126,10 @@ def datetime_from_julian_day(jd: float) -> datetime:
 # --------------------------------------------------------------------------- #
 # ΔT（TT - UT）
 # --------------------------------------------------------------------------- #
-#: (年份, ΔT 秒) 锚点，取自 Espenak & Meeus 多项式在整十年份上的取值，
-#: 2020 之后采用 IERS 实测趋势外推。锚点之间线性插值。
+#: (年份, ΔT 秒) 锚点。1800-2010 取 Espenak & Meeus 多项式整十年取值；
+#: 2015 年后取 IERS/Skyfield 实测与短期外推（2026-11 查询），
+#: 修正旧表在 2026 年高估约 1.9 s、2030 年高估约 2.9 s 的问题。
+#: 锚点之间线性插值；远未来误差随外推增大，报告须标注模型。
 _DELTA_T_ANCHORS: tuple[tuple[float, float], ...] = (
     (1800.0, 13.7),
     (1850.0, 7.1),
@@ -116,19 +143,21 @@ _DELTA_T_ANCHORS: tuple[tuple[float, float], ...] = (
     (1990.0, 56.9),
     (2000.0, 63.8),
     (2010.0, 66.1),
-    (2020.0, 69.4),
-    (2030.0, 72.0),
-    (2050.0, 80.0),
-    (2100.0, 130.0),
-    (2200.0, 260.0),
+    (2015.0, 67.6),
+    (2020.0, 69.36),
+    (2025.0, 69.14),
+    (2030.0, 69.08),
+    (2050.0, 71.44),
+    (2100.0, 95.93),
+    (2200.0, 221.6),
 )
 
 
 def delta_t(year: float) -> float:
-    """返回 ΔT = TT − UT（秒）。
+    """返回 ΔT = TT − UT1（秒）。
 
-    锚点线性插值。1900-2100 区间与实测值偏差 <= 40 s；该偏差对节气时刻的影响
-    为同量级秒数，小于本系统 ±1 分钟的精度目标，故可接受。
+    锚点线性插值。2015 年后采用 IERS/Skyfield 实测与短期外推；
+    2020-2030 年误差约 2 s 以内，远未来为模型外推，不确定度随年份增大。
     超出 1800-2200 时按端点斜率外推，并在报告 manifest 中标注 ``delta_t_model``。
     """
     anchors = _DELTA_T_ANCHORS
@@ -151,15 +180,20 @@ def _decimal_year(jd_ut: float) -> float:
     return dt.year + (dt - start).total_seconds() / (end - start).total_seconds()
 
 
+def delta_t_from_jd_ut(jd_ut: float) -> float:
+    """UT 儒略日对应的 ΔT（秒）。"""
+    return delta_t(_decimal_year(jd_ut))
+
+
 def jd_tt_from_jd_ut(jd_ut: float) -> float:
     """UT 儒略日 → TT 儒略日。"""
-    return jd_ut + delta_t(_decimal_year(jd_ut)) / 86400.0
+    return jd_ut + delta_t_from_jd_ut(jd_ut) / 86400.0
 
 
 def jd_ut_from_jd_tt(jd_tt: float) -> float:
     """TT 儒略日 → UT 儒略日（一次迭代反解，误差 < 0.001 s）。"""
     jd_ut = jd_tt - delta_t(_decimal_year(jd_tt)) / 86400.0
-    jd_ut = jd_tt - delta_t(_decimal_year(jd_ut)) / 86400.0
+    jd_ut = jd_tt - delta_t_from_jd_ut(jd_ut) / 86400.0
     return jd_ut
 
 
@@ -382,6 +416,105 @@ def apparent_solar_longitude(jd_tt: float) -> float:
     return deg
 
 
+# C19-exempt: 零参数缓存（键恒为 ()），只缓存进程级后端选择，无复合参数串味面
+@lru_cache(maxsize=1)
+def resolved_backend() -> str:
+    """当前星历后端：``skyfield`` 或 ``vsop87``。
+
+    环境变量 ``ZERI_EPHEMERIS_BACKEND``：``auto``（默认）/ ``vsop87`` / ``skyfield``。
+    ``auto`` 在没有 skyfield 或星历文件时回退 VSOP87；进程内只解析一次。
+    """
+    requested = os.environ.get("ZERI_EPHEMERIS_BACKEND", "auto").strip().lower()
+    if requested not in ("auto", "vsop87", "skyfield"):
+        raise ValueError(f"ZERI_EPHEMERIS_BACKEND 非法: {requested}（auto/vsop87/skyfield）")
+    if requested == "vsop87":
+        return "vsop87"
+    from .skyfield_ephemeris import available, ephemeris_path
+
+    if available():
+        return "skyfield"
+    if requested == "skyfield":
+        raise RuntimeError(
+            "ZERI_EPHEMERIS_BACKEND=skyfield 但后端不可用：需要安装 skyfield，"
+            f"并提供星历文件 {ephemeris_path()}"
+        )
+    return "vsop87"
+
+
+def ensure_backend_range(dt_utc: datetime, *, backend: str | None = None) -> None:
+    """DE440s 越界显式报错；VSOP87 不做硬性拦截（精度已标 degraded）。"""
+    backend = backend or resolved_backend()
+    if backend != "skyfield":
+        return
+    start, end = DE440S_VALID_RANGE_UTC
+    if dt_utc.tzinfo is None:
+        raise ValueError("ensure_backend_range 需要带时区的 UTC 时间")
+    moment = dt_utc.astimezone(timezone.utc)
+    if not (start <= moment <= end):
+        raise ValueError(
+            f"候选时刻 {moment.isoformat()} 超出 DE440s 有效范围 "
+            f"{start.date().isoformat()}..{end.date().isoformat()}；"
+            "请显式切换 VSOP87（precision=degraded）或提供覆盖该范围的星历文件"
+        )
+
+
+def _fallback_reason() -> str | None:
+    """VSOP87 回退的可查原因；skyfield 正常时不返回原因。"""
+    requested = os.environ.get("ZERI_EPHEMERIS_BACKEND", "auto").strip().lower()
+    if requested == "vsop87":
+        return "explicit: ZERI_EPHEMERIS_BACKEND=vsop87"
+    try:
+        import skyfield  # noqa: F401
+    except ImportError:
+        return "skyfield_not_installed"
+    from .skyfield_ephemeris import ephemeris_path
+
+    path = ephemeris_path()
+    if not path.is_file():
+        return f"ephemeris_file_missing: {path}"
+    return "unknown"
+
+
+def backend_audit(dt_utc: datetime) -> dict:
+    """星历审计字段（manifest.ephemeris 的唯一来源）。
+
+    输出 ``backend/precision/ephemeris_file/valid_range/delta_t_s/
+    fallback_reason``；VSOP87 一律 ``precision=degraded`` 并给出原因。
+    """
+    backend = resolved_backend()
+    jd_ut = julian_day_from_datetime(dt_utc)
+    audit = {
+        "backend": backend,
+        "precision": "high" if backend == "skyfield" else "degraded",
+        "ephemeris_file": None,
+        "valid_range": None,
+        "delta_t_s": round(delta_t_from_jd_ut(jd_ut), 3),
+        "fallback_reason": None,
+    }
+    if backend == "skyfield":
+        from .skyfield_ephemeris import ephemeris_path
+
+        audit["ephemeris_file"] = str(ephemeris_path())
+        audit["valid_range"] = [
+            DE440S_VALID_RANGE_UTC[0].date().isoformat(),
+            DE440S_VALID_RANGE_UTC[1].date().isoformat(),
+        ]
+        ensure_backend_range(dt_utc, backend=backend)
+    else:
+        audit["valid_range"] = list(VSOP87_VALID_RANGE)
+        audit["fallback_reason"] = _fallback_reason()
+    return audit
+
+
+def solar_longitude_deg(jd_tt: float) -> float:
+    """太阳视黄经（度，历元 of date），按当前后端计算。"""
+    if resolved_backend() == "skyfield":
+        from .skyfield_ephemeris import solar_longitude_deg as _skyfield
+
+        return _skyfield(jd_tt)
+    return apparent_solar_longitude(jd_tt)
+
+
 # --------------------------------------------------------------------------- #
 # 反解：太阳视黄经到达指定度数
 # --------------------------------------------------------------------------- #
@@ -390,22 +523,29 @@ def solve_solar_longitude(
     jd_ut_guess: float,
     tol_sec: float = 0.5,
     max_iter: int = 60,
+    lon_func=None,
 ) -> float:
     """求太阳视黄经等于 ``target_deg`` 的 UT 儒略日。
 
     在 TT 域用牛顿迭代（解析导数用有限差分），收敛判据为时间增量 < ``tol_sec``。
-    返回 UT 儒略日。跨越 0°/360° 时用最短角度差处理。
+    ``lon_func`` 默认是 VSOP87 后备路径；Skyfield 路径由 ``jieqi`` 直接调用
+    ``skyfield_ephemeris.solve_term_time``（含 UTC 与 ΔT 换算）。
+    返回 UT 儒略日。
     """
+    if lon_func is None:
+        lon_func = apparent_solar_longitude
     target = target_deg % 360.0
     jd_tt = jd_tt_from_jd_ut(jd_ut_guess)
     for _ in range(max_iter):
-        lon = apparent_solar_longitude(jd_tt)
+        lon = lon_func(jd_tt)
         diff = (target - lon + 180.0) % 360.0 - 180.0  # (-180, 180]
         if abs(diff) < 1e-9:
             break
-        # 太阳视黄经平均日变化约 0.9856°/日，用局部差分提高收敛稳定性
+        # 太阳视黄经平均日变化约 0.9856°/日，用局部差分提高收敛稳定性。
+        # 差分必须跨 0°/360° 解缠，否则春分附近会得到约 -3600°/日 的假导数。
         h = 0.05
-        d_lon = (apparent_solar_longitude(jd_tt + h) - apparent_solar_longitude(jd_tt - h)) / (2 * h)
+        delta = (lon_func(jd_tt + h) - lon_func(jd_tt - h) + 180.0) % 360.0 - 180.0
+        d_lon = delta / (2 * h)
         if d_lon <= 0:
             d_lon = 0.9856
         step = diff / d_lon
@@ -426,7 +566,7 @@ def equation_of_time_minutes(jd_tt: float) -> float:
     其中 ``L0`` 为太阳**平黄经**（Meeus 25.2，系数为"每儒略世纪"，即 36000.76983°/世纪），
     ``α`` 为视赤经，``Δψ`` 为章动。结果归一到 (−180°, 180°] 后 ×4 转分钟。
 
-    精度约 ±10 s（对应 0.2 分钟），满足择日分钟级需求。
+    精度：VSOP87 路径约 ±10 s；Skyfield 路径 < 1 s（观测时刻仍受 ΔT 模型影响）。
     注意：Meeus 28.3 另有一个以"儒略千年"为单位的 L0 表达式（系数 360007.6982779），
     两式不可混用 —— 混用会引入约 400 分钟的偏差（本项目曾踩此坑，见 CHANGELOG）。
     """
@@ -436,8 +576,8 @@ def equation_of_time_minutes(jd_tt: float) -> float:
     l0_deg = (280.4664567 + 36000.76983 * t + 0.0003032 * t * t) % 360.0
     l0 = math.radians(l0_deg)
     d_psi, _ = _nutation(jd_tt)
-    # 视太阳黄经（弧度）
-    lam = apparent_solar_longitude(jd_tt) * _DEG
+    # 视太阳黄经（弧度），按当前星历后端
+    lam = solar_longitude_deg(jd_tt) * _DEG
     alpha = math.atan2(math.cos(epsilon) * math.sin(lam), math.cos(lam))
     e = l0 - 0.0057183 * _DEG - alpha + d_psi * _DEG
     # 归一到 (-180°, 180°] 后转分钟（1° = 4 分钟）

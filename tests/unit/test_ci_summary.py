@@ -84,7 +84,9 @@ def test_unregistered_junit_is_a_visible_failure(tmp_path: Path) -> None:
     text = _render_ci(tmp_path)
     assert "`junit-mutation.xml`" in text
     assert "未登记套件" in text
-    assert "| `junit-mutation.xml` | 1 | 0 | 0 | 0 | 10.0s | ❌ 未登记 |" in text
+    assert (
+        "| `junit-mutation.xml` | 1 | 0 | 0 | 0 | 0 | 10.0s | ❌ 未登记 |" in text
+    )
     assert "**判定：❌ 1 个套件未登记" in text
     assert "本页不是绿色证明" in text
     assert "**判定：✅" not in text
@@ -167,7 +169,7 @@ def test_all_failing_suites_are_visible_with_details(tmp_path: Path) -> None:
 
 
 def test_skip_reason_is_carried_into_summary(tmp_path: Path) -> None:
-    """skip 不算 pass，也不能隐形：表格计数 + 原因都要在 summary 里。"""
+    """skip 不算 pass，也不能隐形：表格计数 + 原因 + 非绿判定都要在 summary 里。"""
     _write_all_passing(tmp_path)
     _write(
         tmp_path,
@@ -184,10 +186,57 @@ def test_skip_reason_is_carried_into_summary(tmp_path: Path) -> None:
         ),
     )
     text = _render_ci(tmp_path)
-    assert "| `junit-cov.xml` | 1 | 0 | 0 | 1 | 345.8s | ✅ |" in text
+    assert (
+        "| `junit-cov.xml` | 1 | 0 | 0 | 1 | 0 | 345.8s | ⚠️ 无法判定 |" in text
+    )
     assert "### 跳过项（非 pass）" in text
     assert "`tests.golden.test_x::test_smoke`：覆盖率插桩放大耗时" in text
-    assert "**判定：✅ 全部 3 个套件通过。**" in text, "有 skip 但无失败时仍算绿，但 skip 必须可见"
+    assert "本次有 1 项无法判定" in text, "首行必须写清无法判定计数"
+    assert "⚠️ 本次有 1 项无法判定" in text
+    assert "**判定：✅ 全部 3 个套件通过。**" not in text, "skip 不得再算绿"
+
+
+def test_undetermined_attribute_reduces_passed(tmp_path: Path) -> None:
+    """junit 的 undetermined 属性必须从 passed 扣除，公式 = tests-failures-errors-skipped-undetermined。"""
+    _write_all_passing(tmp_path)
+    _write(
+        tmp_path,
+        "junit-cov.xml",
+        '<testsuite tests="3" failures="0" errors="0" skipped="0" undetermined="1" time="1.0">'
+        + _passing_cases(2)
+        + "</testsuite>",
+    )
+    record = ci_summary.collect(tmp_path, scope="ci")[0]
+    assert record["undetermined"] == 1
+    assert record["passed"] == 2, "passed 必须扣掉 undetermined"
+    text = _render_ci(tmp_path)
+    assert "本次有 1 项无法判定" in text
+    assert "**判定：✅" not in text
+
+
+def test_undetermined_json_drives_first_line_and_list(tmp_path: Path) -> None:
+    """gate_verdict 的 undetermined.json 优先驱动首行计数与清单。"""
+    _write_all_passing(tmp_path)
+    payload = {
+        "verdict": "undetermined",
+        "undetermined_count": 2,
+        "items": [
+            {"source": "cov", "kind": "skipped", "detail": "1 个跳过（skip 不算 pass）"},
+            {"source": "determinism", "kind": "output_fail", "detail": "报告文本漂移"},
+        ],
+    }
+    (tmp_path / "undetermined.json").write_text(
+        __import__("json").dumps(payload, ensure_ascii=False), encoding="utf-8"
+    )
+    text = ci_summary.render(
+        ci_summary.collect(tmp_path, scope="ci"),
+        scope="ci",
+        undetermined=ci_summary.load_undetermined(tmp_path),
+    )
+    assert text.splitlines()[0] == "本次有 2 项无法判定"
+    assert "### 无法判定项（gate_verdict）" in text
+    assert "[output_fail] determinism：报告文本漂移" in text
+    assert "### 跳过项（非 pass）" not in text, "payload 已含 skip，避免重复清单"
 
 
 def test_bench_failure_is_visible_next_to_passing_smoke(tmp_path: Path) -> None:

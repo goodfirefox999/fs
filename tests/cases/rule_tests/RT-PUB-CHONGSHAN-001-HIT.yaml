@@ -8,3 +8,6 @@ overrides:
   course:
     day:
       zhi: 巳
+  facts:
+    _calibers:
+      q026_sishan_chong_resolved: true

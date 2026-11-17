@@ -9,6 +9,7 @@ hard_veto: false
 severity: 可用
 target: mountain
 evaluable: true
+blocked_by: primary_source_missing
 applies_to:
   task_kinds:
   - 入宅

@@ -410,13 +410,18 @@ class TestRobustness:
 # --------------------------------------------------------------------------- #
 class TestRequiredRulesPublishable:
     def test_required_set_loaded(self, registry) -> None:
-        """必需集只含 hard_veto 规则（准入条件一）；ASSERT-*（慎用）不得入集。
+        """必需集只含 hard_veto + 证据 A 级规则（准入条件一 + 证据准入）。
 
-        ADR-0013：修造必需集 10 → 8（三煞占向、太岁占山因口径与原典相反移出）。
+        2026-11-04：修造必需集 8 → 4；岁破/五黄（B 级）降参考层，
+        月破/日冲山/日冲命/年命三煞（C 级）移出，见 Q-028。
         """
         ids = registry.required_for("修造")
-        assert len(ids) == 8
-        assert "PUB-SANSHA-001" in ids
+        assert len(ids) == 4
+        assert set(ids) == {
+            "PUB-SANSHA-001", "PUB-SANSHA-002", "PUB-SILI-001", "PUB-SIJUE-001",
+        }
+        for rid in ("PUB-SUIPO-001", "PUB-WUHUANG-001", "PUB-YUEPO-001", "PUB-CHONGSHAN-001"):
+            assert rid not in ids, f"{rid} 证据等级不足，不得进必需集（Q-028）"
         assert "PUB-SANSHA-003" not in ids
         assert "PUB-TAISUI-001" not in ids
         assert not any(rid.startswith("ASSERT-") for rid in ids), (
@@ -497,10 +502,10 @@ class TestMutationGaps:
 
     def test_demo_participation_marked(self, base_ctx, registry) -> None:
         """变异 `participation = "演示" → "判定"` 的守卫：演示命中必须标记为演示。"""
-        ctx = deep_merge(base_ctx, {"facts": {"suipo": {"hit_mountain": True}}})
+        ctx = deep_merge(base_ctx, {"facts": {"yuepo": {"hit_mountain": True}}})
         ev = evaluate(ctx, registry, EvalConfig(task_kind="修造", strictness="normal", allow_unverified=True, demo_veto=True))
-        demo = [j for res in ev.per_school.values() for j in res.vetoes if j.rule_id == "PUB-SUIPO-001"]
-        assert demo, "岁破占山应命中"
+        demo = [j for res in ev.per_school.values() for j in res.vetoes if j.rule_id == "PUB-YUEPO-001"]
+        assert demo, "月破占山应命中"
         assert demo[0].participation == "演示"
         assert demo[0].is_demo is True
         assert ev.vectors["demo_veto_count"] >= 1

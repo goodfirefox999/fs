@@ -108,6 +108,7 @@ class TestLoaderContract:
                 tmp_path,
                 status="已考证",
                 citation=citation,
+                evidence={"grade": "A", "source_tier": "primary_scan", "quote_verified": True},
                 engine_eligible=False,
                 ineligible_reason="x",
             )

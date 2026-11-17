@@ -8,8 +8,8 @@ fresh ``make cov`` 实测 84%——75% 是旧数据，不是当前代码。
 
 1. ``gate`` 依赖 ``cov``（pytest --cov 新鲜采集），不再依赖不采覆盖率的 ``test-fast``；
 2. ``coverage report --fail-under=80`` 不得跟 ``|| true``；
-3. CI 中确定性门禁只能走 ``tools/determinism_gate.py``，``make determinism``
-   在 ``CI=true`` 时必须拒绝。
+3. CI 的确定性门禁只能经 ``tools/gate_verdict.py`` 汇总三态，再由它调
+   ``tools/determinism_gate.py``；``make determinism`` 在 ``CI=true`` 时必须拒绝。
 """
 
 from __future__ import annotations
@@ -147,6 +147,15 @@ def test_determinism_refuses_direct_ci_call() -> None:
 
 
 def test_ci_determinism_step_uses_adapter_only() -> None:
-    assert "tools/determinism_gate.py" in _CI
+    """CI 只能经三态汇总层调确定性适配层，不得直接调 make determinism / 原始探针。
+
+    2026-11-04 第五层：CI 入口从 ``determinism_gate.py`` 上移到
+    ``gate_verdict.py``——它负责把 1 归为 violation、4 归为 undetermined，
+    再调用适配层。适配层本身仍必须是唯一探针入口。
+    """
+    assert "tools/gate_verdict.py" in _CI, "CI 必须经 gate_verdict 汇总三态"
     assert "make determinism" not in _CI, "CI 不得直接调用会绕过适配层的 make determinism"
     assert "determinism_probe.py --gate" not in _CI, "CI 不得直接调用原始探针"
+    gate_source = (_ROOT / "tools" / "gate_verdict.py").read_text(encoding="utf-8")
+    assert "determinism_gate.py" in gate_source, "gate_verdict 必须经适配层调探针"
+    assert "determinism_probe.py" not in gate_source, "gate_verdict 不得绕过适配层"

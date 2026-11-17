@@ -27,11 +27,12 @@ ci.yml 里跑）不在本地核对范围，其通过性只能由 CI 证明：本
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-__all__ = ["EXPECTED_SUITES", "collect", "local_expected", "render"]
+__all__ = ["EXPECTED_SUITES", "collect", "load_undetermined", "local_expected", "render"]
 
 # 期望套件清单 = CI 必须产出的 junit（cov 与 perf-smoke 来自 Makefile 的 cov 配方，
 # bench 来自 ci.yml）。只靠 glob 扫目录有个盲区：bench 步骤提前挂掉时
@@ -158,18 +159,27 @@ def _suite(path: Path) -> dict:
         record["error"] = "无 testsuite 节点"
         return record
     attr = ts.attrib
-    tests, failures, errors, skipped = (
-        int(attr.get(key, 0)) for key in ("tests", "failures", "errors", "skipped")
+    tests, failures, errors, skipped, undetermined = (
+        int(attr.get(key, 0))
+        for key in ("tests", "failures", "errors", "skipped", "undetermined")
     )
     record.update(
         tests=tests,
-        passed=tests - failures - errors - skipped,
+        # 2026-11-04（第五层）：passed 必须扣掉 undetermined；skip 另扣，绝不算 pass。
+        passed=tests - failures - errors - skipped - undetermined,
         failed=failures,
         errors=errors,
         skipped=skipped,
+        undetermined=undetermined,
         time=float(attr.get("time", 0) or 0),
     )
-    record["ok"] = failures == 0 and errors == 0 and record["passed"] > 0
+    record["ok"] = (
+        failures == 0
+        and errors == 0
+        and skipped == 0
+        and undetermined == 0
+        and record["passed"] > 0
+    )
     failures_out: list[str] = []
     for case in root.iter("testcase"):
         for tag in ("failure", "error"):
@@ -239,8 +249,36 @@ def collect(
     return records
 
 
-def render(records: list[dict], scope: str = "ci") -> str:
-    lines = ["## CI 测试汇总", ""]
+def load_undetermined(directory: Path) -> dict | None:
+    """读取 ``gate_verdict.py`` 写出的 undetermined.json；缺失/损坏都返回 None。"""
+    path = directory / "undetermined.json"
+    if not path.exists():
+        return None
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    return payload if isinstance(payload, dict) else None
+
+
+def render(records: list[dict], scope: str = "ci", undetermined: dict | None = None) -> str:
+    junit_undetermined = sum(
+        record.get("skipped", 0) + record.get("undetermined", 0)
+        for record in records
+        if not record.get("error")
+        and not record.get("missing_local")
+        and not record.get("unregistered")
+    )
+    # gate_verdict 的清单已包含 junit skip；有它时以它为准，避免重复计数。
+    undetermined_count = (
+        len(undetermined.get("items") or []) if undetermined is not None else junit_undetermined
+    )
+    first = (
+        f"本次有 {undetermined_count} 项无法判定"
+        if undetermined_count
+        else "本次无无法判定项"
+    )
+    lines = [first, "", "## CI 测试汇总", ""]
     if not records:
         lines.append(
             "⚠️ 未找到任何 junit 产物（`out/junit-*.xml`）——测试可能没跑或提前退出。"
@@ -251,13 +289,23 @@ def render(records: list[dict], scope: str = "ci") -> str:
     missing = [record["file"] for record in records if record.get("error")]
     missing_local = [record["file"] for record in records if record.get("missing_local")]
     unregistered = [record["file"] for record in records if record.get("unregistered")]
+    if undetermined is None:
+        # 本地缺失有自己的 ⚠️ 分支（「本地未运行该步骤时属正常」），不能再算进
+        # undetermined，否则本地宽松模式会被升级成「无法判定」。
+        undetermined_count = junit_undetermined + len(missing) + len(unregistered)
+        first = (
+            f"本次有 {undetermined_count} 项无法判定"
+            if undetermined_count
+            else "本次无无法判定项"
+        )
+        lines[0] = first
     failed = [
         record["file"]
         for record in records
         if not record.get("error")
         and not record.get("missing_local")
         and not record.get("unregistered")
-        and not record["ok"]
+        and (record["failed"] or record["errors"])
     ]
     if missing or failed or unregistered:
         reasons: list[str] = []
@@ -272,6 +320,11 @@ def render(records: list[dict], scope: str = "ci") -> str:
                 f"{len(unregistered)} 个套件未登记（{'、'.join(f'`{name}`' for name in unregistered)}）"
             )
         lines.append(f"**判定：❌ {'；'.join(reasons)}——本页不是绿色证明。**")
+    elif undetermined_count > 0:
+        lines.append(
+            f"**判定：⚠️ 本次有 {undetermined_count} 项无法判定（skip / 输出面 / 缺失）"
+            "——不是全绿，详见 undetermined.json 与下方清单。**"
+        )
     elif missing_local or scope == "local":
         # 本地记录的 file 集合 = 本地期望清单；登记了但不在其中的套件没有本地生产者。
         local_files = [record["file"] for record in records]
@@ -297,24 +350,31 @@ def render(records: list[dict], scope: str = "ci") -> str:
         lines.append(f"**判定：✅ 全部 {len(records)} 个套件通过。**")
     lines.append("")
 
-    lines.append("| 套件 | passed | failed | errors | skipped | 耗时 | 判定 |")
-    lines.append("|---|---|---|---|---|---|---|")
+    lines.append("| 套件 | passed | failed | errors | skipped | undetermined | 耗时 | 判定 |")
+    lines.append("|---|---|---|---|---|---|---|---|")
     for record in records:
         if record.get("error"):
-            lines.append(f"| `{record['file']}` | - | - | - | - | - | ❌ {record['error']} |")
+            lines.append(f"| `{record['file']}` | - | - | - | - | - | - | ❌ {record['error']} |")
             continue
         if record.get("missing_local"):
             lines.append(
-                f"| `{record['file']}` | - | - | - | - | - | ⚠️ 缺失（本地未运行该步骤时属正常） |"
+                f"| `{record['file']}` | - | - | - | - | - | - | ⚠️ 缺失（本地未运行该步骤时属正常） |"
             )
             continue
         if record.get("unregistered"):
             verdict = "❌ 未登记"
+        elif record["failed"] or record["errors"]:
+            verdict = "❌"
+        elif record.get("skipped") or record.get("undetermined"):
+            verdict = "⚠️ 无法判定"
+        elif not record["ok"]:
+            verdict = "❌"
         else:
-            verdict = "✅" if record["ok"] else "❌"
+            verdict = "✅"
         lines.append(
             f"| `{record['file']}` | {record['passed']} | {record['failed']} | "
-            f"{record['errors']} | {record['skipped']} | {record['time']:.1f}s | {verdict} |"
+            f"{record['errors']} | {record['skipped']} | {record.get('undetermined', 0)} | "
+            f"{record['time']:.1f}s | {verdict} |"
         )
 
     failures = [
@@ -345,10 +405,17 @@ def render(records: list[dict], scope: str = "ci") -> str:
             lines.append(f"- {detail}（{file}）")
 
     skips = [(record["file"], detail) for record in records for detail in record.get("skip_details", [])]
-    if skips:
+    if skips and undetermined is None:
         lines += ["", "### 跳过项（非 pass）"]
         for file, detail in skips:
             lines.append(f"- {detail}（{file}）")
+
+    if undetermined is not None and undetermined.get("items"):
+        lines += ["", "### 无法判定项（gate_verdict）"]
+        for item in undetermined["items"]:
+            lines.append(
+                f"- [{item.get('kind', 'unknown')}] {item.get('source', '?')}：{item.get('detail', '')}"
+            )
     return "\n".join(lines)
 
 
@@ -366,7 +433,14 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
     expected = local_expected() if args.scope == "local" else EXPECTED_SUITES
-    print(render(collect(Path(args.dir), expected=expected, scope=args.scope), scope=args.scope))
+    directory = Path(args.dir)
+    print(
+        render(
+            collect(directory, expected=expected, scope=args.scope),
+            scope=args.scope,
+            undetermined=load_undetermined(directory),
+        )
+    )
     return 0
 
 

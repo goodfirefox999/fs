@@ -1,5 +1,5 @@
 # 本文件由 tools/gen_rules_phase11.py 生成，结构统一；规则内容（条件/解释/出处）需人类考证者复核。
-# status: 待考证 = 口诀常见但原文未核，默认不参与正式判定，命中时仅登记为 unknown。
+# status: 待考证 = 原文已核影印，但尚无人类签名，默认不参与正式判定，命中时仅登记为 unknown。
 # citation.quote 为 null 表示「尚未核对原文」，不是缺漏，禁止为填满字段而编造引文。
 api_version: 1
 rule_id: PUB-YUEDE-HE-001
@@ -21,22 +21,28 @@ condition:
   op: eq
   value: true
 score_weight: 0.5
+evidence:
+  grade: A
+  source_tier: primary_scan
+  quote_verified: true
+  blocking_ruling: null
 citation:
   kind: classic
   source: 《协纪辨方书》
-  edition: null
-  juan: null
-  pian: null
+  edition: 欽定四庫全書·子部七·術數類（浙江大学图书馆藏影印本，Internet Archive 06056506.cn）
+  juan: 五
+  pian: 义例三·月德合
   entry: 义例·月德合
-  quote_kind: null
-  quote: null
-  url_or_path: null
+  quote_kind: 原文
+  quote: 五行論曰月德合者五行之精符會為合也所理之地衆惡皆消所值之日百福並集利以出師命將上冊受封祠祀星辰營建宮室○曆例曰月德合者正五九月在辛二六十月在己三七十一月在丁四八十二月在乙○考原曰月德合者即各以月德所合之干為之
+  url_or_path: https://archive.org/details/06056506.cn#page/n29
   verified_by: null
   verified_at: null
-  confidence: 低
+  confidence: 高
+  book_authenticity: authentic
 tests:
 - RT-PUB-YUEDE-HE-001-HIT
 - RT-PUB-YUEDE-HE-001-MISS
 explanation: 用事日干为月德合（{facts.jishen.yue_de.he_gan}），按本规则记为可用参考。
 supersedes: null
-notes: 待考证：月德合取月德干之五合（丙辛/甲己/丁壬/乙庚），力度弱于月德本干。
+notes: 待考证：月德合取月德干之五合（丙辛/甲己/丁壬/乙庚），力度弱于月德本干。2026-11-03 已对浙江大学图书馆藏四库本影印卷五叶二十九逐字核对；定字分歧已记录：维基文库四库本作「二六十月在巳」，影印本作「己」，本规则从影印作「己」。判据三条：① 影印字形与同书天德合条「六月己」（卷五叶二十五）同形（开口形），而与同叶「戊在巳為金母」的闭口「巳」不同；② 月德合为月德之五合，甲→己；③ 同叶考原「則己辛丁乙」。维基文库该页标注「請根據四庫全書掃描版校對本頁」，属未校对文本，故不以文库本改字。尚缺人类签名，故 status 仍为待考证。

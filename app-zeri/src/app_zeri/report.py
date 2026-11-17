@@ -16,7 +16,15 @@ import re
 from datetime import datetime
 from typing import Any
 
-from core_eval import Evaluation, SchoolResult
+from core_eval import (
+    BLOCK_EVIDENCE_INSUFFICIENT,
+    BLOCK_INPUT_INSUFFICIENT,
+    BLOCK_PENDING_RULING,
+    BLOCK_PENDING_VERIFICATION,
+    Evaluation,
+    SchoolResult,
+)
+from core_eval.engine import LITERATURE_NOTE_BY_SCHOOL, LITERATURE_STATUS_BY_SCHOOL
 from core_rule.registry import RuleRegistry
 
 from .generator import GenResult
@@ -28,7 +36,10 @@ __all__ = [
     "render_generation_markdown",
     "render_json",
     "render_manifest_block",
+    "ephemeris_notice",
+    "undetermined_notice",
     "zero_voter_notice",
+    "consensus_notice",
 ]
 
 DISCLAIMER = (
@@ -65,6 +76,69 @@ def _judgment_rows(judgments: list[Any]) -> list[str]:
     return rows
 
 
+def _hit_ledger(ev: Evaluation) -> list[str]:
+    """命中规则宜忌台账（事实层）。
+
+    只回答「命中了什么、规则怎么声明、这条能不能用、证据到什么程度」，
+    **不做等第比较、不给综合宜忌**（Q-030 未实现）。
+    """
+    grade_labels = {
+        "A": "A（一手影印）",
+        "B": "B（二手转述）",
+        "C": "C（出处待定位）",
+        "definitional": "定义级（规格）",
+        "unrecorded": "未登记",
+    }
+    source_labels = {
+        "verified": "已考证",
+        "definitional": "定义级",
+        "controversial": "有争议",
+        "unverified": "待考证",
+    }
+    rows: list[tuple[str, Any]] = []
+    seen: set[tuple[str, str]] = set()
+    for school, res in ev.per_school.items():
+        for j in (
+            *res.vetoes,
+            *res.cautions,
+            *res.positives,
+            *res.structural,
+            *res.notes,
+            *res.controversial,
+            *res.demo_hits,
+            *res.reference,
+        ):
+            key = (school, j.rule_id)
+            if key in seen:
+                continue
+            seen.add(key)
+            rows.append((school, j))
+    if not rows:
+        return ["- 本轮无命中规则。"]
+
+    lines = [
+        "| 派别 | 规则 | 类别 | 声明宜忌 | 参与状态 | 证据等级 | 原文状态 |",
+        "|---|---|---|---|---|---|---|",
+    ]
+    for school, j in rows:
+        severity = j.severity
+        if j.declared_severity and j.declared_severity != j.severity:
+            severity = f"{j.declared_severity}→{j.severity}"
+        grade = grade_labels.get(j.evidence_grade_label, j.evidence_grade_label)
+        source = source_labels.get(j.source_status or "", "—")
+        lines.append(
+            f"| `{school}` | `{j.rule_id}` | {j.category} | {severity} | "
+            f"{j.participation} | {grade} | {source} |"
+        )
+    lines.append("")
+    lines.append(
+        "> 本表登记本次命中的全部规则（含神煞、结构与断言规则），只陈述其声明口径："
+        "**不比较轻重、不输出综合宜忌；Q-030 等第仲裁未实现**。"
+        "「A（一手影印）」只表示存在一手影印线索，不等于已签名；B/C 均未达投票门槛。"
+    )
+    return lines
+
+
 def _school_block(res: SchoolResult) -> list[str]:
     lines: list[str] = []
     c = res.counts
@@ -74,9 +148,14 @@ def _school_block(res: SchoolResult) -> list[str]:
     lines.append(
         f"- 分层计数：硬伤 {c['hard_fail_count']} / 强忌 {c['strong_avoid_count']} / "
         f"提示 {c['note_count']} / 正向 {c['positive_count']} / 未知 {c['unknown_count']} / "
-        f"参考 {c.get('reference_count', 0)}"
+        f"参考 {c.get('reference_count', 0)} / 不适用 {c.get('not_applicable_count', 0)}"
     )
     lines.append(f"- 评估规则数：{res.rules_evaluated}")
+    _lit = LITERATURE_STATUS_BY_SCHOOL.get(res.school)
+    if _lit:
+        lines.append(
+            f"- **文献状态：`{_lit}`**——{LITERATURE_NOTE_BY_SCHOOL[res.school]}"
+        )
     if res.rank_score is not None:
         lines.append(f"- 正向权重均值：{res.rank_score:.2f}（**非吉凶概率**）")
     lines.append("")
@@ -153,6 +232,17 @@ def _school_block(res: SchoolResult) -> list[str]:
         for j in res.reference:
             reason = j.ineligible_reason or "未注明"
             lines.append(f"- `{j.rule_id}`（{reason}）：{j.hit_detail}")
+        lines.append("")
+
+    # 「不适用」：规则声明本类输入管不到——不是未知，不阻塞发布
+    if res.not_applicable:
+        lines.append(
+            "**不适用（规则声明本类输入不在适用范围内；"
+            "不计未知、不影响 tier、不阻塞可发布）**"
+        )
+        lines.append("")
+        for j in res.not_applicable:
+            lines.append(f"- `{j.rule_id}`：{j.remedy or '规则已声明本类输入不适用'}")
         lines.append("")
 
     if res.positives:
@@ -267,8 +357,10 @@ def _consensus_block(fso: dict[str, Any]) -> list[str]:
     favorable = votes.get("favorable") or []
     unfavorable = votes.get("unfavorable") or []
     voters = detail.get("voters") or []
+    voter_grades = detail.get("voter_evidence_grades") or {}
     non_voters = detail.get("non_voters") or []
     gate_veto = detail.get("gate_veto_schools") or []
+    undetermined = detail.get("undetermined") or {}
 
     lines = [
         f"**{ratio} 同向**（阈值 {num}/{den}，事项：{detail.get('task_kind') or '未指定'}）",
@@ -278,6 +370,11 @@ def _consensus_block(fso: dict[str, Any]) -> list[str]:
         f"- 同向：{'、'.join(favorable) if favorable else '无'}",
         f"- 反对：{'、'.join(unfavorable) if unfavorable else '无'}",
     ]
+    if voters:
+        grade_text = "、".join(
+            f"`{name}`={'/'.join(voter_grades.get(name) or ['unrecorded'])}" for name in voters
+        )
+        lines.append(f"- 投票证据等级：{grade_text}")
     if gate_veto:
         # 闸门否决会与"全票同向"同时出现（否决不参与计票），必须当场说清谁说了算，
         # 否则读者会看到"4/4 同向却是不可用"而以为程序自相矛盾。
@@ -289,12 +386,31 @@ def _consensus_block(fso: dict[str, Any]) -> list[str]:
     if non_voters:
         lines.append("- 未投票：")
         for nv in non_voters:
+            reason_text = nv.get("detail") or _non_voter_reason(nv.get("reason"))
             lines.append(
-                f"  - `{nv.get('school')}`（{nv.get('layer')}）："
-                f"{_non_voter_reason(nv.get('reason'))}"
+                f"  - `{nv.get('school')}`（{nv.get('layer')}）：{reason_text}"
             )
     else:
         lines.append("- 未投票：无（全部派别均已表态）")
+    undetermined_count = undetermined.get("undetermined_required_count", 0)
+    if undetermined_count:
+        kinds = "、".join(
+            f"{undetermined.get(key, 0)} 条{label}"
+            for key, label in (
+                ("evidence_insufficient_count", "证据不足"),
+                ("pending_ruling_count", "待裁定"),
+                ("pending_verification_count", "待签名"),
+                ("input_insufficient_count", "输入不足"),
+                ("not_applicable_count", "不适用"),
+            )
+            if undetermined.get(key, 0)
+        )
+        lines.append(
+            f"- 未判定：{undetermined_count} 条必需规则（{kinds or '原因见清单'}）；"
+            "共识比只反映已判定规则"
+        )
+        for item in undetermined.get("rules") or []:
+            lines.append(f"  - `{item.get('rule_id')}`（{item.get('kind')}）：{item.get('reason')}")
     lines.append("")
     lines.append(
         "> 该比值是「几成派别同向」的描述统计，**不是吉凶概率**；"
@@ -328,10 +444,14 @@ def _rule_id_to_path() -> dict[str, str]:
 
 
 def zero_voter_notice(ev: Evaluation) -> list[str]:
-    """共识比无意义时的**强制提示**（渲染在结论第一行之后）。
+    """共识比无意义时的**强制提示**。
 
-    为什么必须是"第一行"而不是分节说明
-    ----------------------------------
+    当 ``voters`` 为空或只有演示票时，:func:`render_markdown` 会把结论标题本身
+    改成「无参与投票的已判定规则」，本函数随后只补闸门否决等细节；独立调用
+    （测试、其他渲染入口）时仍返回完整的「不构成结论」主提示。
+
+    为什么不能只在分节里说明
+    ------------------------
     全仓 0 条已考证规则，生产路径的命中全进 ``demo_hits``，于是投票派可能一个都没有
     （0/0）。这不是 bug，是**内容未考证**的真实状态。但它有个恶性读法：
     读者看到"4/4 同向"会以为四派都同意，而真实情况可能是"四派都没表态，且闸门已否决"。
@@ -354,13 +474,120 @@ def zero_voter_notice(ev: Evaluation) -> list[str]:
     if voters and verified_votes:
         return []
 
-    lines = ["", "> ⛔ **本次评估无参与投票的已考证规则，共识比为 "
-             f"{ratio}。以下内容仅为事实层与参考层展示，不构成择日结论。**"]
+    lines = ["", "> ⛔ **无参与投票的已判定规则，以下仅为参考层展示**"
+             f"（当前共识比 {ratio}，不构成择日结论）。"]
     if gate_veto:
         lines.append(
             f"> ⛔ 本候选被闸门否决（{'、'.join(gate_veto)}），投票派 0 派参与，比值无意义。"
         )
     return lines
+
+
+def consensus_notice(ev: Evaluation) -> list[str]:
+    """主结论区的共识摘要：投票派、每派证据等级、相反意见与文献正当性。
+
+    0/0 无票场景由 :func:`zero_voter_notice` 负责，本函数不重复；这里只在
+    **确有票**时出现，避免把"没票"说成"有共识"。
+    """
+    detail = (ev.manifest.get("five_school_output") or {}).get("_consensus_detail") or {}
+    voters = detail.get("voters") or []
+    if not voters:
+        return []
+    ratio = detail.get("consensus_ratio") or "0/0"
+    grades = detail.get("voter_evidence_grades") or {}
+    grade_text = "、".join(
+        f"`{name}`={'/'.join(grades.get(name) or ['unrecorded'])}" for name in voters
+    )
+    lines = [
+        "",
+        f"> 🗳️ **共识 {ratio}**：参与投票 {len(voters)} 派（{'、'.join(voters)}）；"
+        f"证据等级：{grade_text}。",
+    ]
+    for conflict in detail.get("conflicts") or []:
+        if conflict.get("type") != "OPPOSITE_VERDICT":
+            continue
+        between = " vs ".join(conflict.get("between") or [])
+        lines.append(
+            f"> ⚠️ **门派意见相反（OPPOSITE_VERDICT）**：{between}；"
+            "需人工复核，系统不自动裁决。"
+        )
+    for name in voters:
+        status = LITERATURE_STATUS_BY_SCHOOL.get(name)
+        if status == "disputed_by_xieji":
+            lines.append(
+                "> ⚠️ **文献正当性提示**：斗首结果仅作参考，"
+                "协纪辨方书卷三十六·辨讹质疑其出处，不构成 A 级证据。"
+            )
+        elif status == "primary_source_missing":
+            lines.append(
+                "> ⚠️ **原典缺失提示**：玄空大卦缺一手影印原典"
+                "（primary_source_missing），结果仅作参考，不构成 A 级证据。"
+            )
+    return lines
+
+
+def undetermined_notice(ev: Evaluation) -> list[str]:
+    """主结论的未判定计数（第四层）。
+
+    共识比的分母只含已判定规则；不给这句话，读者会把"N 条必需规则没判"
+    读成"N 条都判过且通过"。计数直接取自 engine 的 ``required_blockers`` /
+    ``required_not_applicable``，报告不另算一套。
+    """
+    if not ev.required_rule_ids:
+        return []
+    blockers = ev.required_blockers
+    not_applicable = ev.required_not_applicable
+    if not blockers and not not_applicable:
+        return []
+    kinds = {
+        kind: sum(1 for b in blockers if b.get("kind") == kind)
+        for kind in (
+            BLOCK_EVIDENCE_INSUFFICIENT,
+            BLOCK_PENDING_RULING,
+            BLOCK_PENDING_VERIFICATION,
+            BLOCK_INPUT_INSUFFICIENT,
+        )
+    }
+    extras = [
+        f"{kinds[kind]} 条{label}"
+        for kind, label in (
+            (BLOCK_PENDING_RULING, "待裁定"),
+            (BLOCK_PENDING_VERIFICATION, "待签名"),
+            (BLOCK_INPUT_INSUFFICIENT, "输入不足"),
+        )
+        if kinds[kind]
+    ]
+    total = len(blockers) + len(not_applicable)
+    text = (
+        f"> ℹ️ **本次评估中 {total} 条必需规则未判定"
+        f"（{kinds[BLOCK_EVIDENCE_INSUFFICIENT]} 条证据不足，"
+        f"{len(not_applicable)} 条不适用"
+    )
+    if extras:
+        text += "；另有 " + "、".join(extras)
+    text += "），共识比仅反映已判定规则。**"
+    return ["", text]
+
+
+def ephemeris_notice(ev: Evaluation) -> list[str]:
+    """星历降级且落在节气交界窗口时的强制提示（第五层）。
+
+    manifest 已全字段透传；但 JSON 在报告末尾，读者常先看结论。此提示只
+    在 ``second_precision_required=True`` 时出现——此时月柱可能翻转，所有
+    非定义级命中已被引擎降为「证据不足」，结论不得作为发布依据。
+    """
+    ephem = ev.manifest.get("ephemeris") or {}
+    if not ephem.get("second_precision_required"):
+        return []
+    nearest = ephem.get("nearest_jie") or "节气交界"
+    distance = ephem.get("distance_to_jie_s")
+    dist_text = f"仅 {distance:.1f} 秒" if isinstance(distance, (int, float)) else "秒级窗口内"
+    backend = ephem.get("backend") or "未知"
+    return [
+        "",
+        f"> ⚠️ **星历精度：本次使用降级星历（{backend}），候选距「{nearest}」{dist_text}，"
+        "月柱可能翻转；命中的断言已按「证据不足」处理，本报告不得作为发布依据。**",
+    ]
 
 
 def _non_voter_reason(reason: str | None) -> str:
@@ -377,6 +604,7 @@ def _reason_label(reason: str | None) -> str:
         "missing_input": "缺输入",
         "caliber_undecided": "口径未定",
         "unverified_rule": "规则未考证",
+        "not_applicable": "不适用（不计未知）",
     }.get(reason or "", reason or "—")
 
 
@@ -443,12 +671,31 @@ def render_markdown(result: VerifyResult, *, registry: RuleRegistry | None = Non
     else:
         verdict_label = "**可用** —— 未触发否决层（不等于可发布）"
 
-    lines.append(
-        f"## 结论：{verdict_label}　推荐等级：**{ev.tier}**　"
-        f"可发布：**{'是' if ev.publishable else '否'}**"
-    )
-    # 0/0 无票提示紧贴结论：先说"不构成结论"，再说比值与闸门否决（顺序不可颠倒）
-    lines.extend(zero_voter_notice(ev))
+    zero_lines = zero_voter_notice(ev)
+    if zero_lines:
+        # 0/0 或仅有演示命中时，结论标题本身不得写成「可用」——那会让读者先看到
+        # 一个没有票支撑的结论，再去看下面的免责声明。首行必须是「无参与投票」。
+        detail = (ev.manifest.get("five_school_output") or {}).get("_consensus_detail") or {}
+        ratio = detail.get("consensus_ratio") or "0/0"
+        lines.append(
+            f"## 结论：**无参与投票的已判定规则**（当前共识比 {ratio}，"
+            f"以下仅为参考层展示，不构成择日结论）"
+            f"　推荐等级：**{ev.tier}**　可发布：**{'是' if ev.publishable else '否'}**"
+        )
+        lines.append("")
+        lines.append(f"> 系统状态（非择日结论）：{verdict_label}")
+        lines.extend(zero_lines[2:])
+    else:
+        lines.append(
+            f"## 结论：{verdict_label}　推荐等级：**{ev.tier}**　"
+            f"可发布：**{'是' if ev.publishable else '否'}**"
+        )
+    # 第四层：主结论必须写明未判定计数，否则"没判"会被读成"判了且通过"
+    lines.extend(undetermined_notice(ev))
+    # 第六层：有票时显示投票派/证据等级/相反意见；无票仍由零票提示先说明
+    lines.extend(consensus_notice(ev))
+    # 第五层：降级星历落在节气交界窗口时，结论不可发布（manifest 里也有全字段）
+    lines.extend(ephemeris_notice(ev))
     lines.append("")
     # GAP-TASKKIND-EMPTY 渲染（评审第十四轮产物四）：无事项专属规则的用户可见提示——
     # 通用规则（task_kinds:[]）恒覆盖一切事项，故判据是"显式含本事项的专属规则数==0"
@@ -542,9 +789,12 @@ def render_markdown(result: VerifyResult, *, registry: RuleRegistry | None = Non
             )
         lines.append("**当前状态（未激活项合并说明）**：")
         lines.append("")
+        na_count = len(ev.required_not_applicable)
+        na_suffix = f"，{na_count} 条不适用（不阻塞）" if na_count else ""
         lines.append(
             f"- 可发布=否：必需集 {len(ev.required_rule_ids)} 条中 "
-            f"{verified_required if verified_required is not None else '?'} 条已考证（阻塞项见下表）"
+            f"{verified_required if verified_required is not None else '?'} 条已考证"
+            f"{na_suffix}（阻塞项见下表）"
         )
         if verified_total == 0:
             lines.append(
@@ -559,10 +809,18 @@ def render_markdown(result: VerifyResult, *, registry: RuleRegistry | None = Non
     # 必需集：还差什么才能发布（把报告变成操作指南）
     if ev.required_rule_ids:
         rb = ev.required_blockers
+        na = ev.required_not_applicable
         lines.append(
             f"必需规则集（{task['kind']}）：共 {len(ev.required_rule_ids)} 条，"
-            f"已可判定 {len(ev.required_rule_ids) - len(rb)} 条"
+            f"已可判定 {len(ev.required_rule_ids) - len(rb) - len(na)} 条"
+            + (f"，不适用 {len(na)} 条（不阻塞）" if na else "")
         )
+        if na:
+            lines.append("")
+            lines.append("| 不适用（不阻塞可发布） | 理由 |")
+            lines.append("|---|---|")
+            for b in na:
+                lines.append(f"| `{b['rule_id']}` | {b['reason'] or '规则已声明本类输入不适用'} |")
         if rb:
             lines.append("")
             lines.append("| 尚未可判定的必需规则 | 状态 | 原因 |")
@@ -633,6 +891,11 @@ def render_markdown(result: VerifyResult, *, registry: RuleRegistry | None = Non
     for res in ev.per_school.values():
         lines.extend(_school_block(res))
         lines.append("")
+
+    lines.append("## 神煞宜忌台账（事实层）")
+    lines.append("")
+    lines.extend(_hit_ledger(ev))
+    lines.append("")
 
     lines.append("## 派别冲突")
     lines.append("")

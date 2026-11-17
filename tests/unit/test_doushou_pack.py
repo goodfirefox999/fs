@@ -11,7 +11,6 @@ from __future__ import annotations
 from datetime import date
 
 import pytest
-
 from core_symbol.doushou import (
     DOUSHOU_ELEMENT,
     FANHUA,
@@ -175,6 +174,56 @@ class TestIntegration:
         assert "doushou" in fx
         assert fx["doushou"]["shan"]["element"] == "火"
         assert fx["_calibers"]["doushou_tu_changsheng"] == "shen"
+
+    def test_literature_status_is_explicit_and_not_affecting_tier(self, monkeypatch) -> None:
+        """算法可复现 ≠ 文献正当性：斗首判定必须带 disputed_by_xieji，且不影响结论。"""
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+
+        from app_zeri.generator import _structure_of
+        from app_zeri.report import render_markdown
+        from app_zeri.schemas import CourseSpec, PersonSpec, SiteSpec, TaskSpec, build_context
+        from app_zeri.verifier import VerifyResult
+        from core_eval import EvalConfig, evaluate
+        from core_eval import engine as engine_mod
+        from core_rule.registry import default_registry
+
+        reg = default_registry()
+        # 2027-07-01 辛巳日：乾山斗首得元辰 1 / 贪狼 1 / 破军 2，确保参考层有命中
+        ctx = build_context(
+            CourseSpec(dt=datetime(2027, 7, 1, 9, 0, tzinfo=ZoneInfo("Asia/Shanghai"))),
+            SiteSpec(azimuth_deg=315.0, lat=23.13, lon=113.26),
+            TaskSpec(kind="安葬", strictness="strict"),
+            person=PersonSpec(year_gz="庚戌"),
+            calibers=reg.calibers,
+        )
+        cfg = EvalConfig(
+            task_kind="安葬", strictness="strict", schools=("doushou",),
+            allow_unverified=True, granularity="day_hour",
+        )
+        ev = evaluate(ctx, reg, cfg)
+        res = ev.per_school["doushou"]
+        # 斗首规则均为「待考证」，命中落在 demo_hits，不进 ev.judgments 正式桶
+        judgments = res.demo_hits + res.reference + res.controversial
+        assert judgments, "斗首参考层应产出判定"
+        for j in judgments:
+            assert j.literature_status == "disputed_by_xieji", j.rule_id
+            assert "卷三十六" in (j.literature_note or ""), j.rule_id
+            assert "GAP-010" in (j.literature_note or ""), j.rule_id
+            assert j.to_dict()["literature_status"] == "disputed_by_xieji"
+
+        md = render_markdown(
+            VerifyResult(evaluation=ev, context=ctx, structure=_structure_of(ctx)),
+            registry=reg,
+        )
+        assert "disputed_by_xieji" in md
+        assert "斗首结果仅作参考" in md
+
+        before = (ev.state, ev.tier, ev.publishable)
+        monkeypatch.setattr(engine_mod, "LITERATURE_STATUS_BY_SCHOOL", {})
+        monkeypatch.setattr(engine_mod, "LITERATURE_NOTE_BY_SCHOOL", {})
+        ev2 = evaluate(ctx, reg, cfg)
+        assert (ev2.state, ev2.tier, ev2.publishable) == before
 
     def test_caliber_is_echoed(self) -> None:
         from core_symbol.mountain import mountain_by_name

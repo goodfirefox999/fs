@@ -1,5 +1,5 @@
 # 本文件由 tools/gen_rules_phase11.py 生成，结构统一；规则内容（条件/解释/出处）需人类考证者复核。
-# status: 待考证 = 口诀常见但原文未核，默认不参与正式判定，命中时仅登记为 unknown。
+# status: 待考证 = 原文已核影印，但尚无人类签名，默认不参与正式判定，命中时仅登记为 unknown。
 # citation.quote 为 null 表示「尚未核对原文」，不是缺漏，禁止为填满字段而编造引文。
 api_version: 1
 rule_id: PUB-TIANDE-001
@@ -21,22 +21,28 @@ condition:
   op: eq
   value: true
 score_weight: 1.0
+evidence:
+  grade: A
+  source_tier: primary_scan
+  quote_verified: true
+  blocking_ruling: null
 citation:
   kind: classic
   source: 《协纪辨方书》
-  edition: null
-  juan: null
-  pian: null
+  edition: 欽定四庫全書·子部七·術數類（浙江大学图书馆藏影印本，Internet Archive 06056506.cn）
+  juan: 五
+  pian: 义例三·天德
   entry: 义例·天德
-  quote_kind: null
-  quote: null
-  url_or_path: null
+  quote_kind: 原文
+  quote: 乾坤寶典曰天德者天之福德也所理之方所值之日可以興土功營宮室○堪輿經曰天德者正月丁二月坤三月壬四月辛五月乾六月甲七月癸八月艮九月丙十月乙十一月巽十二月庚
+  url_or_path: https://archive.org/details/06056506.cn#page/n9
   verified_by: null
   verified_at: null
-  confidence: 低
+  confidence: 高
+  book_authenticity: authentic
 tests:
 - RT-PUB-TIANDE-001-HIT
 - RT-PUB-TIANDE-001-MISS
 explanation: 用事日值天德（本月天德在{facts.jishen.tian_de.target}），按本规则记为正向证据。
 supersedes: null
-notes: 待考证：天德能否解三煞/岁破诸凶，各派强度不一（《协纪辨方书》有「虽吉星不能解」之文，专指岁破），故本规则不进否决层、不抵扣硬伤；四维卦月（卯/午/酉/子）取支有口径 tiande_guaxiang 两说，报告须回显。
+notes: 待考证：天德能否解三煞/岁破诸凶，各派强度不一（《协纪辨方书》有「虽吉星不能解」之文，专指岁破），故本规则不进否决层、不抵扣硬伤；四维卦月（卯/午/酉/子）取支有口径 tiande_guaxiang 两说，报告须回显。2026-11-03 已对浙江大学图书馆藏四库本影印卷五叶九（续至叶十）逐字核对，原文见 citation.quote；尚缺人类签名，故 status 仍为待考证。

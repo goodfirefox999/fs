@@ -39,6 +39,7 @@ unknown 三分类（评审要求，报告必须分开统计）
 from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
+from enum import Enum
 from typing import Any
 
 from core_rule.dsl import eval_condition, resolve_path
@@ -85,7 +86,7 @@ STRICTNESS_STRICT = "strict"
 STRICTNESS_NORMAL = "normal"
 STRICTNESS_LOOSE = "loose"
 
-ENGINE_VERSION = "0.2.0"
+ENGINE_VERSION = "0.2.1"  # 0.2.1: Judgment 增加 literature_status/note（序列化面变化）
 
 _STATE_RANK = {STATE_OK: 0, STATE_UNSURE: 1, STATE_BLOCKED: 2}
 
@@ -156,10 +157,77 @@ def _select_cached(
 UNKNOWN_MISSING_INPUT = "missing_input"
 UNKNOWN_CALIBER = "caliber_undecided"
 UNKNOWN_UNVERIFIED = "unverified_rule"
+#: 证据不足：规则有原文线索但未逐字核对或未签名——不投票，且必须显式登记。
+UNKNOWN_EVIDENCE_INSUFFICIENT = "evidence_insufficient"
+#: 「不适用」原因（不是未知，也不是未判定）：规则显式声明该类输入不在适用范围内。
+#: 与输入不足的区别是决定性的——输入不足是"还判不了"，不适用是"这条规则管不到"。
+UNKNOWN_NOT_APPLICABLE = "not_applicable"
+
+#: 文献正当性：**算法可复现 ≠ 文献正当性**。
+#: 斗首五行的翻化链可实现，但协纪卷三十六·辨讹质疑其托名杨筠松。
+#: 该标记只用于报告展示，**不参与 participation / tier / 投票资格**。
+#: 卷三十六影印叶次尚未取到（GAP-010），故文案必须保留「影印叶次待取」。
+LITERATURE_STATUS_BY_SCHOOL: dict[str, str] = {
+    "doushou": "disputed_by_xieji",
+    "xuankong_dagua": "primary_source_missing",
+}
+LITERATURE_NOTE_BY_SCHOOL: dict[str, str] = {
+    "doushou": (
+        "协纪辨方书卷三十六·辨讹质疑斗首五行托名杨筠松"
+        "（「不知其所自起……其为伪托可知」；卷三十六影印叶次待取，GAP-010）；"
+        "斗首结果仅作参考，不代表已获文献正当性。"
+    ),
+    "xuankong_dagua": (
+        "尚无 A 级一手影印原典（blocked_by=primary_source_missing）；"
+        "六十甲子配卦、卦气、卦运表只作事实层，不构成投票资格。"
+    ),
+}
+
+#: 参与状态（显示值，中文）——报告/历史 JSON 沿用这些字符串。
+PARTICIPATION_VOTED = "判定"
+PARTICIPATION_INPUT_INSUFFICIENT = "输入不足"
+PARTICIPATION_NOT_APPLICABLE = "不适用"
+PARTICIPATION_EVIDENCE_INSUFFICIENT = "证据不足"
+PARTICIPATION_REGISTER_ONLY = "仅登记"
+PARTICIPATION_DEMO = "演示"
+
+#: 参与状态（机器可读枚举）——新增状态必须在此登记，不得只加中文字符串。
+class Participation(str, Enum):
+    VOTED = "voted"
+    INPUT_INSUFFICIENT = "input_insufficient"
+    NOT_APPLICABLE = "not_applicable"
+    EVIDENCE_INSUFFICIENT = "evidence_insufficient"
+    REGISTER_ONLY = "register_only"
+    DEMO = "demo"
+
+
+#: 参与状态（显示值，中文）——报告/历史 JSON 沿用这些字符串。
+PARTICIPATION_VOTED = "判定"
+PARTICIPATION_INPUT_INSUFFICIENT = "输入不足"
+PARTICIPATION_NOT_APPLICABLE = "不适用"
+PARTICIPATION_EVIDENCE_INSUFFICIENT = "证据不足"
+PARTICIPATION_REGISTER_ONLY = "仅登记"
+PARTICIPATION_DEMO = "演示"
+
+PARTICIPATION_CODES: dict[str, str] = {
+    PARTICIPATION_VOTED: Participation.VOTED.value,
+    PARTICIPATION_INPUT_INSUFFICIENT: Participation.INPUT_INSUFFICIENT.value,
+    PARTICIPATION_NOT_APPLICABLE: Participation.NOT_APPLICABLE.value,
+    PARTICIPATION_EVIDENCE_INSUFFICIENT: Participation.EVIDENCE_INSUFFICIENT.value,
+    PARTICIPATION_REGISTER_ONLY: Participation.REGISTER_ONLY.value,
+    PARTICIPATION_DEMO: Participation.DEMO.value,
+}
+
+#: 必需集阻塞种类：报告按此分级，不得只给一句"未判定"。
+BLOCK_PENDING_VERIFICATION = "pending_verification"  # A 级原文已核，缺人类签名
+BLOCK_PENDING_RULING = "pending_ruling"              # 卡在 Q-xxx 裁定
+BLOCK_EVIDENCE_INSUFFICIENT = "evidence_insufficient"  # B/C 级或无证据等级
+BLOCK_INPUT_INSUFFICIENT = "input_insufficient"      # 已签规则缺输入/口径
 
 #: 事实注册表里"本系统不提供"的根（用于把 unknown 归到 caliber_undecided）
 _CALIBER_ROOTS = (
     "facts.wuhuang.month",
+    "facts._calibers.q026_sishan_chong_resolved",
     "facts.yinfu",
     "facts.dutiansha",
     "facts.fubing_dahuo",
@@ -214,8 +282,12 @@ class EvalConfig:
 class Judgment:
     """单条判定。
 
-    ``participation`` 说明该条是否进入正式判定：
-    ``判定``（已考证/定义级）｜``仅登记``（命中但未考证）｜``输入不足``。
+    ``participation`` 说明该条是否进入正式判定（显示值）：
+    ``判定``（已考证/定义级）｜``仅登记``（命中但未考证）｜``输入不足``｜
+    ``证据不足``（有原文线索但未核对/未签名，不投票）｜
+    ``不适用``（规则声明该类输入不适用，不阻塞 publishable）。
+    ``participation_code`` 是同一状态的机器可读枚举（voted/input_insufficient/
+    evidence_insufficient/not_applicable/register_only/demo）。
     """
 
     rule_id: str
@@ -253,11 +325,31 @@ class Judgment:
     layer: str | None = None
     engine_eligible: bool = True
     ineligible_reason: str | None = None
+    #: 证据等级（A/B/C，来自 rules YAML 的 evidence.grade）；无元数据时为 None。
+    #: 报告用 ``evidence_grade_label`` 显式呈现 "definitional"/"unrecorded"，
+    #: 不允许把"没登记等级"静默当成 A。
+    evidence_grade: str | None = None
+    #: 文献正当性标记（如 doushou=disputed_by_xieji）。只展示，不参与任何判定。
+    literature_status: str | None = None
+    literature_note: str | None = None
 
     @property
     def is_demo(self) -> bool:
         """演示命中：规则未考证，仅在 ``--allow-unverified`` 下参与链路，**不作为排除依据**。"""
         return self.participation == "演示"
+
+    @property
+    def evidence_grade_label(self) -> str:
+        if self.evidence_grade:
+            return self.evidence_grade
+        if self.definitional or self.status == "定义级":
+            return "definitional"
+        return "unrecorded"
+
+    @property
+    def participation_code(self) -> str:
+        """机器可读参与状态；未知显示值不得静默映射成 voted。"""
+        return PARTICIPATION_CODES.get(self.participation, "unknown")
 
     @property
     def is_effective(self) -> bool:
@@ -291,6 +383,7 @@ class Judgment:
             "target": self.target,
             "matched": self.matched,
             "participation": self.participation,
+            "participation_code": self.participation_code,
             "definitional": self.definitional,
             "hit_detail": self.hit_detail,
             "explanation": self.explanation,
@@ -306,6 +399,9 @@ class Judgment:
             "layer": self.layer,
             "engine_eligible": self.engine_eligible,
             "ineligible_reason": self.ineligible_reason,
+            "evidence_grade": self.evidence_grade_label,
+            "literature_status": self.literature_status,
+            "literature_note": self.literature_note,
             "warnings": list(self.warnings),
             "score_weight": self.score_weight,
         }
@@ -331,6 +427,9 @@ class SchoolResult:
     #: C 第一批：参考层命中（engine_eligible=false）——评估但**不进任何强度桶**，
     #: 与 demo_hits 的区别是"这条规则本身就不该影响结论"，而非"证据不足"。
     reference: list[Judgment] = field(default_factory=list)
+    #: 规则声明「此类输入不适用」——不是未知、不是未判定，**不阻塞 publishable**。
+    #: 与 unknowns 的区别：unknowns 是"还判不了"，本桶是"这条规则管不到"。
+    not_applicable: list[Judgment] = field(default_factory=list)
     rank_score: float | None = None
     rules_evaluated: int = 0
     #: 该派看到的输入事实哈希（用于验证"各派 fact 完全一致"）
@@ -355,6 +454,7 @@ class SchoolResult:
             "controversial_count": len(self.controversial),
             "demo_hit_count": len(self.demo_hits),
             "reference_count": len(self.reference),
+            "not_applicable_count": len(self.not_applicable),
         }
 
     def to_dict(self) -> dict[str, Any]:
@@ -374,6 +474,7 @@ class SchoolResult:
             "controversial": [j.to_dict() for j in self.controversial],
             "demo_hits": [j.to_dict() for j in self.demo_hits],
             "reference": [j.to_dict() for j in self.reference],
+            "not_applicable": [j.to_dict() for j in self.not_applicable],
         }
 
 
@@ -396,12 +497,21 @@ class Evaluation:
     required_rule_ids: tuple[str, ...] = ()
     #: 必需集里尚不可判定的规则（engine 预计算，避免 Evaluation 反查 ruleset）
     blocked_required: list[dict[str, Any]] = field(default_factory=list)
+    #: 必需集里「不适用」的规则（规则显式声明该类输入不适用；不阻塞发布）
+    required_not_applicable: list[dict[str, Any]] = field(default_factory=list)
 
     @property
     def judgments(self) -> list[Judgment]:
         out: list[Judgment] = []
         for res in self.per_school.values():
-            out.extend(res.vetoes + res.cautions + res.notes + res.positives + res.unknowns)
+            out.extend(
+                res.vetoes
+                + res.cautions
+                + res.notes
+                + res.positives
+                + res.unknowns
+                + res.not_applicable
+            )
         return out
 
     @property
@@ -413,6 +523,8 @@ class Evaluation:
         - **有必需集时**：只看该事项的必需规则是否**全部可判定**
           （participation == "判定"，且无输入不足）。非必需规则待考证只降级为
           「参考层缺失」，不阻塞发布 —— 否则 publishable 会永久 false，考证失去验收信号。
+          规则显式声明「本类输入不适用」的（participation == "不适用"）不计入阻塞：
+          它不像输入不足那样"还判不了"，而是"这条规则管不到这类输入"。
         - **无必需集时**：退回严格口径（任何未考证命中/争议/冲突都阻塞）。
         - 两种情况都要求 tier ∈ {ACCEPTABLE, PREFERRED} 且无冲突。
         """
@@ -441,12 +553,14 @@ class Evaluation:
     def required_blockers(self) -> list[dict[str, Any]]:
         """必需集里尚未可判定的规则（用于报告"还差什么才能发布"）。
 
-        阻塞有两种来源（都在 engine 预计算）：
+        阻塞来源（engine 预计算，``kind`` 区分可行动类别）：
 
-        1. **规则本身未考证**（status ∉ {已考证, 定义级}）——
-           此时即使求值为 False，"不犯"这个结论也是基于未考证的条件得出的，
-           不能作为"确认不犯"的发布依据；
-        2. **输入不足**（该规则求值为 unknown）。
+        1. **pending_ruling**：卡在 Q-xxx 人类裁定；
+        2. **pending_verification**：A 级原文已核，缺人类签名；
+        3. **evidence_insufficient**：B/C 级或引文未核对，不得投票；
+        4. **input_insufficient**：已签规则缺输入/口径。
+
+        任何一类都阻塞 ``publishable``——"没判"不得冒充"判了且通过"。
         """
         return list(self.blocked_required)
 
@@ -462,7 +576,21 @@ class Evaluation:
             "structural": [j.to_dict() for j in self.structural],
             "required_rule_ids": list(self.required_rule_ids),
             "required_blockers": self.required_blockers,
-            "required_satisfied_count": len(self.required_rule_ids) - len(self.blocked_required),
+            "required_blocked_kinds": {
+                kind: sum(1 for b in self.blocked_required if b.get("kind") == kind)
+                for kind in (
+                    BLOCK_PENDING_RULING,
+                    BLOCK_PENDING_VERIFICATION,
+                    BLOCK_EVIDENCE_INSUFFICIENT,
+                    BLOCK_INPUT_INSUFFICIENT,
+                )
+            },
+            "required_not_applicable": self.required_not_applicable,
+            "required_satisfied_count": (
+                len(self.required_rule_ids)
+                - len(self.blocked_required)
+                - len(self.required_not_applicable)
+            ),
             "conflicts": self.conflicts,
             "unknowns": self.unknowns,
             "manifest": self.manifest,
@@ -502,20 +630,43 @@ def classify_unknown(
     """返回 ``(reason, remedy)``。
 
     - 规则本身未考证（命中但仅登记）→ ``unverified_rule``
+    - 有原文线索但未逐字核对/未签名 → ``evidence_insufficient``
     - 缺失的事实属于"口径未裁定"→ ``caliber_undecided``
     - 其余缺失 → ``missing_input``
     """
+    if participation == PARTICIPATION_EVIDENCE_INSUFFICIENT:
+        ev = getattr(rule, "evidence", None)
+        if ev is not None and ev.blocking_ruling:
+            return (
+                UNKNOWN_EVIDENCE_INSUFFICIENT,
+                f"待裁定 {ev.blocking_ruling} 后再签名（裁定前不得投票）",
+            )
+        if ev is not None and ev.quote_verified:
+            return (
+                UNKNOWN_EVIDENCE_INSUFFICIENT,
+                "原文已核，缺人类签名：由考证者填写 verified_by 并升级为已考证",
+            )
+        return (
+            UNKNOWN_EVIDENCE_INSUFFICIENT,
+            "需补原文并逐字核对，由考证者签名后升级为已考证（B/C 级不投票）",
+        )
     if participation == "仅登记":
+        if rule.citation.quote:
+            return (
+                UNKNOWN_UNVERIFIED,
+                "原文已核，缺人类签名：由考证者填写 verified_by 并升级为已考证",
+            )
+        source = rule.citation.source or "古籍原文"
         return (
             UNKNOWN_UNVERIFIED,
-            f"需补《{rule.citation.source}》原文与卷次，由考证者签名后升级为已考证",
+            f"需补{source}原文与卷次，由考证者签名后升级为已考证",
         )
 
     for path in unknown_paths:
         if any(path.startswith(root) for root in _CALIBER_ROOTS):
             return (
                 UNKNOWN_CALIBER,
-                f"需先裁定 `{path}` 所属口径（见 docs/QUESTIONS.md Q-005/Q-006）",
+                f"需先裁定 `{path}` 所属口径（见 docs/QUESTIONS.md）",
             )
 
     if unknown_paths:
@@ -545,6 +696,8 @@ def _make_judgment(
     warnings: tuple[str, ...] = (),
     doubt: bool = False,
     declared_severity: str | None = None,
+    unknown_reason_override: str | None = None,
+    remedy_override: str | None = None,
 ) -> Judgment:
     prov = Provenance(
         rule_id=rule.rule_id,
@@ -561,10 +714,19 @@ def _make_judgment(
     )
     reason: str | None = None
     remedy: str | None = None
-    if participation != "判定":
+    if participation == "不适用":
+        reason = UNKNOWN_NOT_APPLICABLE
+        remedy = rule.not_applicable_reason
+    elif participation != "判定":
         reason, remedy = classify_unknown(
             rule, participation=participation, unknown_paths=unknown_paths
         )
+    # 显式覆盖（如星历降级闸门）：优先级高于按规则元数据推断的 remedy，
+    # 否则已签规则的「降为证据不足」会被渲染成「缺人类签名」，指错修复方向。
+    if unknown_reason_override is not None:
+        reason = unknown_reason_override
+    if remedy_override is not None:
+        remedy = remedy_override
     return Judgment(
         rule_id=rule.rule_id,
         rule_version=rule.version,
@@ -573,7 +735,13 @@ def _make_judgment(
         status=rule.status,
         severity=severity,
         target=rule.target,
-        matched=participation in ("判定", "仅登记"),
+        matched=participation
+        in (
+            PARTICIPATION_VOTED,
+            PARTICIPATION_REGISTER_ONLY,
+            PARTICIPATION_DEMO,
+            PARTICIPATION_EVIDENCE_INSUFFICIENT,
+        ),
         participation=participation,
         hit_detail=render_explanation(rule.explanation, ctx),
         explanation=rule.explanation,
@@ -592,6 +760,9 @@ def _make_judgment(
         layer=rule.layer,
         engine_eligible=rule.engine_eligible,
         ineligible_reason=rule.ineligible_reason,
+        evidence_grade=getattr(getattr(rule, "evidence", None), "grade", None),
+        literature_status=LITERATURE_STATUS_BY_SCHOOL.get(rule.school),
+        literature_note=LITERATURE_NOTE_BY_SCHOOL.get(rule.school),
     )
 
 
@@ -621,6 +792,8 @@ def _evaluate_school(
     demo_hits: list[Judgment] = []
     # C 第一批：engine_eligible=false 的命中（只渲染，不进任何强度桶）
     reference: list[Judgment] = []
+    # 规则声明「本类输入不适用」：单独一桶，不进 unknowns（不阻塞 publishable）
+    not_applicable: list[Judgment] = []
     evaluated = 0
 
     strict = cfg.strictness == STRICTNESS_STRICT
@@ -637,6 +810,27 @@ def _evaluate_school(
         ):
             continue
         evaluated += 1
+        # 「不适用」先于主条件求值：规则显式声明本类输入不在适用范围内时，
+        # 不再尝试主条件（否则会以「输入不足」冒充「不适用」）。
+        # 声明条件本身求值失败（None）时视为不触发，继续走主条件——宁可报输入不足，
+        # 也不能用一条求不出的守卫把规则静默放行。
+        if rule.not_applicable_when is not None:
+            na = eval_condition(rule.not_applicable_when, ctx)
+            if na.value is True:
+                not_applicable.append(
+                    _make_judgment(
+                        rule,
+                        ctx=ctx,
+                        rule_lib_version=rule_lib_version,
+                        participation="不适用",
+                        input_hash=input_hash,
+                        school=school,
+                        severity=cap_severity(rule.severity, rule.status),
+                        declared_severity=rule.severity,
+                        warnings=("规则声明本类输入不适用，未参与判定",),
+                    )
+                )
+                continue
         outcome = eval_condition(rule.condition, ctx)
 
         if outcome.value is None:
@@ -662,8 +856,56 @@ def _evaluate_school(
         # ---- 命中 ----
         declared = rule.severity_for(school)
         severity = cap_severity(declared, rule.status)  # ADR-0014 决策 1：单一来源 cap
+
+        # 星历精度闸门（Layer 5）：降级后端（VSOP87）且候选距「节」不足 15 s 时，
+        # 月柱可能翻转——所有非定义级命中一律降为「证据不足」。
+        # 即便规则已签也不得投票：不确定的月柱不能支撑任何断言。
+        ephem = ctx.get("_meta", {}).get("ephemeris") or {}
+        if ephem.get("second_precision_required") and not rule.is_definitional:
+            unknowns.append(
+                _make_judgment(
+                    rule,
+                    ctx=ctx,
+                    rule_lib_version=rule_lib_version,
+                    participation=PARTICIPATION_EVIDENCE_INSUFFICIENT,
+                    input_hash=input_hash,
+                    school=school,
+                    severity=severity,
+                    declared_severity=declared,
+                    warnings=(
+                        "星历精度闸门："
+                        + (
+                            ephem.get("second_precision_reason")
+                            or "星历降级且距节气交界过近"
+                        )
+                        + "；该命中按证据不足处理，不参与判定",
+                    ),
+                    unknown_reason_override=UNKNOWN_EVIDENCE_INSUFFICIENT,
+                    remedy_override="改用 Skyfield/DE440s 重算，或避开节气交界 ±15 秒后再评估",
+                )
+            )
+            continue
+
         is_verified = rule.status in ("已考证", "定义级")
         is_controversial = rule.status == "有争议"
+        # 证据闸门（2026-11-04）：A 级但未签名 = 证据不足，永不投票
+        # （即使 --allow-unverified 也不得降级为"演示"冒充判定）。
+        ev = getattr(rule, "evidence", None)
+        if not is_verified and not is_controversial and ev is not None and ev.grade == "A":
+            unknowns.append(
+                _make_judgment(
+                    rule,
+                    ctx=ctx,
+                    rule_lib_version=rule_lib_version,
+                    participation=PARTICIPATION_EVIDENCE_INSUFFICIENT,
+                    input_hash=input_hash,
+                    school=school,
+                    severity=severity,
+                    declared_severity=declared,
+                    warnings=("证据 A 级但未经人类签名，不参与判定",),
+                )
+            )
+            continue
         # ADR-0014 C12：有争议规则默认参与评估（判定（存疑））；待考证仍需 --allow-unverified
         participating = is_verified or cfg.allow_unverified or is_controversial
         if not participating:
@@ -779,6 +1021,7 @@ def _evaluate_school(
         controversial=controversial,
         demo_hits=demo_hits,
         reference=reference,
+        not_applicable=not_applicable,
         rank_score=rank_score,
         rules_evaluated=evaluated,
         fact_hash=fact_hash,
@@ -840,6 +1083,24 @@ def _school_payload(
             if name in c["schools"]
         ],
     }
+
+
+def _voter_grade_labels(school: str, res: SchoolResult) -> list[str]:
+    """一张票背后的证据等级；文献正当性有争议的派别不得标 A/B。
+
+    ``disputed_by_xieji``（斗首）即使将来升为投票派，其票也永远带 ``disputed``，
+    不允许被当作高置信票统计。玄空大卦的 ``primary_source_missing`` 不在此列：
+    它缺的是一手原典，不是文献伪托，须另行裁定投票资格。
+    """
+    grades = {
+        j.evidence_grade_label
+        for j in (*res.vetoes, *res.cautions, *res.positives)
+        if j.participation in (PARTICIPATION_VOTED, PARTICIPATION_DEMO)
+    }
+    if grades and LITERATURE_STATUS_BY_SCHOOL.get(school) == "disputed_by_xieji":
+        grades -= {"A", "B"}
+        grades.add("disputed")
+    return sorted(grades)
 
 
 def _detect_conflicts(per_school: dict[str, SchoolResult]) -> list[dict[str, Any]]:
@@ -1040,6 +1301,7 @@ def evaluate(
         "unknown_count": unknown_count,
         "unknown_by_reason": by_reason,
         "unverified_hit_count": by_reason.get(UNKNOWN_UNVERIFIED, 0),
+        "evidence_insufficient_count": by_reason.get(UNKNOWN_EVIDENCE_INSUFFICIENT, 0),
         "disputed_count": sum(1 for j in structural if j.status == "有争议"),
         "missing_input_count": by_reason.get(UNKNOWN_MISSING_INPUT, 0),
         "caliber_undecided_count": by_reason.get(UNKNOWN_CALIBER, 0),
@@ -1052,6 +1314,8 @@ def evaluate(
         ),
         # ADR-0014 决策 0：存疑命中计数（渲染层；不入 strong_avoid/tier）
         "controversial_count": sum(len(r.controversial) for r in per_school.values()),
+        # 规则声明「不适用」的计数（不是未知，不阻塞发布）
+        "not_applicable_count": sum(len(r.not_applicable) for r in per_school.values()),
         # ADR-0014 决策 1：声明/生效差异规则（load 期预计算，审计链双显示）
         "cap_applied_ids": sorted(registry.ruleset.cap_applied_ids),
         "verified_veto_count": sum(
@@ -1080,31 +1344,113 @@ def evaluate(
         tier = TIER_ACCEPTABLE
 
     # ---- 必需集阻塞预计算（ADR-0012）----
+    # 「不适用」不算阻塞，但只有在**该规则没有出现在任何其他桶**时才成立：
+    # 若同一规则在某派被判不适用、在另一派又命中/未知，仍按阻塞处理（保守）。
+    _other_bucket_ids: set[str] = set()
+    _na_reason: dict[str, str | None] = {}
+    for res in per_school.values():
+        for j in (
+            res.vetoes
+            + res.cautions
+            + res.notes
+            + res.positives
+            + res.unknowns
+            + res.structural
+            + res.controversial
+            + res.demo_hits
+            + res.reference
+        ):
+            _other_bucket_ids.add(j.rule_id)
+        for j in res.not_applicable:
+            _na_reason.setdefault(j.rule_id, j.remedy)
+    na_only_ids = set(_na_reason) - _other_bucket_ids
+
     blocked_required: list[dict[str, Any]] = []
     seen_blocked: set[str] = set()
+
+    def _block_kind(rule: Rule) -> tuple[str, str]:
+        """把「未判定」拆成可行动类别，禁止只报一句"规则未考证"。"""
+        if rule.status in ("已考证", "定义级"):
+            return BLOCK_INPUT_INSUFFICIENT, "已签规则缺输入/口径"
+        ev = getattr(rule, "evidence", None)
+        if ev is not None and ev.blocking_ruling:
+            return BLOCK_PENDING_RULING, f"待裁定 {ev.blocking_ruling}"
+        if ev is not None and ev.grade == "A" and ev.quote_verified:
+            return BLOCK_PENDING_VERIFICATION, "A 级原文已核，缺人类签名"
+        return BLOCK_EVIDENCE_INSUFFICIENT, "B/C 级或引文未核对，不得投票"
+
+    ephem = (ctx.get("_meta") or {}).get("ephemeris") or {}
     for rid in required_ids:
         rule = registry.ruleset.by_id.get(rid)
         if rule is None:  # pragma: no cover - lint 已校验
             continue
-        if rule.status not in ("已考证", "定义级"):
+        if rid in na_only_ids:
+            continue  # 规则已声明本类输入不适用：不阻塞发布
+        if (
+            ephem.get("second_precision_required")
+            and rule.status == "已考证"
+            and rid not in _other_bucket_ids
+        ):
+            # 降级星历 + 节气交界窗口：月柱可能翻转。即便本轮没命中，
+            # 「不犯」也不能算已判定通过——命中侧已在评估循环降为证据不足。
             blocked_required.append(
                 {
                     "rule_id": rid,
                     "status": rule.status,
+                    "kind": BLOCK_EVIDENCE_INSUFFICIENT,
+                    "detail": ephem.get("second_precision_reason")
+                    or "星历降级且距节气交界过近，月柱不确定",
+                    "reason": "未判定（ephemeris_precision）",
+                }
+            )
+            seen_blocked.add(rid)
+            continue
+        if rule.status not in ("已考证", "定义级"):
+            kind, detail = _block_kind(rule)
+            blocked_required.append(
+                {
+                    "rule_id": rid,
+                    "status": rule.status,
+                    "kind": kind,
+                    "detail": detail,
                     "reason": "规则未考证（其「不犯」结论不可作为发布依据）",
                 }
             )
             seen_blocked.add(rid)
     for u in unknown_items:
         if u["rule_id"] in required_ids and u["rule_id"] not in seen_blocked:
+            rule = registry.ruleset.by_id.get(u["rule_id"])
+            if (
+                rule is not None
+                and rule.status in ("已考证", "定义级")
+                and u.get("unknown_reason") == UNKNOWN_EVIDENCE_INSUFFICIENT
+            ):
+                # 已签规则被证据/精度闸门拦下（如星历降级 + 节气交界窗口）：
+                # 归入 evidence_insufficient，不能报成「缺输入」误导修复方向。
+                kind = BLOCK_EVIDENCE_INSUFFICIENT
+                detail = u.get("remedy") or "证据不足（已签规则被精度/证据闸门拦下）"
+            elif rule is not None:
+                kind, detail = _block_kind(rule)
+            else:
+                kind, detail = BLOCK_INPUT_INSUFFICIENT, "规则缺失"
+            if u.get("unknown_reason") == UNKNOWN_NOT_APPLICABLE:
+                continue  # 防御：不适用已在 na_only_ids 排除
             blocked_required.append(
                 {
                     "rule_id": u["rule_id"],
                     "status": u["status"],
-                    "reason": f"输入不足（{u.get('unknown_reason')}）",
+                    "kind": kind,
+                    "detail": detail,
+                    "reason": f"未判定（{u.get('unknown_reason')}）",
                 }
             )
             seen_blocked.add(u["rule_id"])
+
+    required_not_applicable = [
+        {"rule_id": rid, "reason": _na_reason.get(rid)}
+        for rid in required_ids
+        if rid in na_only_ids
+    ]
 
     # ---- 五派并列输出 schema（spec §4 仲裁层）----
     # tendency 先行：spec §4 冲突 = 两派 tendency 相反 → {schools, issue}，不裁决
@@ -1148,14 +1494,22 @@ def evaluate(
     #      等于把"没意见"稀释成"反对"；替它补一张中立票同样是伪造。
     non_voters: list[dict[str, Any]] = []
     voters: list[str] = []
+    non_voter_details = {
+        "layer_reject": "闸门层只做否决，不参与计票",
+        "layer_reference": "参考层只登记，不参与计票",
+        "demo_only_not_voting": "仅有未考证规则的演示命中，不构成票（有判断、无票权）",
+        "no_verdict": "本轮无任何规则形成判定（沉默派不进分母）",
+    }
     for name in per_school:
         layer = registry.policy.schools[name].layer
         if layer != "scoring":
+            reason = "layer_reject" if layer == "reject" else "layer_reference"
             non_voters.append(
                 {
                     "school": name,
                     "layer": layer,
-                    "reason": "layer_reject" if layer == "reject" else "layer_reference",
+                    "reason": reason,
+                    "detail": non_voter_details[reason],
                 }
             )
             continue
@@ -1166,7 +1520,14 @@ def evaluate(
             #   - no_verdict：本轮一条规则都没命中（沉默）。
             # 混同会让报告把"有意见但不够格"说成"没意见"，也会掩盖考证进度。
             reason = "demo_only_not_voting" if res.demo_hits else "no_verdict"
-            non_voters.append({"school": name, "layer": layer, "reason": reason})
+            non_voters.append(
+                {
+                    "school": name,
+                    "layer": layer,
+                    "reason": reason,
+                    "detail": non_voter_details[reason],
+                }
+            )
             continue
         voters.append(name)
 
@@ -1190,6 +1551,56 @@ def evaluate(
 
     five_school_output["_consensus"] = consensus
     five_school_output["_conflicts"] = conflicts_fso
+    # 第四层（2026-11-04）：共识置信度必须可追溯——
+    #   1. 每张票背后的证据等级（A/B/C/definitional/unrecorded）；
+    #   2. 未投票派别的 reason + detail；
+    #   3. 必需集未判定清单（证据不足/待裁定/待签名/输入不足/不适用）。
+    # 报告主结论只引用这里的计数，不能另算一套。
+    voter_evidence_grades: dict[str, list[str]] = {
+        name: _voter_grade_labels(name, per_school[name]) for name in voters
+    }
+    consensus_conflicts = [
+        {
+            "between": list(c["schools"]),
+            "type": "OPPOSITE_VERDICT",
+            "detail": c["issue"],
+        }
+        for c in conflicts_fso
+    ]
+    blocked_kind_counts = {
+        kind: sum(1 for b in blocked_required if b.get("kind") == kind)
+        for kind in (
+            BLOCK_PENDING_RULING,
+            BLOCK_PENDING_VERIFICATION,
+            BLOCK_EVIDENCE_INSUFFICIENT,
+            BLOCK_INPUT_INSUFFICIENT,
+        )
+    }
+    undetermined_detail = {
+        "required_total": len(required_ids),
+        "undetermined_required_count": len(blocked_required) + len(required_not_applicable),
+        "evidence_insufficient_count": blocked_kind_counts[BLOCK_EVIDENCE_INSUFFICIENT],
+        "input_insufficient_count": blocked_kind_counts[BLOCK_INPUT_INSUFFICIENT],
+        "pending_ruling_count": blocked_kind_counts[BLOCK_PENDING_RULING],
+        "pending_verification_count": blocked_kind_counts[BLOCK_PENDING_VERIFICATION],
+        "not_applicable_count": len(required_not_applicable),
+        "rules": [
+            {
+                "rule_id": b["rule_id"],
+                "kind": b["kind"],
+                "reason": b.get("detail") or b.get("reason"),
+            }
+            for b in blocked_required
+        ]
+        + [
+            {
+                "rule_id": b["rule_id"],
+                "kind": UNKNOWN_NOT_APPLICABLE,
+                "reason": b.get("reason") or "规则已声明本类输入不适用",
+            }
+            for b in required_not_applicable
+        ],
+    }
     five_school_output["_consensus_detail"] = {
         "consensus": consensus,
         # 整数比字符串是唯一对外形态：不提供浮点字段，避免下游对它加权求平均
@@ -1199,13 +1610,18 @@ def evaluate(
             "unfavorable": unfavorable_schools,
         },
         "voters": voters,
+        "voter_evidence_grades": voter_evidence_grades,
+        # 共识层冲突：只列「方向相反」的派别对，不裁决谁对谁错（ADR-0015）
+        "conflicts": consensus_conflicts,
         "non_voters": non_voters,
+        "undetermined": undetermined_detail,
         "gate_veto_schools": gate_veto_schools,
         "threshold": agree_spec.to_dict(),
         "task_kind": cfg.task_kind,
         "convention": (
             "favorable/voters >= min_agree_num/min_agree_den（整数交叉相乘）；"
-            "闸门层与参考层不计票，沉默派不进分母"
+            "闸门层与参考层不计票，沉默派不进分母；"
+            "共识比只反映已判定规则，未判定清单见 undetermined"
         ),
     }
 
@@ -1215,6 +1631,7 @@ def evaluate(
         "rule_lib_version": rule_lib_version,
         "engine_version": ENGINE_VERSION,
         "config": cfg.to_dict(),
+        "ephemeris": dict(ctx.get("_meta", {}).get("ephemeris") or {}),
         "five_school_output": five_school_output,
         "schools": list(per_school),
         "rule_counts": {name: res.rules_evaluated for name, res in per_school.items()},
@@ -1236,6 +1653,7 @@ def evaluate(
         structural=structural,
         required_rule_ids=tuple(required_ids),
         blocked_required=blocked_required,
+        required_not_applicable=required_not_applicable,
     )
 
 

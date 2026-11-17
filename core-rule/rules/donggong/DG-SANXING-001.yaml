@@ -9,6 +9,15 @@ hard_veto: false
 severity: 可用
 target: day
 evaluable: true
+# 数据完整性（2026-11-03 评审）：固定三循环表与月建分组起例不符。修正前本条命中
+# 不得作为证据；`rules lint` 的 data_integrity_broken 组会列出本条。
+data_integrity: broken
+data_integrity_note: >-
+  donggong_sanxing_60jiazi.json 按 60 甲子固定展开（煞贡/直星/人专三循环），
+  不随月建变化；而董公/金符经三星起例以月建分组（四季月组等），同一日干支在
+  不同月建下值星不同——例：甲午日在四季月应为卜木，不是人专。故本表在修正前
+  对**全年所有日期**的三星判定均不可信，不只是未月甲午。修正需按「月建+日干支」
+  重建查表键（或 12 张月建分组表）并逐条对原本；修正前即使命中也不得引用。
 applies_to:
   task_kinds:
   - 安葬
@@ -44,3 +53,6 @@ explanation: 三星值日（煞贡/直星/人专）。facts.donggong.star 由 60
 supersedes: null
 notes: >-
   三星值日。spec §2.3：值日 score_delta +2，reason 注明「仅解中低神煞，不解金神七煞」；金神七煞前置 reject 不可被三星绕过（Layer 3 优先）。
+  2026-11-03 评审：数据表固定三循环、未按董公月建分组，属 data_integrity: broken；
+  本条 status 保持待考证（命中本就不投票），但「不投票」不等于「可当参考证据」——
+  修正数据并逐条对原本之前，报告与人工复核都不得引用任何三星命中。

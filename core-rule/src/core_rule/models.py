@@ -17,6 +17,9 @@ __all__ = [
     "Target",
     "Strictness",
     "AppliesTo",
+    "Evidence",
+    "EVIDENCE_GRADES",
+    "SOURCE_TIERS",
     "Rule",
     "SEVERITY_ORDER",
     "DEFINITIONAL_SEVERITY",
@@ -49,6 +52,83 @@ DEFINITIONAL_SEVERITY = "记录"
 ASSERTION_SEVERITIES: tuple[str, ...] = ("禁用", "慎用", "可用", "推荐")
 TARGETS: tuple[str, ...] = ("mountain", "facing", "day", "hour", "person", "node")
 STRICTNESS_ORDER: dict[str, int] = {"normal": 0, "strict": 1}
+
+#: 证据等级（2026-11-04 评审指令）：
+#: - ``A`` 影印本原文（唯一可进入投票/必需集）
+#: - ``B`` 权威转述（只进 reference，永不投票）
+#: - ``C`` 出处未定位（不得进入必需集）
+EVIDENCE_GRADES: tuple[str, ...] = ("A", "B", "C")
+SOURCE_TIERS: tuple[str, ...] = ("primary_scan", "secondary_transcription", "unlocated")
+_GRADE_TO_TIER: dict[str, str] = {
+    "A": "primary_scan",
+    "B": "secondary_transcription",
+    "C": "unlocated",
+}
+
+
+@dataclass(frozen=True)
+class Evidence:
+    """规则证据元数据。
+
+    ``quote_verified`` 只表示"引文与影印逐字核对过"，**不表示已签名**；
+    签名仍是 ``status=已考证`` + ``citation.verified_by`` 的人类动作。
+    """
+
+    grade: str = "C"
+    source_tier: str = "unlocated"
+    quote_verified: bool = False
+    #: 卡住该规则的口径裁定编号（如 Q-002 / Q-026 / Q-027）；无则 None。
+    blocking_ruling: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.grade not in EVIDENCE_GRADES:
+            raise ValueError(f"evidence.grade 只能是 {EVIDENCE_GRADES}，得到 {self.grade!r}")
+        if self.source_tier not in SOURCE_TIERS:
+            raise ValueError(
+                f"evidence.source_tier 只能是 {SOURCE_TIERS}，得到 {self.source_tier!r}"
+            )
+        expected = _GRADE_TO_TIER[self.grade]
+        if self.source_tier != expected:
+            raise ValueError(
+                f"evidence.grade={self.grade} 必须配 source_tier={expected}，"
+                f"得到 {self.source_tier!r}"
+            )
+        if self.quote_verified and self.grade != "A":
+            raise ValueError("quote_verified=true 只允许 grade=A（转述/未定位不得声称逐字核对）")
+        if self.blocking_ruling is not None:
+            if not isinstance(self.blocking_ruling, str) or not self.blocking_ruling.strip():
+                raise ValueError("evidence.blocking_ruling 必须是非空字符串或 null")
+
+    @property
+    def votable(self) -> bool:
+        """是否具备进入投票的证据资格（仍需人类签名才成为 VOTED）。"""
+        return self.grade == "A" and self.quote_verified
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "grade": self.grade,
+            "source_tier": self.source_tier,
+            "quote_verified": self.quote_verified,
+            "blocking_ruling": self.blocking_ruling,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any] | None) -> "Evidence":
+        if data is None:
+            return cls()
+        if not isinstance(data, dict):
+            raise ValueError("evidence 必须是映射")
+        allowed = {"grade", "source_tier", "quote_verified", "blocking_ruling"}
+        unknown = set(data) - allowed
+        if unknown:
+            raise ValueError(f"evidence 含未知字段：{sorted(unknown)}")
+        return cls(
+            grade=str(data.get("grade", "C")),
+            source_tier=str(data.get("source_tier", _GRADE_TO_TIER.get(str(data.get("grade", "C")), "unlocated"))),
+            quote_verified=bool(data.get("quote_verified", False)),
+            blocking_ruling=data.get("blocking_ruling"),
+        )
+
 
 #: 严重度强弱（用于聚合，不用于"加减分"）。``记录`` 不在吉凶序列内，置为 -1。
 SEVERITY_ORDER: dict[str, int] = {"禁用": 3, "慎用": 2, "可用": 1, "推荐": 0, "记录": -1}
@@ -114,12 +194,18 @@ class Rule:
     condition: dict[str, Any]
     citation: Citation
     explanation: str
+    #: 证据等级与投票资格。``None`` = 未标注（definition-level 豁免）；
+    #: 断言级规则缺省按 C（出处未定位）处理，避免"没写就算 A"。
+    evidence: Evidence | None = None
     tests: tuple[str, ...] = ()
     score_weight: float | None = None
     #: 起例未实现/口径未定的规则标 false：保留在规则库（完整性）但**排除出评估集**——
     # 避免 (provided=True, value=None) 事实经 exists 算子渲染成"确定无此禁忌"的假阴性
     # （Q-014；评审第十三/十四轮）。裁定+起例实现后改回 true 走正常考证流程。
     evaluable: bool = True
+    #: 阻塞项（机器可读）。``evaluable=false`` 必填；仍在评估但缺一手原典的规则
+    #: 可标 ``primary_source_missing``——只表示**无投票资格**，不表示不评估。
+    blocked_by: str | None = None
     #: C 第一批（2026-11-02）：判定类型。
     #: ``gate`` = 闸门（否决/过滤，不参与打分）；``vote`` = 投票（正负证据，进分层向量）；
     #: ``reference`` = 只展示不判定。``None`` = 尚未标注（迁移期允许，lint 计数不阻断）。
@@ -131,6 +217,13 @@ class Rule:
     engine_eligible: bool = True
     #: engine_eligible=False 的理由（机器可读枚举，如 ``day_yuan_undecided``）
     ineligible_reason: str | None = None
+    #: 该规则在某类输入下「不适用」的声明条件（DSL 条件）。
+    #: 求值为真时引擎标 ``不适用``，与「输入不足」区分：不适用不阻塞 publishable。
+    #: 触发条件必须由规则内容显式声明（如 Q-026 裁定后的四维山日冲山），
+    #: **引擎不得内置任何默认不适用判定**。
+    not_applicable_when: dict[str, Any] | None = None
+    #: 不适用的理由（人类可读；与 not_applicable_when 必须同时出现）
+    not_applicable_reason: str | None = None
     supersedes: str | None = None
     api_version: int = 1
     notes: str | None = None
@@ -220,4 +313,5 @@ class Rule:
             "layer": self.layer,
             "engine_eligible": self.engine_eligible,
             "ineligible_reason": self.ineligible_reason,
+            "blocked_by": self.blocked_by,
         }

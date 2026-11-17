@@ -1,13 +1,10 @@
-"""确定性门禁适配层的退出码处置（2026-11-03 评审七回路）。
+"""确定性门禁适配层的三态处置（2026-11-04 第五层改写）。
 
-探针本身返回 0/1/2/3；适配层只允许把 3 降级成 0，并留下可机查的 flag。
-本文件锁住四件事：
-
-- 3 → 0 + ``out/output-fail.flag``（带警告通过，不能无声）
-- 0 → 0 + **清理旧 flag**（否则上一次的警告会贴到这一次）
-- 1/2 → 原样阻断（产品坏 / 机器忙都不能被吞）
-- 未知退出码 → 2（门禁自身异常，先查调用方式）
-
+探针本身返回 0/1/2/3；适配层按三态翻译：
+- 0 → 0（通过）
+- 1 → 1（PRODUCT_FAIL，阻断）
+- 2/3/未知码 → 4（undetermined，不是通过；3 另写 ``out/output-fail.flag``）
+本文件锁住四件事：3→4 且留 flag；0 清理旧 flag；1 原样阻断；2/未知码→4。
 每个用例都配反证：该留 flag 时文件必须在，该阻断时文件必须不在。
 """
 
@@ -16,8 +13,6 @@ from __future__ import annotations
 import importlib.util
 import json
 from pathlib import Path
-
-import pytest
 
 _SPEC = importlib.util.spec_from_file_location(
     "determinism_gate", Path(__file__).resolve().parents[2] / "tools" / "determinism_gate.py"
@@ -28,23 +23,23 @@ _SPEC.loader.exec_module(gate)
 
 
 class TestArbitrate:
-    def test_output_fail_is_warning_but_flagged(self, tmp_path: Path, capsys) -> None:
+    def test_output_fail_is_undetermined_but_flagged(self, tmp_path: Path, capsys) -> None:
         rc = gate.arbitrate(
             3,
             "decision=aaa\noutput=bbb\n",
             "OUTPUT_FAIL（输出面）: 决策一致，但报告文本跨进程不稳定",
             tmp_path,
         )
-        assert rc == 0, "OUTPUT_FAIL 必须降级为带警告通过"
+        assert rc == 4, "OUTPUT_FAIL 是「无法判定」，不得再降级为通过"
         flag = tmp_path / gate.FLAG_NAME
-        assert flag.exists(), "降级必须留下机器可查的证据"
+        assert flag.exists(), "无法判定必须留下机器可查的证据"
         payload = json.loads(flag.read_text(encoding="utf-8"))
         assert payload["kind"] == "OUTPUT_FAIL"
         assert payload["probe_rc"] == 3
-        assert payload["disposition"] == "warn-and-pass"
+        assert payload["disposition"] == "undetermined"
         assert "OUTPUT_FAIL" in payload["probe_stderr"]
         err = capsys.readouterr().err
-        assert "⚠️" in err and "不得当作全绿" in err
+        assert "UNDETERMINED" in err and "不是全绿" in err
 
     def test_success_clears_stale_flag(self, tmp_path: Path, capsys) -> None:
         flag = tmp_path / gate.FLAG_NAME
@@ -53,13 +48,17 @@ class TestArbitrate:
         assert not flag.exists(), "本次成功必须清掉上一次的警告，否则告警会永久粘住"
         assert "DETERMINISTIC" in capsys.readouterr().out
 
-    @pytest.mark.parametrize("probe_rc", [1, 2])
-    def test_blocking_codes_are_not_downgraded(self, tmp_path: Path, probe_rc: int) -> None:
-        assert gate.arbitrate(probe_rc, "", "失败原因", tmp_path) == probe_rc
-        assert not (tmp_path / gate.FLAG_NAME).exists(), "阻断不得被伪装成带警告通过"
+    def test_product_fail_blocks(self, tmp_path: Path) -> None:
+        assert gate.arbitrate(1, "", "决策不一致", tmp_path) == 1
+        assert not (tmp_path / gate.FLAG_NAME).exists(), "阻断不得被伪装成无法判定"
 
-    def test_unknown_code_is_env_suspect(self, tmp_path: Path) -> None:
-        assert gate.arbitrate(99, "", "", tmp_path) == 2
+    def test_env_suspect_is_undetermined(self, tmp_path: Path, capsys) -> None:
+        assert gate.arbitrate(2, "", "机器忙", tmp_path) == 4
+        assert not (tmp_path / gate.FLAG_NAME).exists()
+        assert "ENV_SUSPECT" in capsys.readouterr().err
+
+    def test_unknown_code_is_undetermined(self, tmp_path: Path) -> None:
+        assert gate.arbitrate(99, "", "", tmp_path) == 4
         assert not (tmp_path / gate.FLAG_NAME).exists()
 
     def test_probe_timeout_clears_stale_flag(self, tmp_path: Path, monkeypatch, capsys) -> None:
@@ -73,7 +72,7 @@ class TestArbitrate:
             raise subprocess.TimeoutExpired(cmd, kwargs.get("timeout", 1))
 
         monkeypatch.setattr(gate.subprocess, "run", fake_run)
-        assert gate.main(["--out-dir", str(tmp_path)]) == 2
+        assert gate.main(["--out-dir", str(tmp_path)]) == 4
         assert not flag.exists()
         assert "超时" in capsys.readouterr().err
 

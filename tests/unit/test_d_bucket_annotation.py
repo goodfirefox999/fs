@@ -55,6 +55,7 @@ _SPEC.loader.exec_module(probe)
 _TZ = ZoneInfo("Asia/Shanghai")
 
 #: C 第二批 D 桶（docs/c2-batch2-plan.md §二）
+#: 2026-11-04：岁破/五黄因证据 B 级降 reference，移出本清单（原 12 → 10）。
 D_BUCKET: tuple[str, ...] = (
     "DG-DASHA-001",
     "DG-JINSHEN-001",
@@ -65,8 +66,6 @@ D_BUCKET: tuple[str, ...] = (
     "PUB-SANSHA-002",
     "PUB-SIJUE-001",
     "PUB-SILI-001",
-    "PUB-SUIPO-001",
-    "PUB-WUHUANG-001",
     "PUB-YUEPO-001",
 )
 

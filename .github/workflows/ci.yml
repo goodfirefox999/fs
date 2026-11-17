@@ -82,25 +82,36 @@ jobs:
           path: tests/bench/bench_history.ci.jsonl
           if-no-files-found: ignore
 
-      - name: Test summary (all suites; failures must be visible)
-        # run #33 的教训：summary 只报 perf_smoke=1.33s（通过），slow bench 超档
-        # 却只在 log 里，读 summary 的人不知道红在哪。这里汇总所有 junit 套件。
+      - name: Gate verdict (pass / violation / undetermined)
+        # 三态门禁：0=pass，1=violation（阻断），4=undetermined（不阻断但要可见）。
+        # skip 不再算 pass；4 必须留下 out/undetermined.json 供 Step Summary 与 artifact。
+        id: gate_verdict
+        run: |
+          set +e
+          python tools/gate_verdict.py --scope ci --dir out
+          rc=$?
+          echo "rc=$rc" >> "$GITHUB_OUTPUT"
+          if [ "$rc" -eq 4 ]; then
+            echo "::warning title=UNDETERMINED::本次有无法判定项，详见 out/undetermined.json"
+            exit 0
+          fi
+          exit "$rc"
+
+      - name: Upload UNDETERMINED report
         if: always()
-        # tee：Step Summary 是写进文件的外部状态，同时回显到 job log 才能事后核对。
-        # --scope ci：严格对称差（缺失/未登记都报 ❌）；本地须显式 --scope local
-        # （只核对 make cov 可产出的套件，bench 只能由 CI 证明）。
-        run: python tools/ci_summary.py --dir out --scope ci | tee -a "$GITHUB_STEP_SUMMARY"
+        uses: actions/upload-artifact@v6
+        with:
+          name: undetermined
+          path: out/undetermined.json
+          if-no-files-found: warn
 
-      - name: Determinism gate (decision blocks, output warns)
-        run: python tools/determinism_gate.py --out-dir out
-
-      - name: Surface OUTPUT_FAIL (warn, do not hide)
+      - name: Surface OUTPUT_FAIL (undetermined, do not hide)
         if: always()
         run: |
           if [ -f out/output-fail.flag ]; then
-            echo "::warning title=OUTPUT_FAIL::报告文本跨进程不稳定；本次为带警告通过，详见 out/output-fail.flag"
+            echo "::warning title=OUTPUT_FAIL::报告文本跨进程不稳定；本次为「无法判定」，详见 out/output-fail.flag"
             {
-              echo "## ⚠️ OUTPUT_FAIL（带警告通过）"
+              echo "## ⚠️ OUTPUT_FAIL（无法判定）"
               echo ""
               echo '```json'
               cat out/output-fail.flag
@@ -117,6 +128,16 @@ jobs:
           name: output-fail-flag
           path: out/output-fail.flag
           if-no-files-found: ignore
+
+      - name: Test summary (all suites; failures must be visible)
+        # run #33 的教训：summary 只报 perf_smoke=1.33s（通过），slow bench 超档
+        # 却只在 log 里，读 summary 的人不知道红在哪。这里汇总所有 junit 套件。
+        if: always()
+        # tee：Step Summary 是写进文件的外部状态，同时回显到 job log 才能事后核对。
+        # --scope ci：严格对称差（缺失/未登记都报 ❌）；本地须显式 --scope local
+        # （只核对 make cov 可产出的套件，bench 只能由 CI 证明）。
+        # 放在 gate_verdict 之后：首行要读到 out/undetermined.json 的真实计数。
+        run: python tools/ci_summary.py --dir out --scope ci | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Status signature check
         run: |

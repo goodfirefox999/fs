@@ -73,8 +73,9 @@ def rule(
     strictness_min: str = "normal",
     score_weight: float | None = None,
     evaluable: bool = True,
+    extra: dict | None = None,
 ) -> dict:
-    return {
+    spec = {
         "api_version": 1,
         "rule_id": rule_id,
         "version": 1,
@@ -99,6 +100,9 @@ def rule(
         "supersedes": None,
         "notes": notes,
     }
+    if extra:
+        spec.update(extra)
+    return spec
 
 
 def fact(path: str, op: str, value=None, value_from: str | None = None) -> dict:
@@ -159,10 +163,29 @@ RULES_SPEC: list[dict] = [
          source=TONGSU, task_kinds=BUILD_TASKS),
     # ================= 日时 =================
     rule("PUB-CHONGSHAN-001", "日冲山", severity="禁用", hard_veto=True, target="day",
-         condition=sg("site.shan_jia_zhi", "course.day.zhi", "chong"),
+         condition={"all": [
+             fact("facts._calibers.q026_sishan_chong_resolved", "eq", True),
+             sg("site.shan_jia_zhi", "course.day.zhi", "chong"),
+         ]},
          explanation="日支{course.day.zhi}与坐山山家{site.shan_jia_zhi}相冲，按本规则判为禁用。",
-         notes="待考证：四维山无地支时如何取山家；兼向取何山。",
-         source=SANSHA, task_kinds=BUILD_TASKS),
+         notes=(
+             "待考证：四维山无地支时如何取山家；兼向取何山。"
+             "Q-026 未裁定前：四维山（乾/坤/艮/巽）标「不适用」且不阻塞 publishable；"
+             "地支山因取法未定报「输入不足」。若裁定「四维山不忌日冲山」，四维山仍为不适用；"
+             "若裁定「双山取支」，须先把山家事实由单支改为双支，本规则不适用条件不覆盖该取法。"
+             "出处未定位（C 级），补证见 Q-028。"
+         ),
+         source=SANSHA, task_kinds=BUILD_TASKS,
+         extra={
+             "not_applicable_when": {"all": [
+                 fact("site.mountain", "in", ["乾", "坤", "艮", "巽"]),
+                 fact("facts._calibers.q026_sishan_chong", "in", ["undecided", "not_taboo"]),
+             ]},
+             "not_applicable_reason": (
+                 "四维山日冲山取法未裁定（Q-026）；四维山正针无地支，"
+                 "本规则不适用且不阻塞发布。"
+             ),
+         }),
     rule("PUB-CHONGSHAN-002", "时冲山", severity="慎用", hard_veto=False, target="hour",
          condition=sg("site.shan_jia_zhi", "course.hour.zhi", "chong"),
          explanation="时支{course.hour.zhi}与坐山山家{site.shan_jia_zhi}相冲，按本规则判为慎用。",
@@ -181,12 +204,12 @@ RULES_SPEC: list[dict] = [
     rule("PUB-SILI-001", "四离日", severity="禁用", hard_veto=True, target="day",
          condition=fact("facts.sili_sijue.has_sili", "eq", True),
          explanation="用事日为四离日（二分二至前一日），按本规则判为禁用。",
-         notes="待考证：取前一日还是当日；是否只忌出行、不忌修造。",
+         notes="待考证：取前一日还是当日。2026-11-04 核四库本：卷十·用事宜忌铺注「止不忌祭祀解除沐浴……餘事皆忌」，按语「四离四绝……故诸事不宜」，安葬在「餘事皆忌」内；卷六义例四（06056507.cn n148–n149）李鼎祚「忌出行征伐」是义例溯源，不是完整适用范围。卷十影印叶次待补。",
          source=SANSHA),
     rule("PUB-SIJUE-001", "四绝日", severity="禁用", hard_veto=True, target="day",
          condition=fact("facts.sili_sijue.has_sijue", "eq", True),
          explanation="用事日为四绝日（四立前一日），按本规则判为禁用。",
-         notes="待考证：取前一日还是当日；是否只忌出行。",
+         notes="待考证：取前一日还是当日。2026-11-04 核四库本：卷十·用事宜忌铺注「止不忌祭祀解除沐浴……餘事皆忌」，按语「四离四绝……故诸事不宜」，安葬在「餘事皆忌」内；卷六义例四（06056507.cn n148–n149）李鼎祚「忌出軍遠行」是义例溯源，不是完整适用范围。卷十影印叶次待补。",
          source=SANSHA),
     rule("PUB-YANGGONG-001", "杨公忌日", severity="慎用", hard_veto=False, target="day",
          condition=fact("facts.yangongji.value", "exists"),
@@ -511,7 +534,13 @@ VECTORS: dict[str, tuple] = {
     "PUB-WUHUANG-001": ({"facts": {"wuhuang": {"year": {"hit_mountain": True}}}}, {}),
     "PUB-YUEPO-001": ({"facts": {"yuepo": {"hit_mountain": True}}}, {}),
     "PUB-YUEJIAN-001": ({"site": {"shan_jia_zhi": "未"}, "time": {"month_zhi": "未"}}, {}),
-    "PUB-CHONGSHAN-001": ({"course": {"day": {"zhi": "巳"}}}, {}),
+    "PUB-CHONGSHAN-001": (
+        {
+            "course": {"day": {"zhi": "巳"}},
+            "facts": {"_calibers": {"q026_sishan_chong_resolved": True}},
+        },
+        {},
+    ),
     "PUB-CHONGSHAN-002": ({"course": {"hour": {"zhi": "巳"}}}, {}),
     "PUB-CHONGMING-001": ({"person": {"year_zhi": "酉"}}, {"person": {"year_zhi": "丑"}}),
     "PUB-CHONGMING-002": ({"person": {"year_zhi": "丑"}}, {"person": {"year_zhi": "子"}}),
@@ -591,6 +620,15 @@ def write_rule(spec: dict) -> Path:
     out_dir = RULES / school
     out_dir.mkdir(parents=True, exist_ok=True)
     path = out_dir / f"{spec['rule_id']}.yaml"
+    # 人工裁定元数据（evidence/verdict_type/layer/not_applicable_* 等）不在
+    # RULES_SPEC 的生成范围内：重生成时保留旧文件里的额外键，避免 `make rules`
+    # 把证据分级和参考层降级悄悄抹掉。生成器自己产出的键始终以 RULES_SPEC 为准。
+    if path.exists():
+        old = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        if isinstance(old, dict):
+            for key, value in old.items():
+                if key not in spec:
+                    spec = {**spec, key: value}
     body = yaml.safe_dump(spec, allow_unicode=True, sort_keys=False, default_flow_style=False, width=120)
     path.write_text(HEADER + body, encoding="utf-8")
     return path

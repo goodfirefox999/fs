@@ -62,6 +62,30 @@ class TestSanxingData:
         assert set(days.values()) <= {"煞贡", "直星", "人专"}
 
 
+class TestSanxingDataIntegrity:
+    """固定三循环表不随月建变化，与三星起例不符（2026-11-03 评审登记）。
+
+    修正前**所有**三星命中都不可信，不只是未月甲午；规则以 ``data_integrity: broken``
+    显式声明，lint 的 ``data_integrity_broken`` 组逐轮回显。
+    """
+
+    def test_rule_declares_broken_data(self) -> None:
+        rule = load_rule(RULES / "DG-SANXING-001.yaml")
+        assert rule.raw.get("data_integrity") == "broken"
+        assert rule.status == "待考证"
+        note = rule.raw.get("data_integrity_note") or ""
+        assert "月建" in note, "数据缺陷说明必须写明起例按月建分组"
+        assert "全年" in note, "影响面必须写明是全年所有判定，而非个别日期"
+
+    def test_broken_data_cannot_be_verified(self) -> None:
+        for path in sorted((ROOT / "core-rule/rules").rglob("*.yaml")):
+            rule = load_rule(path)
+            if (rule.raw or {}).get("data_integrity") == "broken":
+                assert rule.status not in ("已考证", "定义级"), (
+                    f"{rule.rule_id}: data_integrity=broken 不得标 {rule.status}"
+                )
+
+
 class TestDashaData:
     """大煞 reject 数据完整性。"""
 
