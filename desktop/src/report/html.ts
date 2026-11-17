@@ -10,7 +10,7 @@
 import type { DayEvaluation } from '@core/zeri/evaluate'
 import { STANCE_LABELS, partitionDasha } from '@core/zeri/dasha'
 import { RULE_PACK_VERSION } from '@core/zeri/version'
-import { CONSENSUS_LABEL, PRINT_HINT, REPORT_CSS, TENDENCY_LABEL, escapeHtml } from './shared'
+import { CONSENSUS_LABEL, PRINT_HINT, REPORT_CSS, TENDENCY_LABEL, escapeHtml, renderAttribution } from './shared'
 
 export interface ReportMeta {
   generatedAt: string
@@ -21,6 +21,8 @@ export interface ReportMeta {
   inputHash?: string
   /** 扫描窗口说明，例如「2026-11-01 起 90 天」 */
   windowNote?: string
+  /** 与上次保存档案的归因（可选；无档案时不渲染该节） */
+  attribution?: { kind: string; narrative: string } | null
 }
 
 export function renderReportHtml(evaluation: DayEvaluation, meta: ReportMeta): string {
@@ -161,6 +163,8 @@ export function renderReportHtml(evaluation: DayEvaluation, meta: ReportMeta): s
     <li>各派结论并列呈现，不做跨派合并；流派分歧与需人工复核项均已原样保留。</li>
     <li>所有规则当前均为待人工核对状态（verification_status = unverified），出处以报告所列为准。</li>
   </ul>
+
+  ${renderAttribution(meta.attribution)}
 
   <footer>
     居境罗盘 · 桌面工作台 · 规则包 ${escapeHtml(RULE_PACK_VERSION)} ·

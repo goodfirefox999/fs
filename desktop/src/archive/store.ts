@@ -165,6 +165,46 @@ async function save(
 }
 
 /**
+ * 自动保存：只把当前输入写回已有档案，**不动 lastEvaluation**。
+ *
+ * 与 save() 的区别是刻意不写快照，否则每次扫一下都会把「上次结论」刷新成当前，
+ * rules_only / unstable 归因会永远消失（见 recordEvaluation 的注释）。
+ * 只在已有当前档案时生效；无档案时不自动创建，避免用户随手改个字段就多出一条档案。
+ * 写盘由主进程的 tmp+rename 保证原子性，本函数走同一条串行写队列。
+ */
+async function autosave(state: WorkbenchState): Promise<boolean> {
+  const existing = current()
+  if (!existing || readOnly.value) return false
+  const snapshotState = cloneState(state)
+  const inputHash = workbenchInputHash(snapshotState)
+  if (inputHash === existing.inputHash) return false
+  try {
+    return await serialize(async () => {
+      // 进队列后重新取一次：期间可能发生 open/remove/rename
+      const target = current()
+      if (!target || target.id !== existing.id) return false
+      const next: WorkbenchArchive = {
+        ...target,
+        updatedAt: Date.now(),
+        schemaVersion: WORKBENCH_SCHEMA_VERSION,
+        inputHash,
+        rulePackVersion: RULE_PACK_VERSION,
+        state: snapshotState,
+        // lastEvaluation 保持原值；输入变了但结论基准不动，diff 才能归因到 input_only
+      }
+      const list = archives.value.map((item) => (item.id === next.id ? next : item))
+      await writeRaw(list)
+      archives.value = list
+      lastSavedAt.value = Date.now()
+      return true
+    })
+  } catch (error) {
+    errorMessage.value = `自动保存失败：${error instanceof Error ? error.message : String(error)}`
+    return false
+  }
+}
+
+/**
  * 给还没有结论基准的档案补一次扫描摘要（如外部导入的旧档案）。
  *
  * 已有基准时一律不写：`lastEvaluation` 是「上次保存时的结论」，
@@ -332,6 +372,7 @@ export function useArchiveStore() {
     current,
     load,
     save,
+    autosave,
     recordEvaluation,
     diffAgainstCurrent,
     open,

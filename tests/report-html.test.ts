@@ -85,3 +85,31 @@ describe('被前置层排除的日期', () => {
     expect(html).toContain('不进入五派评分')
   })
 })
+
+describe('报告档案归因章节', () => {
+  const evaluation = evalOf('2026-11-18')
+
+  it('无归因时不渲染该节', () => {
+    const html = renderReportHtml(evaluation, META)
+    expect(html).not.toContain('与上次保存的结论对比')
+  })
+
+  it('有归因时渲染归因类型与叙述', () => {
+    const html = renderReportHtml(evaluation, {
+      ...META,
+      attribution: { kind: 'rules_only', narrative: '归因：rulePackVersion 1.0.0 → 1.1.0，输入未变' },
+    })
+    expect(html).toContain('与上次保存的结论对比')
+    expect(html).toContain('仅规则包变化')
+    expect(html).toContain('rulePackVersion 1.0.0 → 1.1.0')
+  })
+
+  it('结论不稳定时以醒目样式呈现', () => {
+    const html = renderReportHtml(evaluation, {
+      ...META,
+      attribution: { kind: 'unstable', narrative: '输入与规则包均未变化，但结论不同' },
+    })
+    expect(html).toContain('结论不稳定')
+    expect(html).toContain('verdict bad')
+  })
+})

@@ -29,15 +29,40 @@ const module = ref<'zeri' | 'paipan' | 'compass' | 'archive'>('zeri')
 // reactive 包装：模板里直接读 archive.archives / archive.errorMessage，不必写 .value
 const archive = reactive(useArchiveStore())
 
+/** 自动保存：输入变更后 2s 防抖落盘；载入档案时不触发（避免把刚载入的基准当改动）。 */
+let autosaveTimer: ReturnType<typeof setTimeout> | null = null
+let suppressAutosave = false
+watch(
+  state,
+  () => {
+    if (suppressAutosave || !archive.currentId) return
+    if (autosaveTimer) clearTimeout(autosaveTimer)
+    autosaveTimer = setTimeout(() => {
+      autosaveTimer = null
+      void archive.autosave(state)
+    }, 2000)
+  },
+  { deep: true },
+)
+onUnmounted(() => {
+  if (autosaveTimer) {
+    clearTimeout(autosaveTimer)
+    void archive.autosave(state)   // 退出前把最后一次改动落盘
+  }
+})
+
 onMounted(() => {
   void archive.load()
 })
 
 /** 载入档案：就地覆盖 reactive 状态，保持 ControlPanel 的引用不失效。 */
 function applyState(next: WorkbenchState) {
+  suppressAutosave = true
   Object.assign(state, next)
   module.value = 'zeri'
   requestScan()
+  // state 的 watch 是异步调度，下一个 tick 后解除抑制
+  void Promise.resolve().then(() => { suppressAutosave = false })
 }
 
 function evalOf(date: string): DayEvaluation {
@@ -114,6 +139,7 @@ async function exportReport() {
       mountShan: state.mountShan,
       sittingDeg: state.sittingDeg,
       inputHash: currentSnapshot.value?.inputHash,
+      attribution: diff.value,
       windowNote: `${state.startDate} 起 ${state.daysCount} 天`,
     })
     const result = await bridge.exportReport({
@@ -172,6 +198,7 @@ async function exportWindowReport() {
       startDate: state.startDate,
       daysCount: state.daysCount,
       inputHash: currentSnapshot.value?.inputHash,
+      attribution: diff.value,
       paipan,
       policyNotes: [
         `三煞口径：${SAN_SHA_LABEL[state.sanShaMode] ?? state.sanShaMode}`,

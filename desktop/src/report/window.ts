@@ -9,7 +9,7 @@
 import type { ZeRiResult } from '@core/types'
 import type { PaipanReport } from '@core/paipan'
 import { RULE_PACK_VERSION } from '@core/zeri/version'
-import { PRINT_HINT, REPORT_CSS, TENDENCY_LABEL, escapeHtml, tendencySummary } from './shared'
+import { PRINT_HINT, REPORT_CSS, TENDENCY_LABEL, escapeHtml, renderAttribution, tendencySummary } from './shared'
 
 export interface WindowReportMeta {
   generatedAt: string
@@ -23,6 +23,8 @@ export interface WindowReportMeta {
   paipan?: PaipanReport
   /** 生成时使用的口径说明（如三煞层级、开关状态） */
   policyNotes?: string[]
+  /** 与上次保存档案的归因（可选；无档案时不渲染该节） */
+  attribution?: { kind: string; narrative: string } | null
 }
 
 function stat(label: string, value: number | string, hint?: string): string {
@@ -184,6 +186,8 @@ export function renderWindowReportHtml(result: ZeRiResult, meta: WindowReportMet
     <li>所有规则当前均为待人工核对状态（verification_status = unverified）；出处以报告所列为准。</li>
     <li>涉及施工、地质、消防与纪念地事项，须由专业人士现场复核后再决定。</li>
   </ul>
+
+  ${renderAttribution(meta.attribution)}
 
   <footer>
     居境罗盘 · 桌面工作台 · 规则包 ${escapeHtml(RULE_PACK_VERSION)} ·

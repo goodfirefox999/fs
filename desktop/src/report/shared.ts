@@ -106,6 +106,24 @@ export const REPORT_CSS = `
   }
 `
 
+/** 档案对比归因章节：把数据层的五类归因写进导出报告，供留档与回溯。 */
+export function renderAttribution(
+  attribution: { kind: string; narrative: string } | null | undefined,
+): string {
+  if (!attribution) return ''
+  const label: Record<string, string> = {
+    none: '无变化',
+    input_only: '仅输入变化',
+    rules_only: '仅规则包变化',
+    both: '输入与规则包都变化',
+    unstable: '结论不稳定（需人工复核）',
+  }
+  return `<section class="attribution">
+  <h2>与上次保存的结论对比</h2>
+  <p class="verdict${attribution.kind === 'unstable' ? ' bad' : ''}">${escapeHtml(label[attribution.kind] || attribution.kind)}：${escapeHtml(attribution.narrative)}</p>
+</section>`
+}
+
 /** 打印提示：屏幕上显示，打印时隐藏。 */
 export const PRINT_HINT =
   '打印提示：用 Chrome 打印时勾选「页眉和页脚」可显示页码；用支持 CSS Paged Media 的引擎（如 WeasyPrint）导出会自动带「第 n 页 / 共 m 页」。'

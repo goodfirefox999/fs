@@ -18,5 +18,17 @@ export default defineConfig({
     outDir: fileURLToPath(new URL('../dist-desktop', import.meta.url)),
     emptyOutDir: true,
     target: 'es2022',
+    rollupOptions: {
+      output: {
+        // 引擎与 UI 拆包：避免单个 chunk >500KB 触发构建警告，
+        // 也让规则引擎的变更不使整个 UI 缓存失效。
+        manualChunks(id) {
+          // 只按路径归类，不列具体入口文件（各子目录的 index.ts 并非都存在）
+          if (id.includes('/src/core/')) return 'core-engine'
+          if (id.includes('node_modules')) return 'vendor'
+          return undefined
+        },
+      },
+    },
   },
 })
