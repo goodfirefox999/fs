@@ -1,0 +1,25 @@
+appId: com.jujing.luopan.desktop
+productName: 居境罗盘
+directories:
+  output: release
+# 本机没装 Electron 下载代理时 electron-builder 会去 GitHub 拉发行包并失败；
+# 直接复用 npm 已装好的同一版本（33.4.11），打包全程离线。
+electronDist: node_modules/electron/dist
+files:
+  - desktop/main.cjs
+  - desktop/preload.cjs
+  # main.cjs 运行时要 require 它；漏了会在启动时直接 MODULE_NOT_FOUND
+  - desktop/paths.cjs
+  - dist-desktop/**
+  # 桌面端运行时不 require 任何第三方包（main/preload 只用 electron 与 node 内置模块）；
+  # 不排除会把小程序用的 uni-app 全家桶塞进 app.asar，体积从几 MB 涨到上百 MB。
+  - "!node_modules/**/*"
+asar: true
+mac:
+  category: public.app-category.productivity
+  target:
+    - dmg
+    - zip
+  # 当前仅自用、不分发，故不签名。对外分发前必须配置 Developer ID 并完成公证，
+  # 否则 Gatekeeper 会直接拦截未签名的 dmg。
+  identity: null

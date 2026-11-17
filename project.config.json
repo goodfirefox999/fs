@@ -1,0 +1,16 @@
+{
+  "description": "微信开发者工具项目配置：小程序产物在 dist，云函数在 cloudfunctions。",
+  "miniprogramRoot": "dist/build/mp-weixin/",
+  "cloudfunctionRoot": "cloudfunctions/",
+  "compileType": "miniprogram",
+  "appid": "touristappid",
+  "projectname": "居境罗盘",
+  "setting": {
+    "urlCheck": false,
+    "es6": true,
+    "postcss": true,
+    "minified": true,
+    "bigPackageSizeSupport": true
+  },
+  "libVersion": "3.6.0"
+}

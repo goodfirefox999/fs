@@ -1,0 +1,2874 @@
+{
+ "_source": "Know-your-fate/.claude/skills/fengshui-kanyu/scripts/_common.py (MIT, Copyright (c) 2026 Feng Tang and contributors)",
+ "_note": "八宅游年与命卦 oracle，仅用于交叉校验，不随小程序发布。",
+ "houses": {
+  "坎": {
+   "东南": "生气",
+   "东北": "五鬼",
+   "南": "延年",
+   "西北": "六煞",
+   "西": "祸害",
+   "东": "天医",
+   "西南": "绝命",
+   "北": "伏位"
+  },
+  "坤": {
+   "东北": "生气",
+   "东南": "五鬼",
+   "西北": "延年",
+   "南": "六煞",
+   "东": "祸害",
+   "西": "天医",
+   "北": "绝命",
+   "西南": "伏位"
+  },
+  "震": {
+   "南": "生气",
+   "西北": "五鬼",
+   "东南": "延年",
+   "东北": "六煞",
+   "西南": "祸害",
+   "北": "天医",
+   "西": "绝命",
+   "东": "伏位"
+  },
+  "巽": {
+   "北": "生气",
+   "西南": "五鬼",
+   "东": "延年",
+   "西": "六煞",
+   "西北": "祸害",
+   "南": "天医",
+   "东北": "绝命",
+   "东南": "伏位"
+  },
+  "乾": {
+   "西": "生气",
+   "东": "五鬼",
+   "西南": "延年",
+   "北": "六煞",
+   "东南": "祸害",
+   "东北": "天医",
+   "南": "绝命",
+   "西北": "伏位"
+  },
+  "兑": {
+   "西北": "生气",
+   "南": "五鬼",
+   "东北": "延年",
+   "东南": "六煞",
+   "北": "祸害",
+   "西南": "天医",
+   "东": "绝命",
+   "西": "伏位"
+  },
+  "艮": {
+   "西南": "生气",
+   "北": "五鬼",
+   "西": "延年",
+   "东": "六煞",
+   "南": "祸害",
+   "西北": "天医",
+   "东南": "绝命",
+   "东北": "伏位"
+  },
+  "离": {
+   "东": "生气",
+   "西": "五鬼",
+   "北": "延年",
+   "西南": "六煞",
+   "东北": "祸害",
+   "东南": "天医",
+   "西北": "绝命",
+   "南": "伏位"
+  }
+ },
+ "ming": [
+  {
+   "year": 1901,
+   "gender": "男",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 1901,
+   "gender": "女",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 1902,
+   "gender": "男",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 1902,
+   "gender": "女",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 1903,
+   "gender": "男",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 1903,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 1904,
+   "gender": "男",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 1904,
+   "gender": "女",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 1905,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 1905,
+   "gender": "女",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 1906,
+   "gender": "男",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 1906,
+   "gender": "女",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 1907,
+   "gender": "男",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 1907,
+   "gender": "女",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 1908,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 1908,
+   "gender": "女",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 1909,
+   "gender": "男",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 1909,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 1910,
+   "gender": "男",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 1910,
+   "gender": "女",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 1911,
+   "gender": "男",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 1911,
+   "gender": "女",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 1912,
+   "gender": "男",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 1912,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 1913,
+   "gender": "男",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 1913,
+   "gender": "女",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 1914,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 1914,
+   "gender": "女",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 1915,
+   "gender": "男",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 1915,
+   "gender": "女",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 1916,
+   "gender": "男",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 1916,
+   "gender": "女",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 1917,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 1917,
+   "gender": "女",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 1918,
+   "gender": "男",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 1918,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 1919,
+   "gender": "男",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 1919,
+   "gender": "女",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 1920,
+   "gender": "男",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 1920,
+   "gender": "女",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 1921,
+   "gender": "男",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 1921,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 1922,
+   "gender": "男",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 1922,
+   "gender": "女",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 1923,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 1923,
+   "gender": "女",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 1924,
+   "gender": "男",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 1924,
+   "gender": "女",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 1925,
+   "gender": "男",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 1925,
+   "gender": "女",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 1926,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 1926,
+   "gender": "女",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 1927,
+   "gender": "男",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 1927,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 1928,
+   "gender": "男",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 1928,
+   "gender": "女",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 1929,
+   "gender": "男",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 1929,
+   "gender": "女",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 1930,
+   "gender": "男",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 1930,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 1931,
+   "gender": "男",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 1931,
+   "gender": "女",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 1932,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 1932,
+   "gender": "女",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 1933,
+   "gender": "男",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 1933,
+   "gender": "女",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 1934,
+   "gender": "男",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 1934,
+   "gender": "女",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 1935,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 1935,
+   "gender": "女",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 1936,
+   "gender": "男",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 1936,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 1937,
+   "gender": "男",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 1937,
+   "gender": "女",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 1938,
+   "gender": "男",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 1938,
+   "gender": "女",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 1939,
+   "gender": "男",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 1939,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 1940,
+   "gender": "男",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 1940,
+   "gender": "女",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 1941,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 1941,
+   "gender": "女",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 1942,
+   "gender": "男",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 1942,
+   "gender": "女",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 1943,
+   "gender": "男",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 1943,
+   "gender": "女",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 1944,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 1944,
+   "gender": "女",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 1945,
+   "gender": "男",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 1945,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 1946,
+   "gender": "男",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 1946,
+   "gender": "女",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 1947,
+   "gender": "男",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 1947,
+   "gender": "女",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 1948,
+   "gender": "男",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 1948,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 1949,
+   "gender": "男",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 1949,
+   "gender": "女",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 1950,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 1950,
+   "gender": "女",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 1951,
+   "gender": "男",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 1951,
+   "gender": "女",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 1952,
+   "gender": "男",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 1952,
+   "gender": "女",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 1953,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 1953,
+   "gender": "女",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 1954,
+   "gender": "男",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 1954,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 1955,
+   "gender": "男",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 1955,
+   "gender": "女",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 1956,
+   "gender": "男",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 1956,
+   "gender": "女",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 1957,
+   "gender": "男",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 1957,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 1958,
+   "gender": "男",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 1958,
+   "gender": "女",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 1959,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 1959,
+   "gender": "女",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 1960,
+   "gender": "男",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 1960,
+   "gender": "女",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 1961,
+   "gender": "男",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 1961,
+   "gender": "女",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 1962,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 1962,
+   "gender": "女",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 1963,
+   "gender": "男",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 1963,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 1964,
+   "gender": "男",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 1964,
+   "gender": "女",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 1965,
+   "gender": "男",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 1965,
+   "gender": "女",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 1966,
+   "gender": "男",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 1966,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 1967,
+   "gender": "男",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 1967,
+   "gender": "女",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 1968,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 1968,
+   "gender": "女",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 1969,
+   "gender": "男",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 1969,
+   "gender": "女",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 1970,
+   "gender": "男",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 1970,
+   "gender": "女",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 1971,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 1971,
+   "gender": "女",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 1972,
+   "gender": "男",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 1972,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 1973,
+   "gender": "男",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 1973,
+   "gender": "女",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 1974,
+   "gender": "男",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 1974,
+   "gender": "女",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 1975,
+   "gender": "男",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 1975,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 1976,
+   "gender": "男",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 1976,
+   "gender": "女",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 1977,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 1977,
+   "gender": "女",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 1978,
+   "gender": "男",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 1978,
+   "gender": "女",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 1979,
+   "gender": "男",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 1979,
+   "gender": "女",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 1980,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 1980,
+   "gender": "女",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 1981,
+   "gender": "男",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 1981,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 1982,
+   "gender": "男",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 1982,
+   "gender": "女",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 1983,
+   "gender": "男",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 1983,
+   "gender": "女",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 1984,
+   "gender": "男",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 1984,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 1985,
+   "gender": "男",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 1985,
+   "gender": "女",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 1986,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 1986,
+   "gender": "女",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 1987,
+   "gender": "男",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 1987,
+   "gender": "女",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 1988,
+   "gender": "男",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 1988,
+   "gender": "女",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 1989,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 1989,
+   "gender": "女",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 1990,
+   "gender": "男",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 1990,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 1991,
+   "gender": "男",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 1991,
+   "gender": "女",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 1992,
+   "gender": "男",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 1992,
+   "gender": "女",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 1993,
+   "gender": "男",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 1993,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 1994,
+   "gender": "男",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 1994,
+   "gender": "女",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 1995,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 1995,
+   "gender": "女",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 1996,
+   "gender": "男",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 1996,
+   "gender": "女",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 1997,
+   "gender": "男",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 1997,
+   "gender": "女",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 1998,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 1998,
+   "gender": "女",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 1999,
+   "gender": "男",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 1999,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 2000,
+   "gender": "男",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 2000,
+   "gender": "女",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 2001,
+   "gender": "男",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 2001,
+   "gender": "女",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 2002,
+   "gender": "男",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 2002,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 2003,
+   "gender": "男",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 2003,
+   "gender": "女",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 2004,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 2004,
+   "gender": "女",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 2005,
+   "gender": "男",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 2005,
+   "gender": "女",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 2006,
+   "gender": "男",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 2006,
+   "gender": "女",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 2007,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 2007,
+   "gender": "女",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 2008,
+   "gender": "男",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 2008,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 2009,
+   "gender": "男",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 2009,
+   "gender": "女",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 2010,
+   "gender": "男",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 2010,
+   "gender": "女",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 2011,
+   "gender": "男",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 2011,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 2012,
+   "gender": "男",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 2012,
+   "gender": "女",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 2013,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 2013,
+   "gender": "女",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 2014,
+   "gender": "男",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 2014,
+   "gender": "女",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 2015,
+   "gender": "男",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 2015,
+   "gender": "女",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 2016,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 2016,
+   "gender": "女",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 2017,
+   "gender": "男",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 2017,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 2018,
+   "gender": "男",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 2018,
+   "gender": "女",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 2019,
+   "gender": "男",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 2019,
+   "gender": "女",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 2020,
+   "gender": "男",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 2020,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 2021,
+   "gender": "男",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 2021,
+   "gender": "女",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 2022,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 2022,
+   "gender": "女",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 2023,
+   "gender": "男",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 2023,
+   "gender": "女",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 2024,
+   "gender": "男",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 2024,
+   "gender": "女",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 2025,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 2025,
+   "gender": "女",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 2026,
+   "gender": "男",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 2026,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 2027,
+   "gender": "男",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 2027,
+   "gender": "女",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 2028,
+   "gender": "男",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 2028,
+   "gender": "女",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 2029,
+   "gender": "男",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 2029,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 2030,
+   "gender": "男",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 2030,
+   "gender": "女",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 2031,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 2031,
+   "gender": "女",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 2032,
+   "gender": "男",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 2032,
+   "gender": "女",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 2033,
+   "gender": "男",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 2033,
+   "gender": "女",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 2034,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 2034,
+   "gender": "女",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 2035,
+   "gender": "男",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 2035,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 2036,
+   "gender": "男",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 2036,
+   "gender": "女",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 2037,
+   "gender": "男",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 2037,
+   "gender": "女",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 2038,
+   "gender": "男",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 2038,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 2039,
+   "gender": "男",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 2039,
+   "gender": "女",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 2040,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 2040,
+   "gender": "女",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 2041,
+   "gender": "男",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 2041,
+   "gender": "女",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 2042,
+   "gender": "男",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 2042,
+   "gender": "女",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 2043,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 2043,
+   "gender": "女",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 2044,
+   "gender": "男",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 2044,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 2045,
+   "gender": "男",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 2045,
+   "gender": "女",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 2046,
+   "gender": "男",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 2046,
+   "gender": "女",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 2047,
+   "gender": "男",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 2047,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 2048,
+   "gender": "男",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 2048,
+   "gender": "女",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 2049,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 2049,
+   "gender": "女",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 2050,
+   "gender": "男",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 2050,
+   "gender": "女",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 2051,
+   "gender": "男",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 2051,
+   "gender": "女",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 2052,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 2052,
+   "gender": "女",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 2053,
+   "gender": "男",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 2053,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 2054,
+   "gender": "男",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 2054,
+   "gender": "女",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 2055,
+   "gender": "男",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 2055,
+   "gender": "女",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 2056,
+   "gender": "男",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 2056,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 2057,
+   "gender": "男",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 2057,
+   "gender": "女",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 2058,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 2058,
+   "gender": "女",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 2059,
+   "gender": "男",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 2059,
+   "gender": "女",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 2060,
+   "gender": "男",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 2060,
+   "gender": "女",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 2061,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 2061,
+   "gender": "女",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 2062,
+   "gender": "男",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 2062,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 2063,
+   "gender": "男",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 2063,
+   "gender": "女",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 2064,
+   "gender": "男",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 2064,
+   "gender": "女",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 2065,
+   "gender": "男",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 2065,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 2066,
+   "gender": "男",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 2066,
+   "gender": "女",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 2067,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 2067,
+   "gender": "女",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 2068,
+   "gender": "男",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 2068,
+   "gender": "女",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 2069,
+   "gender": "男",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 2069,
+   "gender": "女",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 2070,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 2070,
+   "gender": "女",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 2071,
+   "gender": "男",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 2071,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 2072,
+   "gender": "男",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 2072,
+   "gender": "女",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 2073,
+   "gender": "男",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 2073,
+   "gender": "女",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 2074,
+   "gender": "男",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 2074,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 2075,
+   "gender": "男",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 2075,
+   "gender": "女",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 2076,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 2076,
+   "gender": "女",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 2077,
+   "gender": "男",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 2077,
+   "gender": "女",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 2078,
+   "gender": "男",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 2078,
+   "gender": "女",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 2079,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 2079,
+   "gender": "女",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 2080,
+   "gender": "男",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 2080,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 2081,
+   "gender": "男",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 2081,
+   "gender": "女",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 2082,
+   "gender": "男",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 2082,
+   "gender": "女",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 2083,
+   "gender": "男",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 2083,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 2084,
+   "gender": "男",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 2084,
+   "gender": "女",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 2085,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 2085,
+   "gender": "女",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 2086,
+   "gender": "男",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 2086,
+   "gender": "女",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 2087,
+   "gender": "男",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 2087,
+   "gender": "女",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 2088,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 2088,
+   "gender": "女",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 2089,
+   "gender": "男",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 2089,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 2090,
+   "gender": "男",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 2090,
+   "gender": "女",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 2091,
+   "gender": "男",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 2091,
+   "gender": "女",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 2092,
+   "gender": "男",
+   "gua": "兑",
+   "luoshu": 7,
+   "group": "西四"
+  },
+  {
+   "year": 2092,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 2093,
+   "gender": "男",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  },
+  {
+   "year": 2093,
+   "gender": "女",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 2094,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 2094,
+   "gender": "女",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 2095,
+   "gender": "男",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 2095,
+   "gender": "女",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 2096,
+   "gender": "男",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 2096,
+   "gender": "女",
+   "gua": "震",
+   "luoshu": 3,
+   "group": "东四"
+  },
+  {
+   "year": 2097,
+   "gender": "男",
+   "gua": "坤",
+   "luoshu": 2,
+   "group": "西四"
+  },
+  {
+   "year": 2097,
+   "gender": "女",
+   "gua": "巽",
+   "luoshu": 4,
+   "group": "东四"
+  },
+  {
+   "year": 2098,
+   "gender": "男",
+   "gua": "坎",
+   "luoshu": 1,
+   "group": "东四"
+  },
+  {
+   "year": 2098,
+   "gender": "女",
+   "gua": "艮",
+   "luoshu": 8,
+   "group": "西四"
+  },
+  {
+   "year": 2099,
+   "gender": "男",
+   "gua": "离",
+   "luoshu": 9,
+   "group": "东四"
+  },
+  {
+   "year": 2099,
+   "gender": "女",
+   "gua": "乾",
+   "luoshu": 6,
+   "group": "西四"
+  }
+ ]
+}

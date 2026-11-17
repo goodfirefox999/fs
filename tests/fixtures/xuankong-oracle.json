@@ -1,0 +1,11454 @@
+{
+ "_source": "Know-your-fate/.claude/skills/fengshui-kanyu/scripts/_common.py (MIT, Copyright (c) 2026 Feng Tang and contributors)",
+ "_note": "下卦 oracle：9 运 × 24 山，仅用于交叉校验，不随小程序发布。",
+ "rows": [
+  {
+   "yun": 1,
+   "sit": "子",
+   "sitCenter": 0,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 6,
+     "shan": 2,
+     "xiang": 9
+    },
+    "坤": {
+     "yun": 7,
+     "shan": 3,
+     "xiang": 8
+    },
+    "震": {
+     "yun": 8,
+     "shan": 4,
+     "xiang": 7
+    },
+    "巽": {
+     "yun": 9,
+     "shan": 5,
+     "xiang": 6
+    },
+    "中": {
+     "yun": 1,
+     "shan": 6,
+     "xiang": 5
+    },
+    "乾": {
+     "yun": 2,
+     "shan": 7,
+     "xiang": 4
+    },
+    "兑": {
+     "yun": 3,
+     "shan": 8,
+     "xiang": 3
+    },
+    "艮": {
+     "yun": 4,
+     "shan": 9,
+     "xiang": 2
+    },
+    "离": {
+     "yun": 5,
+     "shan": 1,
+     "xiang": 1
+    }
+   }
+  },
+  {
+   "yun": 1,
+   "sit": "癸",
+   "sitCenter": 15,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 6,
+     "shan": 2,
+     "xiang": 9
+    },
+    "坤": {
+     "yun": 7,
+     "shan": 3,
+     "xiang": 8
+    },
+    "震": {
+     "yun": 8,
+     "shan": 4,
+     "xiang": 7
+    },
+    "巽": {
+     "yun": 9,
+     "shan": 5,
+     "xiang": 6
+    },
+    "中": {
+     "yun": 1,
+     "shan": 6,
+     "xiang": 5
+    },
+    "乾": {
+     "yun": 2,
+     "shan": 7,
+     "xiang": 4
+    },
+    "兑": {
+     "yun": 3,
+     "shan": 8,
+     "xiang": 3
+    },
+    "艮": {
+     "yun": 4,
+     "shan": 9,
+     "xiang": 2
+    },
+    "离": {
+     "yun": 5,
+     "shan": 1,
+     "xiang": 1
+    }
+   }
+  },
+  {
+   "yun": 1,
+   "sit": "丑",
+   "sitCenter": 30,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 6,
+     "shan": 8,
+     "xiang": 3
+    },
+    "坤": {
+     "yun": 7,
+     "shan": 7,
+     "xiang": 4
+    },
+    "震": {
+     "yun": 8,
+     "shan": 6,
+     "xiang": 5
+    },
+    "巽": {
+     "yun": 9,
+     "shan": 5,
+     "xiang": 6
+    },
+    "中": {
+     "yun": 1,
+     "shan": 4,
+     "xiang": 7
+    },
+    "乾": {
+     "yun": 2,
+     "shan": 3,
+     "xiang": 8
+    },
+    "兑": {
+     "yun": 3,
+     "shan": 2,
+     "xiang": 9
+    },
+    "艮": {
+     "yun": 4,
+     "shan": 1,
+     "xiang": 1
+    },
+    "离": {
+     "yun": 5,
+     "shan": 9,
+     "xiang": 2
+    }
+   }
+  },
+  {
+   "yun": 1,
+   "sit": "艮",
+   "sitCenter": 45,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 6,
+     "shan": 9,
+     "xiang": 2
+    },
+    "坤": {
+     "yun": 7,
+     "shan": 1,
+     "xiang": 1
+    },
+    "震": {
+     "yun": 8,
+     "shan": 2,
+     "xiang": 9
+    },
+    "巽": {
+     "yun": 9,
+     "shan": 3,
+     "xiang": 8
+    },
+    "中": {
+     "yun": 1,
+     "shan": 4,
+     "xiang": 7
+    },
+    "乾": {
+     "yun": 2,
+     "shan": 5,
+     "xiang": 6
+    },
+    "兑": {
+     "yun": 3,
+     "shan": 6,
+     "xiang": 5
+    },
+    "艮": {
+     "yun": 4,
+     "shan": 7,
+     "xiang": 4
+    },
+    "离": {
+     "yun": 5,
+     "shan": 8,
+     "xiang": 3
+    }
+   }
+  },
+  {
+   "yun": 1,
+   "sit": "寅",
+   "sitCenter": 60,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 6,
+     "shan": 9,
+     "xiang": 2
+    },
+    "坤": {
+     "yun": 7,
+     "shan": 1,
+     "xiang": 1
+    },
+    "震": {
+     "yun": 8,
+     "shan": 2,
+     "xiang": 9
+    },
+    "巽": {
+     "yun": 9,
+     "shan": 3,
+     "xiang": 8
+    },
+    "中": {
+     "yun": 1,
+     "shan": 4,
+     "xiang": 7
+    },
+    "乾": {
+     "yun": 2,
+     "shan": 5,
+     "xiang": 6
+    },
+    "兑": {
+     "yun": 3,
+     "shan": 6,
+     "xiang": 5
+    },
+    "艮": {
+     "yun": 4,
+     "shan": 7,
+     "xiang": 4
+    },
+    "离": {
+     "yun": 5,
+     "shan": 8,
+     "xiang": 3
+    }
+   }
+  },
+  {
+   "yun": 1,
+   "sit": "甲",
+   "sitCenter": 75,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 6,
+     "shan": 3,
+     "xiang": 8
+    },
+    "坤": {
+     "yun": 7,
+     "shan": 2,
+     "xiang": 9
+    },
+    "震": {
+     "yun": 8,
+     "shan": 1,
+     "xiang": 1
+    },
+    "巽": {
+     "yun": 9,
+     "shan": 9,
+     "xiang": 2
+    },
+    "中": {
+     "yun": 1,
+     "shan": 8,
+     "xiang": 3
+    },
+    "乾": {
+     "yun": 2,
+     "shan": 7,
+     "xiang": 4
+    },
+    "兑": {
+     "yun": 3,
+     "shan": 6,
+     "xiang": 5
+    },
+    "艮": {
+     "yun": 4,
+     "shan": 5,
+     "xiang": 6
+    },
+    "离": {
+     "yun": 5,
+     "shan": 4,
+     "xiang": 7
+    }
+   }
+  },
+  {
+   "yun": 1,
+   "sit": "卯",
+   "sitCenter": 90,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 6,
+     "shan": 4,
+     "xiang": 7
+    },
+    "坤": {
+     "yun": 7,
+     "shan": 5,
+     "xiang": 6
+    },
+    "震": {
+     "yun": 8,
+     "shan": 6,
+     "xiang": 5
+    },
+    "巽": {
+     "yun": 9,
+     "shan": 7,
+     "xiang": 4
+    },
+    "中": {
+     "yun": 1,
+     "shan": 8,
+     "xiang": 3
+    },
+    "乾": {
+     "yun": 2,
+     "shan": 9,
+     "xiang": 2
+    },
+    "兑": {
+     "yun": 3,
+     "shan": 1,
+     "xiang": 1
+    },
+    "艮": {
+     "yun": 4,
+     "shan": 2,
+     "xiang": 9
+    },
+    "离": {
+     "yun": 5,
+     "shan": 3,
+     "xiang": 8
+    }
+   }
+  },
+  {
+   "yun": 1,
+   "sit": "乙",
+   "sitCenter": 105,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 6,
+     "shan": 4,
+     "xiang": 7
+    },
+    "坤": {
+     "yun": 7,
+     "shan": 5,
+     "xiang": 6
+    },
+    "震": {
+     "yun": 8,
+     "shan": 6,
+     "xiang": 5
+    },
+    "巽": {
+     "yun": 9,
+     "shan": 7,
+     "xiang": 4
+    },
+    "中": {
+     "yun": 1,
+     "shan": 8,
+     "xiang": 3
+    },
+    "乾": {
+     "yun": 2,
+     "shan": 9,
+     "xiang": 2
+    },
+    "兑": {
+     "yun": 3,
+     "shan": 1,
+     "xiang": 1
+    },
+    "艮": {
+     "yun": 4,
+     "shan": 2,
+     "xiang": 9
+    },
+    "离": {
+     "yun": 5,
+     "shan": 3,
+     "xiang": 8
+    }
+   }
+  },
+  {
+   "yun": 1,
+   "sit": "辰",
+   "sitCenter": 120,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 6,
+     "shan": 5,
+     "xiang": 6
+    },
+    "坤": {
+     "yun": 7,
+     "shan": 6,
+     "xiang": 5
+    },
+    "震": {
+     "yun": 8,
+     "shan": 7,
+     "xiang": 4
+    },
+    "巽": {
+     "yun": 9,
+     "shan": 8,
+     "xiang": 3
+    },
+    "中": {
+     "yun": 1,
+     "shan": 9,
+     "xiang": 2
+    },
+    "乾": {
+     "yun": 2,
+     "shan": 1,
+     "xiang": 1
+    },
+    "兑": {
+     "yun": 3,
+     "shan": 2,
+     "xiang": 9
+    },
+    "艮": {
+     "yun": 4,
+     "shan": 3,
+     "xiang": 8
+    },
+    "离": {
+     "yun": 5,
+     "shan": 4,
+     "xiang": 7
+    }
+   }
+  },
+  {
+   "yun": 1,
+   "sit": "巽",
+   "sitCenter": 135,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 6,
+     "shan": 4,
+     "xiang": 7
+    },
+    "坤": {
+     "yun": 7,
+     "shan": 3,
+     "xiang": 8
+    },
+    "震": {
+     "yun": 8,
+     "shan": 2,
+     "xiang": 9
+    },
+    "巽": {
+     "yun": 9,
+     "shan": 1,
+     "xiang": 1
+    },
+    "中": {
+     "yun": 1,
+     "shan": 9,
+     "xiang": 2
+    },
+    "乾": {
+     "yun": 2,
+     "shan": 8,
+     "xiang": 3
+    },
+    "兑": {
+     "yun": 3,
+     "shan": 7,
+     "xiang": 4
+    },
+    "艮": {
+     "yun": 4,
+     "shan": 6,
+     "xiang": 5
+    },
+    "离": {
+     "yun": 5,
+     "shan": 5,
+     "xiang": 6
+    }
+   }
+  },
+  {
+   "yun": 1,
+   "sit": "巳",
+   "sitCenter": 150,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 6,
+     "shan": 4,
+     "xiang": 7
+    },
+    "坤": {
+     "yun": 7,
+     "shan": 3,
+     "xiang": 8
+    },
+    "震": {
+     "yun": 8,
+     "shan": 2,
+     "xiang": 9
+    },
+    "巽": {
+     "yun": 9,
+     "shan": 1,
+     "xiang": 1
+    },
+    "中": {
+     "yun": 1,
+     "shan": 9,
+     "xiang": 2
+    },
+    "乾": {
+     "yun": 2,
+     "shan": 8,
+     "xiang": 3
+    },
+    "兑": {
+     "yun": 3,
+     "shan": 7,
+     "xiang": 4
+    },
+    "艮": {
+     "yun": 4,
+     "shan": 6,
+     "xiang": 5
+    },
+    "离": {
+     "yun": 5,
+     "shan": 5,
+     "xiang": 6
+    }
+   }
+  },
+  {
+   "yun": 1,
+   "sit": "丙",
+   "sitCenter": 165,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 6,
+     "shan": 1,
+     "xiang": 1
+    },
+    "坤": {
+     "yun": 7,
+     "shan": 2,
+     "xiang": 9
+    },
+    "震": {
+     "yun": 8,
+     "shan": 3,
+     "xiang": 8
+    },
+    "巽": {
+     "yun": 9,
+     "shan": 4,
+     "xiang": 7
+    },
+    "中": {
+     "yun": 1,
+     "shan": 5,
+     "xiang": 6
+    },
+    "乾": {
+     "yun": 2,
+     "shan": 6,
+     "xiang": 5
+    },
+    "兑": {
+     "yun": 3,
+     "shan": 7,
+     "xiang": 4
+    },
+    "艮": {
+     "yun": 4,
+     "shan": 8,
+     "xiang": 3
+    },
+    "离": {
+     "yun": 5,
+     "shan": 9,
+     "xiang": 2
+    }
+   }
+  },
+  {
+   "yun": 1,
+   "sit": "午",
+   "sitCenter": 180,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 6,
+     "shan": 9,
+     "xiang": 2
+    },
+    "坤": {
+     "yun": 7,
+     "shan": 8,
+     "xiang": 3
+    },
+    "震": {
+     "yun": 8,
+     "shan": 7,
+     "xiang": 4
+    },
+    "巽": {
+     "yun": 9,
+     "shan": 6,
+     "xiang": 5
+    },
+    "中": {
+     "yun": 1,
+     "shan": 5,
+     "xiang": 6
+    },
+    "乾": {
+     "yun": 2,
+     "shan": 4,
+     "xiang": 7
+    },
+    "兑": {
+     "yun": 3,
+     "shan": 3,
+     "xiang": 8
+    },
+    "艮": {
+     "yun": 4,
+     "shan": 2,
+     "xiang": 9
+    },
+    "离": {
+     "yun": 5,
+     "shan": 1,
+     "xiang": 1
+    }
+   }
+  },
+  {
+   "yun": 1,
+   "sit": "丁",
+   "sitCenter": 195,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 6,
+     "shan": 9,
+     "xiang": 2
+    },
+    "坤": {
+     "yun": 7,
+     "shan": 8,
+     "xiang": 3
+    },
+    "震": {
+     "yun": 8,
+     "shan": 7,
+     "xiang": 4
+    },
+    "巽": {
+     "yun": 9,
+     "shan": 6,
+     "xiang": 5
+    },
+    "中": {
+     "yun": 1,
+     "shan": 5,
+     "xiang": 6
+    },
+    "乾": {
+     "yun": 2,
+     "shan": 4,
+     "xiang": 7
+    },
+    "兑": {
+     "yun": 3,
+     "shan": 3,
+     "xiang": 8
+    },
+    "艮": {
+     "yun": 4,
+     "shan": 2,
+     "xiang": 9
+    },
+    "离": {
+     "yun": 5,
+     "shan": 1,
+     "xiang": 1
+    }
+   }
+  },
+  {
+   "yun": 1,
+   "sit": "未",
+   "sitCenter": 210,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 6,
+     "shan": 3,
+     "xiang": 8
+    },
+    "坤": {
+     "yun": 7,
+     "shan": 4,
+     "xiang": 7
+    },
+    "震": {
+     "yun": 8,
+     "shan": 5,
+     "xiang": 6
+    },
+    "巽": {
+     "yun": 9,
+     "shan": 6,
+     "xiang": 5
+    },
+    "中": {
+     "yun": 1,
+     "shan": 7,
+     "xiang": 4
+    },
+    "乾": {
+     "yun": 2,
+     "shan": 8,
+     "xiang": 3
+    },
+    "兑": {
+     "yun": 3,
+     "shan": 9,
+     "xiang": 2
+    },
+    "艮": {
+     "yun": 4,
+     "shan": 1,
+     "xiang": 1
+    },
+    "离": {
+     "yun": 5,
+     "shan": 2,
+     "xiang": 9
+    }
+   }
+  },
+  {
+   "yun": 1,
+   "sit": "坤",
+   "sitCenter": 225,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 6,
+     "shan": 2,
+     "xiang": 9
+    },
+    "坤": {
+     "yun": 7,
+     "shan": 1,
+     "xiang": 1
+    },
+    "震": {
+     "yun": 8,
+     "shan": 9,
+     "xiang": 2
+    },
+    "巽": {
+     "yun": 9,
+     "shan": 8,
+     "xiang": 3
+    },
+    "中": {
+     "yun": 1,
+     "shan": 7,
+     "xiang": 4
+    },
+    "乾": {
+     "yun": 2,
+     "shan": 6,
+     "xiang": 5
+    },
+    "兑": {
+     "yun": 3,
+     "shan": 5,
+     "xiang": 6
+    },
+    "艮": {
+     "yun": 4,
+     "shan": 4,
+     "xiang": 7
+    },
+    "离": {
+     "yun": 5,
+     "shan": 3,
+     "xiang": 8
+    }
+   }
+  },
+  {
+   "yun": 1,
+   "sit": "申",
+   "sitCenter": 240,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 6,
+     "shan": 2,
+     "xiang": 9
+    },
+    "坤": {
+     "yun": 7,
+     "shan": 1,
+     "xiang": 1
+    },
+    "震": {
+     "yun": 8,
+     "shan": 9,
+     "xiang": 2
+    },
+    "巽": {
+     "yun": 9,
+     "shan": 8,
+     "xiang": 3
+    },
+    "中": {
+     "yun": 1,
+     "shan": 7,
+     "xiang": 4
+    },
+    "乾": {
+     "yun": 2,
+     "shan": 6,
+     "xiang": 5
+    },
+    "兑": {
+     "yun": 3,
+     "shan": 5,
+     "xiang": 6
+    },
+    "艮": {
+     "yun": 4,
+     "shan": 4,
+     "xiang": 7
+    },
+    "离": {
+     "yun": 5,
+     "shan": 3,
+     "xiang": 8
+    }
+   }
+  },
+  {
+   "yun": 1,
+   "sit": "庚",
+   "sitCenter": 255,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 6,
+     "shan": 8,
+     "xiang": 3
+    },
+    "坤": {
+     "yun": 7,
+     "shan": 9,
+     "xiang": 2
+    },
+    "震": {
+     "yun": 8,
+     "shan": 1,
+     "xiang": 1
+    },
+    "巽": {
+     "yun": 9,
+     "shan": 2,
+     "xiang": 9
+    },
+    "中": {
+     "yun": 1,
+     "shan": 3,
+     "xiang": 8
+    },
+    "乾": {
+     "yun": 2,
+     "shan": 4,
+     "xiang": 7
+    },
+    "兑": {
+     "yun": 3,
+     "shan": 5,
+     "xiang": 6
+    },
+    "艮": {
+     "yun": 4,
+     "shan": 6,
+     "xiang": 5
+    },
+    "离": {
+     "yun": 5,
+     "shan": 7,
+     "xiang": 4
+    }
+   }
+  },
+  {
+   "yun": 1,
+   "sit": "酉",
+   "sitCenter": 270,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 6,
+     "shan": 7,
+     "xiang": 4
+    },
+    "坤": {
+     "yun": 7,
+     "shan": 6,
+     "xiang": 5
+    },
+    "震": {
+     "yun": 8,
+     "shan": 5,
+     "xiang": 6
+    },
+    "巽": {
+     "yun": 9,
+     "shan": 4,
+     "xiang": 7
+    },
+    "中": {
+     "yun": 1,
+     "shan": 3,
+     "xiang": 8
+    },
+    "乾": {
+     "yun": 2,
+     "shan": 2,
+     "xiang": 9
+    },
+    "兑": {
+     "yun": 3,
+     "shan": 1,
+     "xiang": 1
+    },
+    "艮": {
+     "yun": 4,
+     "shan": 9,
+     "xiang": 2
+    },
+    "离": {
+     "yun": 5,
+     "shan": 8,
+     "xiang": 3
+    }
+   }
+  },
+  {
+   "yun": 1,
+   "sit": "辛",
+   "sitCenter": 285,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 6,
+     "shan": 7,
+     "xiang": 4
+    },
+    "坤": {
+     "yun": 7,
+     "shan": 6,
+     "xiang": 5
+    },
+    "震": {
+     "yun": 8,
+     "shan": 5,
+     "xiang": 6
+    },
+    "巽": {
+     "yun": 9,
+     "shan": 4,
+     "xiang": 7
+    },
+    "中": {
+     "yun": 1,
+     "shan": 3,
+     "xiang": 8
+    },
+    "乾": {
+     "yun": 2,
+     "shan": 2,
+     "xiang": 9
+    },
+    "兑": {
+     "yun": 3,
+     "shan": 1,
+     "xiang": 1
+    },
+    "艮": {
+     "yun": 4,
+     "shan": 9,
+     "xiang": 2
+    },
+    "离": {
+     "yun": 5,
+     "shan": 8,
+     "xiang": 3
+    }
+   }
+  },
+  {
+   "yun": 1,
+   "sit": "戌",
+   "sitCenter": 300,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 6,
+     "shan": 6,
+     "xiang": 5
+    },
+    "坤": {
+     "yun": 7,
+     "shan": 5,
+     "xiang": 6
+    },
+    "震": {
+     "yun": 8,
+     "shan": 4,
+     "xiang": 7
+    },
+    "巽": {
+     "yun": 9,
+     "shan": 3,
+     "xiang": 8
+    },
+    "中": {
+     "yun": 1,
+     "shan": 2,
+     "xiang": 9
+    },
+    "乾": {
+     "yun": 2,
+     "shan": 1,
+     "xiang": 1
+    },
+    "兑": {
+     "yun": 3,
+     "shan": 9,
+     "xiang": 2
+    },
+    "艮": {
+     "yun": 4,
+     "shan": 8,
+     "xiang": 3
+    },
+    "离": {
+     "yun": 5,
+     "shan": 7,
+     "xiang": 4
+    }
+   }
+  },
+  {
+   "yun": 1,
+   "sit": "乾",
+   "sitCenter": 315,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 6,
+     "shan": 7,
+     "xiang": 4
+    },
+    "坤": {
+     "yun": 7,
+     "shan": 8,
+     "xiang": 3
+    },
+    "震": {
+     "yun": 8,
+     "shan": 9,
+     "xiang": 2
+    },
+    "巽": {
+     "yun": 9,
+     "shan": 1,
+     "xiang": 1
+    },
+    "中": {
+     "yun": 1,
+     "shan": 2,
+     "xiang": 9
+    },
+    "乾": {
+     "yun": 2,
+     "shan": 3,
+     "xiang": 8
+    },
+    "兑": {
+     "yun": 3,
+     "shan": 4,
+     "xiang": 7
+    },
+    "艮": {
+     "yun": 4,
+     "shan": 5,
+     "xiang": 6
+    },
+    "离": {
+     "yun": 5,
+     "shan": 6,
+     "xiang": 5
+    }
+   }
+  },
+  {
+   "yun": 1,
+   "sit": "亥",
+   "sitCenter": 330,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 6,
+     "shan": 7,
+     "xiang": 4
+    },
+    "坤": {
+     "yun": 7,
+     "shan": 8,
+     "xiang": 3
+    },
+    "震": {
+     "yun": 8,
+     "shan": 9,
+     "xiang": 2
+    },
+    "巽": {
+     "yun": 9,
+     "shan": 1,
+     "xiang": 1
+    },
+    "中": {
+     "yun": 1,
+     "shan": 2,
+     "xiang": 9
+    },
+    "乾": {
+     "yun": 2,
+     "shan": 3,
+     "xiang": 8
+    },
+    "兑": {
+     "yun": 3,
+     "shan": 4,
+     "xiang": 7
+    },
+    "艮": {
+     "yun": 4,
+     "shan": 5,
+     "xiang": 6
+    },
+    "离": {
+     "yun": 5,
+     "shan": 6,
+     "xiang": 5
+    }
+   }
+  },
+  {
+   "yun": 1,
+   "sit": "壬",
+   "sitCenter": 345,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 6,
+     "shan": 1,
+     "xiang": 1
+    },
+    "坤": {
+     "yun": 7,
+     "shan": 9,
+     "xiang": 2
+    },
+    "震": {
+     "yun": 8,
+     "shan": 8,
+     "xiang": 3
+    },
+    "巽": {
+     "yun": 9,
+     "shan": 7,
+     "xiang": 4
+    },
+    "中": {
+     "yun": 1,
+     "shan": 6,
+     "xiang": 5
+    },
+    "乾": {
+     "yun": 2,
+     "shan": 5,
+     "xiang": 6
+    },
+    "兑": {
+     "yun": 3,
+     "shan": 4,
+     "xiang": 7
+    },
+    "艮": {
+     "yun": 4,
+     "shan": 3,
+     "xiang": 8
+    },
+    "离": {
+     "yun": 5,
+     "shan": 2,
+     "xiang": 9
+    }
+   }
+  },
+  {
+   "yun": 2,
+   "sit": "子",
+   "sitCenter": 0,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 7,
+     "shan": 2,
+     "xiang": 2
+    },
+    "坤": {
+     "yun": 8,
+     "shan": 1,
+     "xiang": 3
+    },
+    "震": {
+     "yun": 9,
+     "shan": 9,
+     "xiang": 4
+    },
+    "巽": {
+     "yun": 1,
+     "shan": 8,
+     "xiang": 5
+    },
+    "中": {
+     "yun": 2,
+     "shan": 7,
+     "xiang": 6
+    },
+    "乾": {
+     "yun": 3,
+     "shan": 6,
+     "xiang": 7
+    },
+    "兑": {
+     "yun": 4,
+     "shan": 5,
+     "xiang": 8
+    },
+    "艮": {
+     "yun": 5,
+     "shan": 4,
+     "xiang": 9
+    },
+    "离": {
+     "yun": 6,
+     "shan": 3,
+     "xiang": 1
+    }
+   }
+  },
+  {
+   "yun": 2,
+   "sit": "癸",
+   "sitCenter": 15,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 7,
+     "shan": 2,
+     "xiang": 2
+    },
+    "坤": {
+     "yun": 8,
+     "shan": 1,
+     "xiang": 3
+    },
+    "震": {
+     "yun": 9,
+     "shan": 9,
+     "xiang": 4
+    },
+    "巽": {
+     "yun": 1,
+     "shan": 8,
+     "xiang": 5
+    },
+    "中": {
+     "yun": 2,
+     "shan": 7,
+     "xiang": 6
+    },
+    "乾": {
+     "yun": 3,
+     "shan": 6,
+     "xiang": 7
+    },
+    "兑": {
+     "yun": 4,
+     "shan": 5,
+     "xiang": 8
+    },
+    "艮": {
+     "yun": 5,
+     "shan": 4,
+     "xiang": 9
+    },
+    "离": {
+     "yun": 6,
+     "shan": 3,
+     "xiang": 1
+    }
+   }
+  },
+  {
+   "yun": 2,
+   "sit": "丑",
+   "sitCenter": 30,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 7,
+     "shan": 9,
+     "xiang": 3
+    },
+    "坤": {
+     "yun": 8,
+     "shan": 8,
+     "xiang": 2
+    },
+    "震": {
+     "yun": 9,
+     "shan": 7,
+     "xiang": 1
+    },
+    "巽": {
+     "yun": 1,
+     "shan": 6,
+     "xiang": 9
+    },
+    "中": {
+     "yun": 2,
+     "shan": 5,
+     "xiang": 8
+    },
+    "乾": {
+     "yun": 3,
+     "shan": 4,
+     "xiang": 7
+    },
+    "兑": {
+     "yun": 4,
+     "shan": 3,
+     "xiang": 6
+    },
+    "艮": {
+     "yun": 5,
+     "shan": 2,
+     "xiang": 5
+    },
+    "离": {
+     "yun": 6,
+     "shan": 1,
+     "xiang": 4
+    }
+   }
+  },
+  {
+   "yun": 2,
+   "sit": "艮",
+   "sitCenter": 45,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 7,
+     "shan": 1,
+     "xiang": 4
+    },
+    "坤": {
+     "yun": 8,
+     "shan": 2,
+     "xiang": 5
+    },
+    "震": {
+     "yun": 9,
+     "shan": 3,
+     "xiang": 6
+    },
+    "巽": {
+     "yun": 1,
+     "shan": 4,
+     "xiang": 7
+    },
+    "中": {
+     "yun": 2,
+     "shan": 5,
+     "xiang": 8
+    },
+    "乾": {
+     "yun": 3,
+     "shan": 6,
+     "xiang": 9
+    },
+    "兑": {
+     "yun": 4,
+     "shan": 7,
+     "xiang": 1
+    },
+    "艮": {
+     "yun": 5,
+     "shan": 8,
+     "xiang": 2
+    },
+    "离": {
+     "yun": 6,
+     "shan": 9,
+     "xiang": 3
+    }
+   }
+  },
+  {
+   "yun": 2,
+   "sit": "寅",
+   "sitCenter": 60,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 7,
+     "shan": 1,
+     "xiang": 4
+    },
+    "坤": {
+     "yun": 8,
+     "shan": 2,
+     "xiang": 5
+    },
+    "震": {
+     "yun": 9,
+     "shan": 3,
+     "xiang": 6
+    },
+    "巽": {
+     "yun": 1,
+     "shan": 4,
+     "xiang": 7
+    },
+    "中": {
+     "yun": 2,
+     "shan": 5,
+     "xiang": 8
+    },
+    "乾": {
+     "yun": 3,
+     "shan": 6,
+     "xiang": 9
+    },
+    "兑": {
+     "yun": 4,
+     "shan": 7,
+     "xiang": 1
+    },
+    "艮": {
+     "yun": 5,
+     "shan": 8,
+     "xiang": 2
+    },
+    "离": {
+     "yun": 6,
+     "shan": 9,
+     "xiang": 3
+    }
+   }
+  },
+  {
+   "yun": 2,
+   "sit": "甲",
+   "sitCenter": 75,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 7,
+     "shan": 5,
+     "xiang": 8
+    },
+    "坤": {
+     "yun": 8,
+     "shan": 6,
+     "xiang": 7
+    },
+    "震": {
+     "yun": 9,
+     "shan": 7,
+     "xiang": 6
+    },
+    "巽": {
+     "yun": 1,
+     "shan": 8,
+     "xiang": 5
+    },
+    "中": {
+     "yun": 2,
+     "shan": 9,
+     "xiang": 4
+    },
+    "乾": {
+     "yun": 3,
+     "shan": 1,
+     "xiang": 3
+    },
+    "兑": {
+     "yun": 4,
+     "shan": 2,
+     "xiang": 2
+    },
+    "艮": {
+     "yun": 5,
+     "shan": 3,
+     "xiang": 1
+    },
+    "离": {
+     "yun": 6,
+     "shan": 4,
+     "xiang": 9
+    }
+   }
+  },
+  {
+   "yun": 2,
+   "sit": "卯",
+   "sitCenter": 90,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 7,
+     "shan": 4,
+     "xiang": 9
+    },
+    "坤": {
+     "yun": 8,
+     "shan": 3,
+     "xiang": 1
+    },
+    "震": {
+     "yun": 9,
+     "shan": 2,
+     "xiang": 2
+    },
+    "巽": {
+     "yun": 1,
+     "shan": 1,
+     "xiang": 3
+    },
+    "中": {
+     "yun": 2,
+     "shan": 9,
+     "xiang": 4
+    },
+    "乾": {
+     "yun": 3,
+     "shan": 8,
+     "xiang": 5
+    },
+    "兑": {
+     "yun": 4,
+     "shan": 7,
+     "xiang": 6
+    },
+    "艮": {
+     "yun": 5,
+     "shan": 6,
+     "xiang": 7
+    },
+    "离": {
+     "yun": 6,
+     "shan": 5,
+     "xiang": 8
+    }
+   }
+  },
+  {
+   "yun": 2,
+   "sit": "乙",
+   "sitCenter": 105,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 7,
+     "shan": 4,
+     "xiang": 9
+    },
+    "坤": {
+     "yun": 8,
+     "shan": 3,
+     "xiang": 1
+    },
+    "震": {
+     "yun": 9,
+     "shan": 2,
+     "xiang": 2
+    },
+    "巽": {
+     "yun": 1,
+     "shan": 1,
+     "xiang": 3
+    },
+    "中": {
+     "yun": 2,
+     "shan": 9,
+     "xiang": 4
+    },
+    "乾": {
+     "yun": 3,
+     "shan": 8,
+     "xiang": 5
+    },
+    "兑": {
+     "yun": 4,
+     "shan": 7,
+     "xiang": 6
+    },
+    "艮": {
+     "yun": 5,
+     "shan": 6,
+     "xiang": 7
+    },
+    "离": {
+     "yun": 6,
+     "shan": 5,
+     "xiang": 8
+    }
+   }
+  },
+  {
+   "yun": 2,
+   "sit": "辰",
+   "sitCenter": 120,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 7,
+     "shan": 6,
+     "xiang": 8
+    },
+    "坤": {
+     "yun": 8,
+     "shan": 7,
+     "xiang": 9
+    },
+    "震": {
+     "yun": 9,
+     "shan": 8,
+     "xiang": 1
+    },
+    "巽": {
+     "yun": 1,
+     "shan": 9,
+     "xiang": 2
+    },
+    "中": {
+     "yun": 2,
+     "shan": 1,
+     "xiang": 3
+    },
+    "乾": {
+     "yun": 3,
+     "shan": 2,
+     "xiang": 4
+    },
+    "兑": {
+     "yun": 4,
+     "shan": 3,
+     "xiang": 5
+    },
+    "艮": {
+     "yun": 5,
+     "shan": 4,
+     "xiang": 6
+    },
+    "离": {
+     "yun": 6,
+     "shan": 5,
+     "xiang": 7
+    }
+   }
+  },
+  {
+   "yun": 2,
+   "sit": "巽",
+   "sitCenter": 135,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 7,
+     "shan": 5,
+     "xiang": 7
+    },
+    "坤": {
+     "yun": 8,
+     "shan": 4,
+     "xiang": 6
+    },
+    "震": {
+     "yun": 9,
+     "shan": 3,
+     "xiang": 5
+    },
+    "巽": {
+     "yun": 1,
+     "shan": 2,
+     "xiang": 4
+    },
+    "中": {
+     "yun": 2,
+     "shan": 1,
+     "xiang": 3
+    },
+    "乾": {
+     "yun": 3,
+     "shan": 9,
+     "xiang": 2
+    },
+    "兑": {
+     "yun": 4,
+     "shan": 8,
+     "xiang": 1
+    },
+    "艮": {
+     "yun": 5,
+     "shan": 7,
+     "xiang": 9
+    },
+    "离": {
+     "yun": 6,
+     "shan": 6,
+     "xiang": 8
+    }
+   }
+  },
+  {
+   "yun": 2,
+   "sit": "巳",
+   "sitCenter": 150,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 7,
+     "shan": 5,
+     "xiang": 7
+    },
+    "坤": {
+     "yun": 8,
+     "shan": 4,
+     "xiang": 6
+    },
+    "震": {
+     "yun": 9,
+     "shan": 3,
+     "xiang": 5
+    },
+    "巽": {
+     "yun": 1,
+     "shan": 2,
+     "xiang": 4
+    },
+    "中": {
+     "yun": 2,
+     "shan": 1,
+     "xiang": 3
+    },
+    "乾": {
+     "yun": 3,
+     "shan": 9,
+     "xiang": 2
+    },
+    "兑": {
+     "yun": 4,
+     "shan": 8,
+     "xiang": 1
+    },
+    "艮": {
+     "yun": 5,
+     "shan": 7,
+     "xiang": 9
+    },
+    "离": {
+     "yun": 6,
+     "shan": 6,
+     "xiang": 8
+    }
+   }
+  },
+  {
+   "yun": 2,
+   "sit": "丙",
+   "sitCenter": 165,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 7,
+     "shan": 1,
+     "xiang": 3
+    },
+    "坤": {
+     "yun": 8,
+     "shan": 9,
+     "xiang": 4
+    },
+    "震": {
+     "yun": 9,
+     "shan": 8,
+     "xiang": 5
+    },
+    "巽": {
+     "yun": 1,
+     "shan": 7,
+     "xiang": 6
+    },
+    "中": {
+     "yun": 2,
+     "shan": 6,
+     "xiang": 7
+    },
+    "乾": {
+     "yun": 3,
+     "shan": 5,
+     "xiang": 8
+    },
+    "兑": {
+     "yun": 4,
+     "shan": 4,
+     "xiang": 9
+    },
+    "艮": {
+     "yun": 5,
+     "shan": 3,
+     "xiang": 1
+    },
+    "离": {
+     "yun": 6,
+     "shan": 2,
+     "xiang": 2
+    }
+   }
+  },
+  {
+   "yun": 2,
+   "sit": "午",
+   "sitCenter": 180,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 7,
+     "shan": 2,
+     "xiang": 2
+    },
+    "坤": {
+     "yun": 8,
+     "shan": 3,
+     "xiang": 1
+    },
+    "震": {
+     "yun": 9,
+     "shan": 4,
+     "xiang": 9
+    },
+    "巽": {
+     "yun": 1,
+     "shan": 5,
+     "xiang": 8
+    },
+    "中": {
+     "yun": 2,
+     "shan": 6,
+     "xiang": 7
+    },
+    "乾": {
+     "yun": 3,
+     "shan": 7,
+     "xiang": 6
+    },
+    "兑": {
+     "yun": 4,
+     "shan": 8,
+     "xiang": 5
+    },
+    "艮": {
+     "yun": 5,
+     "shan": 9,
+     "xiang": 4
+    },
+    "离": {
+     "yun": 6,
+     "shan": 1,
+     "xiang": 3
+    }
+   }
+  },
+  {
+   "yun": 2,
+   "sit": "丁",
+   "sitCenter": 195,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 7,
+     "shan": 2,
+     "xiang": 2
+    },
+    "坤": {
+     "yun": 8,
+     "shan": 3,
+     "xiang": 1
+    },
+    "震": {
+     "yun": 9,
+     "shan": 4,
+     "xiang": 9
+    },
+    "巽": {
+     "yun": 1,
+     "shan": 5,
+     "xiang": 8
+    },
+    "中": {
+     "yun": 2,
+     "shan": 6,
+     "xiang": 7
+    },
+    "乾": {
+     "yun": 3,
+     "shan": 7,
+     "xiang": 6
+    },
+    "兑": {
+     "yun": 4,
+     "shan": 8,
+     "xiang": 5
+    },
+    "艮": {
+     "yun": 5,
+     "shan": 9,
+     "xiang": 4
+    },
+    "离": {
+     "yun": 6,
+     "shan": 1,
+     "xiang": 3
+    }
+   }
+  },
+  {
+   "yun": 2,
+   "sit": "未",
+   "sitCenter": 210,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 7,
+     "shan": 3,
+     "xiang": 9
+    },
+    "坤": {
+     "yun": 8,
+     "shan": 2,
+     "xiang": 8
+    },
+    "震": {
+     "yun": 9,
+     "shan": 1,
+     "xiang": 7
+    },
+    "巽": {
+     "yun": 1,
+     "shan": 9,
+     "xiang": 6
+    },
+    "中": {
+     "yun": 2,
+     "shan": 8,
+     "xiang": 5
+    },
+    "乾": {
+     "yun": 3,
+     "shan": 7,
+     "xiang": 4
+    },
+    "兑": {
+     "yun": 4,
+     "shan": 6,
+     "xiang": 3
+    },
+    "艮": {
+     "yun": 5,
+     "shan": 5,
+     "xiang": 2
+    },
+    "离": {
+     "yun": 6,
+     "shan": 4,
+     "xiang": 1
+    }
+   }
+  },
+  {
+   "yun": 2,
+   "sit": "坤",
+   "sitCenter": 225,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 7,
+     "shan": 4,
+     "xiang": 1
+    },
+    "坤": {
+     "yun": 8,
+     "shan": 5,
+     "xiang": 2
+    },
+    "震": {
+     "yun": 9,
+     "shan": 6,
+     "xiang": 3
+    },
+    "巽": {
+     "yun": 1,
+     "shan": 7,
+     "xiang": 4
+    },
+    "中": {
+     "yun": 2,
+     "shan": 8,
+     "xiang": 5
+    },
+    "乾": {
+     "yun": 3,
+     "shan": 9,
+     "xiang": 6
+    },
+    "兑": {
+     "yun": 4,
+     "shan": 1,
+     "xiang": 7
+    },
+    "艮": {
+     "yun": 5,
+     "shan": 2,
+     "xiang": 8
+    },
+    "离": {
+     "yun": 6,
+     "shan": 3,
+     "xiang": 9
+    }
+   }
+  },
+  {
+   "yun": 2,
+   "sit": "申",
+   "sitCenter": 240,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 7,
+     "shan": 4,
+     "xiang": 1
+    },
+    "坤": {
+     "yun": 8,
+     "shan": 5,
+     "xiang": 2
+    },
+    "震": {
+     "yun": 9,
+     "shan": 6,
+     "xiang": 3
+    },
+    "巽": {
+     "yun": 1,
+     "shan": 7,
+     "xiang": 4
+    },
+    "中": {
+     "yun": 2,
+     "shan": 8,
+     "xiang": 5
+    },
+    "乾": {
+     "yun": 3,
+     "shan": 9,
+     "xiang": 6
+    },
+    "兑": {
+     "yun": 4,
+     "shan": 1,
+     "xiang": 7
+    },
+    "艮": {
+     "yun": 5,
+     "shan": 2,
+     "xiang": 8
+    },
+    "离": {
+     "yun": 6,
+     "shan": 3,
+     "xiang": 9
+    }
+   }
+  },
+  {
+   "yun": 2,
+   "sit": "庚",
+   "sitCenter": 255,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 7,
+     "shan": 8,
+     "xiang": 5
+    },
+    "坤": {
+     "yun": 8,
+     "shan": 7,
+     "xiang": 6
+    },
+    "震": {
+     "yun": 9,
+     "shan": 6,
+     "xiang": 7
+    },
+    "巽": {
+     "yun": 1,
+     "shan": 5,
+     "xiang": 8
+    },
+    "中": {
+     "yun": 2,
+     "shan": 4,
+     "xiang": 9
+    },
+    "乾": {
+     "yun": 3,
+     "shan": 3,
+     "xiang": 1
+    },
+    "兑": {
+     "yun": 4,
+     "shan": 2,
+     "xiang": 2
+    },
+    "艮": {
+     "yun": 5,
+     "shan": 1,
+     "xiang": 3
+    },
+    "离": {
+     "yun": 6,
+     "shan": 9,
+     "xiang": 4
+    }
+   }
+  },
+  {
+   "yun": 2,
+   "sit": "酉",
+   "sitCenter": 270,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 7,
+     "shan": 9,
+     "xiang": 4
+    },
+    "坤": {
+     "yun": 8,
+     "shan": 1,
+     "xiang": 3
+    },
+    "震": {
+     "yun": 9,
+     "shan": 2,
+     "xiang": 2
+    },
+    "巽": {
+     "yun": 1,
+     "shan": 3,
+     "xiang": 1
+    },
+    "中": {
+     "yun": 2,
+     "shan": 4,
+     "xiang": 9
+    },
+    "乾": {
+     "yun": 3,
+     "shan": 5,
+     "xiang": 8
+    },
+    "兑": {
+     "yun": 4,
+     "shan": 6,
+     "xiang": 7
+    },
+    "艮": {
+     "yun": 5,
+     "shan": 7,
+     "xiang": 6
+    },
+    "离": {
+     "yun": 6,
+     "shan": 8,
+     "xiang": 5
+    }
+   }
+  },
+  {
+   "yun": 2,
+   "sit": "辛",
+   "sitCenter": 285,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 7,
+     "shan": 9,
+     "xiang": 4
+    },
+    "坤": {
+     "yun": 8,
+     "shan": 1,
+     "xiang": 3
+    },
+    "震": {
+     "yun": 9,
+     "shan": 2,
+     "xiang": 2
+    },
+    "巽": {
+     "yun": 1,
+     "shan": 3,
+     "xiang": 1
+    },
+    "中": {
+     "yun": 2,
+     "shan": 4,
+     "xiang": 9
+    },
+    "乾": {
+     "yun": 3,
+     "shan": 5,
+     "xiang": 8
+    },
+    "兑": {
+     "yun": 4,
+     "shan": 6,
+     "xiang": 7
+    },
+    "艮": {
+     "yun": 5,
+     "shan": 7,
+     "xiang": 6
+    },
+    "离": {
+     "yun": 6,
+     "shan": 8,
+     "xiang": 5
+    }
+   }
+  },
+  {
+   "yun": 2,
+   "sit": "戌",
+   "sitCenter": 300,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 7,
+     "shan": 8,
+     "xiang": 6
+    },
+    "坤": {
+     "yun": 8,
+     "shan": 9,
+     "xiang": 7
+    },
+    "震": {
+     "yun": 9,
+     "shan": 1,
+     "xiang": 8
+    },
+    "巽": {
+     "yun": 1,
+     "shan": 2,
+     "xiang": 9
+    },
+    "中": {
+     "yun": 2,
+     "shan": 3,
+     "xiang": 1
+    },
+    "乾": {
+     "yun": 3,
+     "shan": 4,
+     "xiang": 2
+    },
+    "兑": {
+     "yun": 4,
+     "shan": 5,
+     "xiang": 3
+    },
+    "艮": {
+     "yun": 5,
+     "shan": 6,
+     "xiang": 4
+    },
+    "离": {
+     "yun": 6,
+     "shan": 7,
+     "xiang": 5
+    }
+   }
+  },
+  {
+   "yun": 2,
+   "sit": "乾",
+   "sitCenter": 315,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 7,
+     "shan": 7,
+     "xiang": 5
+    },
+    "坤": {
+     "yun": 8,
+     "shan": 6,
+     "xiang": 4
+    },
+    "震": {
+     "yun": 9,
+     "shan": 5,
+     "xiang": 3
+    },
+    "巽": {
+     "yun": 1,
+     "shan": 4,
+     "xiang": 2
+    },
+    "中": {
+     "yun": 2,
+     "shan": 3,
+     "xiang": 1
+    },
+    "乾": {
+     "yun": 3,
+     "shan": 2,
+     "xiang": 9
+    },
+    "兑": {
+     "yun": 4,
+     "shan": 1,
+     "xiang": 8
+    },
+    "艮": {
+     "yun": 5,
+     "shan": 9,
+     "xiang": 7
+    },
+    "离": {
+     "yun": 6,
+     "shan": 8,
+     "xiang": 6
+    }
+   }
+  },
+  {
+   "yun": 2,
+   "sit": "亥",
+   "sitCenter": 330,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 7,
+     "shan": 7,
+     "xiang": 5
+    },
+    "坤": {
+     "yun": 8,
+     "shan": 6,
+     "xiang": 4
+    },
+    "震": {
+     "yun": 9,
+     "shan": 5,
+     "xiang": 3
+    },
+    "巽": {
+     "yun": 1,
+     "shan": 4,
+     "xiang": 2
+    },
+    "中": {
+     "yun": 2,
+     "shan": 3,
+     "xiang": 1
+    },
+    "乾": {
+     "yun": 3,
+     "shan": 2,
+     "xiang": 9
+    },
+    "兑": {
+     "yun": 4,
+     "shan": 1,
+     "xiang": 8
+    },
+    "艮": {
+     "yun": 5,
+     "shan": 9,
+     "xiang": 7
+    },
+    "离": {
+     "yun": 6,
+     "shan": 8,
+     "xiang": 6
+    }
+   }
+  },
+  {
+   "yun": 2,
+   "sit": "壬",
+   "sitCenter": 345,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 7,
+     "shan": 3,
+     "xiang": 1
+    },
+    "坤": {
+     "yun": 8,
+     "shan": 4,
+     "xiang": 9
+    },
+    "震": {
+     "yun": 9,
+     "shan": 5,
+     "xiang": 8
+    },
+    "巽": {
+     "yun": 1,
+     "shan": 6,
+     "xiang": 7
+    },
+    "中": {
+     "yun": 2,
+     "shan": 7,
+     "xiang": 6
+    },
+    "乾": {
+     "yun": 3,
+     "shan": 8,
+     "xiang": 5
+    },
+    "兑": {
+     "yun": 4,
+     "shan": 9,
+     "xiang": 4
+    },
+    "艮": {
+     "yun": 5,
+     "shan": 1,
+     "xiang": 3
+    },
+    "离": {
+     "yun": 6,
+     "shan": 2,
+     "xiang": 2
+    }
+   }
+  },
+  {
+   "yun": 3,
+   "sit": "子",
+   "sitCenter": 0,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 8,
+     "shan": 4,
+     "xiang": 2
+    },
+    "坤": {
+     "yun": 9,
+     "shan": 5,
+     "xiang": 1
+    },
+    "震": {
+     "yun": 1,
+     "shan": 6,
+     "xiang": 9
+    },
+    "巽": {
+     "yun": 2,
+     "shan": 7,
+     "xiang": 8
+    },
+    "中": {
+     "yun": 3,
+     "shan": 8,
+     "xiang": 7
+    },
+    "乾": {
+     "yun": 4,
+     "shan": 9,
+     "xiang": 6
+    },
+    "兑": {
+     "yun": 5,
+     "shan": 1,
+     "xiang": 5
+    },
+    "艮": {
+     "yun": 6,
+     "shan": 2,
+     "xiang": 4
+    },
+    "离": {
+     "yun": 7,
+     "shan": 3,
+     "xiang": 3
+    }
+   }
+  },
+  {
+   "yun": 3,
+   "sit": "癸",
+   "sitCenter": 15,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 8,
+     "shan": 4,
+     "xiang": 2
+    },
+    "坤": {
+     "yun": 9,
+     "shan": 5,
+     "xiang": 1
+    },
+    "震": {
+     "yun": 1,
+     "shan": 6,
+     "xiang": 9
+    },
+    "巽": {
+     "yun": 2,
+     "shan": 7,
+     "xiang": 8
+    },
+    "中": {
+     "yun": 3,
+     "shan": 8,
+     "xiang": 7
+    },
+    "乾": {
+     "yun": 4,
+     "shan": 9,
+     "xiang": 6
+    },
+    "兑": {
+     "yun": 5,
+     "shan": 1,
+     "xiang": 5
+    },
+    "艮": {
+     "yun": 6,
+     "shan": 2,
+     "xiang": 4
+    },
+    "离": {
+     "yun": 7,
+     "shan": 3,
+     "xiang": 3
+    }
+   }
+  },
+  {
+   "yun": 3,
+   "sit": "丑",
+   "sitCenter": 30,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 8,
+     "shan": 1,
+     "xiang": 5
+    },
+    "坤": {
+     "yun": 9,
+     "shan": 9,
+     "xiang": 6
+    },
+    "震": {
+     "yun": 1,
+     "shan": 8,
+     "xiang": 7
+    },
+    "巽": {
+     "yun": 2,
+     "shan": 7,
+     "xiang": 8
+    },
+    "中": {
+     "yun": 3,
+     "shan": 6,
+     "xiang": 9
+    },
+    "乾": {
+     "yun": 4,
+     "shan": 5,
+     "xiang": 1
+    },
+    "兑": {
+     "yun": 5,
+     "shan": 4,
+     "xiang": 2
+    },
+    "艮": {
+     "yun": 6,
+     "shan": 3,
+     "xiang": 3
+    },
+    "离": {
+     "yun": 7,
+     "shan": 2,
+     "xiang": 4
+    }
+   }
+  },
+  {
+   "yun": 3,
+   "sit": "艮",
+   "sitCenter": 45,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 8,
+     "shan": 2,
+     "xiang": 4
+    },
+    "坤": {
+     "yun": 9,
+     "shan": 3,
+     "xiang": 3
+    },
+    "震": {
+     "yun": 1,
+     "shan": 4,
+     "xiang": 2
+    },
+    "巽": {
+     "yun": 2,
+     "shan": 5,
+     "xiang": 1
+    },
+    "中": {
+     "yun": 3,
+     "shan": 6,
+     "xiang": 9
+    },
+    "乾": {
+     "yun": 4,
+     "shan": 7,
+     "xiang": 8
+    },
+    "兑": {
+     "yun": 5,
+     "shan": 8,
+     "xiang": 7
+    },
+    "艮": {
+     "yun": 6,
+     "shan": 9,
+     "xiang": 6
+    },
+    "离": {
+     "yun": 7,
+     "shan": 1,
+     "xiang": 5
+    }
+   }
+  },
+  {
+   "yun": 3,
+   "sit": "寅",
+   "sitCenter": 60,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 8,
+     "shan": 2,
+     "xiang": 4
+    },
+    "坤": {
+     "yun": 9,
+     "shan": 3,
+     "xiang": 3
+    },
+    "震": {
+     "yun": 1,
+     "shan": 4,
+     "xiang": 2
+    },
+    "巽": {
+     "yun": 2,
+     "shan": 5,
+     "xiang": 1
+    },
+    "中": {
+     "yun": 3,
+     "shan": 6,
+     "xiang": 9
+    },
+    "乾": {
+     "yun": 4,
+     "shan": 7,
+     "xiang": 8
+    },
+    "兑": {
+     "yun": 5,
+     "shan": 8,
+     "xiang": 7
+    },
+    "艮": {
+     "yun": 6,
+     "shan": 9,
+     "xiang": 6
+    },
+    "离": {
+     "yun": 7,
+     "shan": 1,
+     "xiang": 5
+    }
+   }
+  },
+  {
+   "yun": 3,
+   "sit": "甲",
+   "sitCenter": 75,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 8,
+     "shan": 6,
+     "xiang": 1
+    },
+    "坤": {
+     "yun": 9,
+     "shan": 7,
+     "xiang": 2
+    },
+    "震": {
+     "yun": 1,
+     "shan": 8,
+     "xiang": 3
+    },
+    "巽": {
+     "yun": 2,
+     "shan": 9,
+     "xiang": 4
+    },
+    "中": {
+     "yun": 3,
+     "shan": 1,
+     "xiang": 5
+    },
+    "乾": {
+     "yun": 4,
+     "shan": 2,
+     "xiang": 6
+    },
+    "兑": {
+     "yun": 5,
+     "shan": 3,
+     "xiang": 7
+    },
+    "艮": {
+     "yun": 6,
+     "shan": 4,
+     "xiang": 8
+    },
+    "离": {
+     "yun": 7,
+     "shan": 5,
+     "xiang": 9
+    }
+   }
+  },
+  {
+   "yun": 3,
+   "sit": "卯",
+   "sitCenter": 90,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 8,
+     "shan": 5,
+     "xiang": 9
+    },
+    "坤": {
+     "yun": 9,
+     "shan": 4,
+     "xiang": 8
+    },
+    "震": {
+     "yun": 1,
+     "shan": 3,
+     "xiang": 7
+    },
+    "巽": {
+     "yun": 2,
+     "shan": 2,
+     "xiang": 6
+    },
+    "中": {
+     "yun": 3,
+     "shan": 1,
+     "xiang": 5
+    },
+    "乾": {
+     "yun": 4,
+     "shan": 9,
+     "xiang": 4
+    },
+    "兑": {
+     "yun": 5,
+     "shan": 8,
+     "xiang": 3
+    },
+    "艮": {
+     "yun": 6,
+     "shan": 7,
+     "xiang": 2
+    },
+    "离": {
+     "yun": 7,
+     "shan": 6,
+     "xiang": 1
+    }
+   }
+  },
+  {
+   "yun": 3,
+   "sit": "乙",
+   "sitCenter": 105,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 8,
+     "shan": 5,
+     "xiang": 9
+    },
+    "坤": {
+     "yun": 9,
+     "shan": 4,
+     "xiang": 8
+    },
+    "震": {
+     "yun": 1,
+     "shan": 3,
+     "xiang": 7
+    },
+    "巽": {
+     "yun": 2,
+     "shan": 2,
+     "xiang": 6
+    },
+    "中": {
+     "yun": 3,
+     "shan": 1,
+     "xiang": 5
+    },
+    "乾": {
+     "yun": 4,
+     "shan": 9,
+     "xiang": 4
+    },
+    "兑": {
+     "yun": 5,
+     "shan": 8,
+     "xiang": 3
+    },
+    "艮": {
+     "yun": 6,
+     "shan": 7,
+     "xiang": 2
+    },
+    "离": {
+     "yun": 7,
+     "shan": 6,
+     "xiang": 1
+    }
+   }
+  },
+  {
+   "yun": 3,
+   "sit": "辰",
+   "sitCenter": 120,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 8,
+     "shan": 6,
+     "xiang": 8
+    },
+    "坤": {
+     "yun": 9,
+     "shan": 5,
+     "xiang": 7
+    },
+    "震": {
+     "yun": 1,
+     "shan": 4,
+     "xiang": 6
+    },
+    "巽": {
+     "yun": 2,
+     "shan": 3,
+     "xiang": 5
+    },
+    "中": {
+     "yun": 3,
+     "shan": 2,
+     "xiang": 4
+    },
+    "乾": {
+     "yun": 4,
+     "shan": 1,
+     "xiang": 3
+    },
+    "兑": {
+     "yun": 5,
+     "shan": 9,
+     "xiang": 2
+    },
+    "艮": {
+     "yun": 6,
+     "shan": 8,
+     "xiang": 1
+    },
+    "离": {
+     "yun": 7,
+     "shan": 7,
+     "xiang": 9
+    }
+   }
+  },
+  {
+   "yun": 3,
+   "sit": "巽",
+   "sitCenter": 135,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 8,
+     "shan": 7,
+     "xiang": 9
+    },
+    "坤": {
+     "yun": 9,
+     "shan": 8,
+     "xiang": 1
+    },
+    "震": {
+     "yun": 1,
+     "shan": 9,
+     "xiang": 2
+    },
+    "巽": {
+     "yun": 2,
+     "shan": 1,
+     "xiang": 3
+    },
+    "中": {
+     "yun": 3,
+     "shan": 2,
+     "xiang": 4
+    },
+    "乾": {
+     "yun": 4,
+     "shan": 3,
+     "xiang": 5
+    },
+    "兑": {
+     "yun": 5,
+     "shan": 4,
+     "xiang": 6
+    },
+    "艮": {
+     "yun": 6,
+     "shan": 5,
+     "xiang": 7
+    },
+    "离": {
+     "yun": 7,
+     "shan": 6,
+     "xiang": 8
+    }
+   }
+  },
+  {
+   "yun": 3,
+   "sit": "巳",
+   "sitCenter": 150,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 8,
+     "shan": 7,
+     "xiang": 9
+    },
+    "坤": {
+     "yun": 9,
+     "shan": 8,
+     "xiang": 1
+    },
+    "震": {
+     "yun": 1,
+     "shan": 9,
+     "xiang": 2
+    },
+    "巽": {
+     "yun": 2,
+     "shan": 1,
+     "xiang": 3
+    },
+    "中": {
+     "yun": 3,
+     "shan": 2,
+     "xiang": 4
+    },
+    "乾": {
+     "yun": 4,
+     "shan": 3,
+     "xiang": 5
+    },
+    "兑": {
+     "yun": 5,
+     "shan": 4,
+     "xiang": 6
+    },
+    "艮": {
+     "yun": 6,
+     "shan": 5,
+     "xiang": 7
+    },
+    "离": {
+     "yun": 7,
+     "shan": 6,
+     "xiang": 8
+    }
+   }
+  },
+  {
+   "yun": 3,
+   "sit": "丙",
+   "sitCenter": 165,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 8,
+     "shan": 3,
+     "xiang": 3
+    },
+    "坤": {
+     "yun": 9,
+     "shan": 4,
+     "xiang": 2
+    },
+    "震": {
+     "yun": 1,
+     "shan": 5,
+     "xiang": 1
+    },
+    "巽": {
+     "yun": 2,
+     "shan": 6,
+     "xiang": 9
+    },
+    "中": {
+     "yun": 3,
+     "shan": 7,
+     "xiang": 8
+    },
+    "乾": {
+     "yun": 4,
+     "shan": 8,
+     "xiang": 7
+    },
+    "兑": {
+     "yun": 5,
+     "shan": 9,
+     "xiang": 6
+    },
+    "艮": {
+     "yun": 6,
+     "shan": 1,
+     "xiang": 5
+    },
+    "离": {
+     "yun": 7,
+     "shan": 2,
+     "xiang": 4
+    }
+   }
+  },
+  {
+   "yun": 3,
+   "sit": "午",
+   "sitCenter": 180,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 8,
+     "shan": 2,
+     "xiang": 4
+    },
+    "坤": {
+     "yun": 9,
+     "shan": 1,
+     "xiang": 5
+    },
+    "震": {
+     "yun": 1,
+     "shan": 9,
+     "xiang": 6
+    },
+    "巽": {
+     "yun": 2,
+     "shan": 8,
+     "xiang": 7
+    },
+    "中": {
+     "yun": 3,
+     "shan": 7,
+     "xiang": 8
+    },
+    "乾": {
+     "yun": 4,
+     "shan": 6,
+     "xiang": 9
+    },
+    "兑": {
+     "yun": 5,
+     "shan": 5,
+     "xiang": 1
+    },
+    "艮": {
+     "yun": 6,
+     "shan": 4,
+     "xiang": 2
+    },
+    "离": {
+     "yun": 7,
+     "shan": 3,
+     "xiang": 3
+    }
+   }
+  },
+  {
+   "yun": 3,
+   "sit": "丁",
+   "sitCenter": 195,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 8,
+     "shan": 2,
+     "xiang": 4
+    },
+    "坤": {
+     "yun": 9,
+     "shan": 1,
+     "xiang": 5
+    },
+    "震": {
+     "yun": 1,
+     "shan": 9,
+     "xiang": 6
+    },
+    "巽": {
+     "yun": 2,
+     "shan": 8,
+     "xiang": 7
+    },
+    "中": {
+     "yun": 3,
+     "shan": 7,
+     "xiang": 8
+    },
+    "乾": {
+     "yun": 4,
+     "shan": 6,
+     "xiang": 9
+    },
+    "兑": {
+     "yun": 5,
+     "shan": 5,
+     "xiang": 1
+    },
+    "艮": {
+     "yun": 6,
+     "shan": 4,
+     "xiang": 2
+    },
+    "离": {
+     "yun": 7,
+     "shan": 3,
+     "xiang": 3
+    }
+   }
+  },
+  {
+   "yun": 3,
+   "sit": "未",
+   "sitCenter": 210,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 8,
+     "shan": 5,
+     "xiang": 1
+    },
+    "坤": {
+     "yun": 9,
+     "shan": 6,
+     "xiang": 9
+    },
+    "震": {
+     "yun": 1,
+     "shan": 7,
+     "xiang": 8
+    },
+    "巽": {
+     "yun": 2,
+     "shan": 8,
+     "xiang": 7
+    },
+    "中": {
+     "yun": 3,
+     "shan": 9,
+     "xiang": 6
+    },
+    "乾": {
+     "yun": 4,
+     "shan": 1,
+     "xiang": 5
+    },
+    "兑": {
+     "yun": 5,
+     "shan": 2,
+     "xiang": 4
+    },
+    "艮": {
+     "yun": 6,
+     "shan": 3,
+     "xiang": 3
+    },
+    "离": {
+     "yun": 7,
+     "shan": 4,
+     "xiang": 2
+    }
+   }
+  },
+  {
+   "yun": 3,
+   "sit": "坤",
+   "sitCenter": 225,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 8,
+     "shan": 4,
+     "xiang": 2
+    },
+    "坤": {
+     "yun": 9,
+     "shan": 3,
+     "xiang": 3
+    },
+    "震": {
+     "yun": 1,
+     "shan": 2,
+     "xiang": 4
+    },
+    "巽": {
+     "yun": 2,
+     "shan": 1,
+     "xiang": 5
+    },
+    "中": {
+     "yun": 3,
+     "shan": 9,
+     "xiang": 6
+    },
+    "乾": {
+     "yun": 4,
+     "shan": 8,
+     "xiang": 7
+    },
+    "兑": {
+     "yun": 5,
+     "shan": 7,
+     "xiang": 8
+    },
+    "艮": {
+     "yun": 6,
+     "shan": 6,
+     "xiang": 9
+    },
+    "离": {
+     "yun": 7,
+     "shan": 5,
+     "xiang": 1
+    }
+   }
+  },
+  {
+   "yun": 3,
+   "sit": "申",
+   "sitCenter": 240,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 8,
+     "shan": 4,
+     "xiang": 2
+    },
+    "坤": {
+     "yun": 9,
+     "shan": 3,
+     "xiang": 3
+    },
+    "震": {
+     "yun": 1,
+     "shan": 2,
+     "xiang": 4
+    },
+    "巽": {
+     "yun": 2,
+     "shan": 1,
+     "xiang": 5
+    },
+    "中": {
+     "yun": 3,
+     "shan": 9,
+     "xiang": 6
+    },
+    "乾": {
+     "yun": 4,
+     "shan": 8,
+     "xiang": 7
+    },
+    "兑": {
+     "yun": 5,
+     "shan": 7,
+     "xiang": 8
+    },
+    "艮": {
+     "yun": 6,
+     "shan": 6,
+     "xiang": 9
+    },
+    "离": {
+     "yun": 7,
+     "shan": 5,
+     "xiang": 1
+    }
+   }
+  },
+  {
+   "yun": 3,
+   "sit": "庚",
+   "sitCenter": 255,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 8,
+     "shan": 1,
+     "xiang": 6
+    },
+    "坤": {
+     "yun": 9,
+     "shan": 2,
+     "xiang": 7
+    },
+    "震": {
+     "yun": 1,
+     "shan": 3,
+     "xiang": 8
+    },
+    "巽": {
+     "yun": 2,
+     "shan": 4,
+     "xiang": 9
+    },
+    "中": {
+     "yun": 3,
+     "shan": 5,
+     "xiang": 1
+    },
+    "乾": {
+     "yun": 4,
+     "shan": 6,
+     "xiang": 2
+    },
+    "兑": {
+     "yun": 5,
+     "shan": 7,
+     "xiang": 3
+    },
+    "艮": {
+     "yun": 6,
+     "shan": 8,
+     "xiang": 4
+    },
+    "离": {
+     "yun": 7,
+     "shan": 9,
+     "xiang": 5
+    }
+   }
+  },
+  {
+   "yun": 3,
+   "sit": "酉",
+   "sitCenter": 270,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 8,
+     "shan": 9,
+     "xiang": 5
+    },
+    "坤": {
+     "yun": 9,
+     "shan": 8,
+     "xiang": 4
+    },
+    "震": {
+     "yun": 1,
+     "shan": 7,
+     "xiang": 3
+    },
+    "巽": {
+     "yun": 2,
+     "shan": 6,
+     "xiang": 2
+    },
+    "中": {
+     "yun": 3,
+     "shan": 5,
+     "xiang": 1
+    },
+    "乾": {
+     "yun": 4,
+     "shan": 4,
+     "xiang": 9
+    },
+    "兑": {
+     "yun": 5,
+     "shan": 3,
+     "xiang": 8
+    },
+    "艮": {
+     "yun": 6,
+     "shan": 2,
+     "xiang": 7
+    },
+    "离": {
+     "yun": 7,
+     "shan": 1,
+     "xiang": 6
+    }
+   }
+  },
+  {
+   "yun": 3,
+   "sit": "辛",
+   "sitCenter": 285,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 8,
+     "shan": 9,
+     "xiang": 5
+    },
+    "坤": {
+     "yun": 9,
+     "shan": 8,
+     "xiang": 4
+    },
+    "震": {
+     "yun": 1,
+     "shan": 7,
+     "xiang": 3
+    },
+    "巽": {
+     "yun": 2,
+     "shan": 6,
+     "xiang": 2
+    },
+    "中": {
+     "yun": 3,
+     "shan": 5,
+     "xiang": 1
+    },
+    "乾": {
+     "yun": 4,
+     "shan": 4,
+     "xiang": 9
+    },
+    "兑": {
+     "yun": 5,
+     "shan": 3,
+     "xiang": 8
+    },
+    "艮": {
+     "yun": 6,
+     "shan": 2,
+     "xiang": 7
+    },
+    "离": {
+     "yun": 7,
+     "shan": 1,
+     "xiang": 6
+    }
+   }
+  },
+  {
+   "yun": 3,
+   "sit": "戌",
+   "sitCenter": 300,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 8,
+     "shan": 8,
+     "xiang": 6
+    },
+    "坤": {
+     "yun": 9,
+     "shan": 7,
+     "xiang": 5
+    },
+    "震": {
+     "yun": 1,
+     "shan": 6,
+     "xiang": 4
+    },
+    "巽": {
+     "yun": 2,
+     "shan": 5,
+     "xiang": 3
+    },
+    "中": {
+     "yun": 3,
+     "shan": 4,
+     "xiang": 2
+    },
+    "乾": {
+     "yun": 4,
+     "shan": 3,
+     "xiang": 1
+    },
+    "兑": {
+     "yun": 5,
+     "shan": 2,
+     "xiang": 9
+    },
+    "艮": {
+     "yun": 6,
+     "shan": 1,
+     "xiang": 8
+    },
+    "离": {
+     "yun": 7,
+     "shan": 9,
+     "xiang": 7
+    }
+   }
+  },
+  {
+   "yun": 3,
+   "sit": "乾",
+   "sitCenter": 315,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 8,
+     "shan": 9,
+     "xiang": 7
+    },
+    "坤": {
+     "yun": 9,
+     "shan": 1,
+     "xiang": 8
+    },
+    "震": {
+     "yun": 1,
+     "shan": 2,
+     "xiang": 9
+    },
+    "巽": {
+     "yun": 2,
+     "shan": 3,
+     "xiang": 1
+    },
+    "中": {
+     "yun": 3,
+     "shan": 4,
+     "xiang": 2
+    },
+    "乾": {
+     "yun": 4,
+     "shan": 5,
+     "xiang": 3
+    },
+    "兑": {
+     "yun": 5,
+     "shan": 6,
+     "xiang": 4
+    },
+    "艮": {
+     "yun": 6,
+     "shan": 7,
+     "xiang": 5
+    },
+    "离": {
+     "yun": 7,
+     "shan": 8,
+     "xiang": 6
+    }
+   }
+  },
+  {
+   "yun": 3,
+   "sit": "亥",
+   "sitCenter": 330,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 8,
+     "shan": 9,
+     "xiang": 7
+    },
+    "坤": {
+     "yun": 9,
+     "shan": 1,
+     "xiang": 8
+    },
+    "震": {
+     "yun": 1,
+     "shan": 2,
+     "xiang": 9
+    },
+    "巽": {
+     "yun": 2,
+     "shan": 3,
+     "xiang": 1
+    },
+    "中": {
+     "yun": 3,
+     "shan": 4,
+     "xiang": 2
+    },
+    "乾": {
+     "yun": 4,
+     "shan": 5,
+     "xiang": 3
+    },
+    "兑": {
+     "yun": 5,
+     "shan": 6,
+     "xiang": 4
+    },
+    "艮": {
+     "yun": 6,
+     "shan": 7,
+     "xiang": 5
+    },
+    "离": {
+     "yun": 7,
+     "shan": 8,
+     "xiang": 6
+    }
+   }
+  },
+  {
+   "yun": 3,
+   "sit": "壬",
+   "sitCenter": 345,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 8,
+     "shan": 3,
+     "xiang": 3
+    },
+    "坤": {
+     "yun": 9,
+     "shan": 2,
+     "xiang": 4
+    },
+    "震": {
+     "yun": 1,
+     "shan": 1,
+     "xiang": 5
+    },
+    "巽": {
+     "yun": 2,
+     "shan": 9,
+     "xiang": 6
+    },
+    "中": {
+     "yun": 3,
+     "shan": 8,
+     "xiang": 7
+    },
+    "乾": {
+     "yun": 4,
+     "shan": 7,
+     "xiang": 8
+    },
+    "兑": {
+     "yun": 5,
+     "shan": 6,
+     "xiang": 9
+    },
+    "艮": {
+     "yun": 6,
+     "shan": 5,
+     "xiang": 1
+    },
+    "离": {
+     "yun": 7,
+     "shan": 4,
+     "xiang": 2
+    }
+   }
+  },
+  {
+   "yun": 4,
+   "sit": "子",
+   "sitCenter": 0,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 9,
+     "shan": 4,
+     "xiang": 4
+    },
+    "坤": {
+     "yun": 1,
+     "shan": 3,
+     "xiang": 5
+    },
+    "震": {
+     "yun": 2,
+     "shan": 2,
+     "xiang": 6
+    },
+    "巽": {
+     "yun": 3,
+     "shan": 1,
+     "xiang": 7
+    },
+    "中": {
+     "yun": 4,
+     "shan": 9,
+     "xiang": 8
+    },
+    "乾": {
+     "yun": 5,
+     "shan": 8,
+     "xiang": 9
+    },
+    "兑": {
+     "yun": 6,
+     "shan": 7,
+     "xiang": 1
+    },
+    "艮": {
+     "yun": 7,
+     "shan": 6,
+     "xiang": 2
+    },
+    "离": {
+     "yun": 8,
+     "shan": 5,
+     "xiang": 3
+    }
+   }
+  },
+  {
+   "yun": 4,
+   "sit": "癸",
+   "sitCenter": 15,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 9,
+     "shan": 4,
+     "xiang": 4
+    },
+    "坤": {
+     "yun": 1,
+     "shan": 3,
+     "xiang": 5
+    },
+    "震": {
+     "yun": 2,
+     "shan": 2,
+     "xiang": 6
+    },
+    "巽": {
+     "yun": 3,
+     "shan": 1,
+     "xiang": 7
+    },
+    "中": {
+     "yun": 4,
+     "shan": 9,
+     "xiang": 8
+    },
+    "乾": {
+     "yun": 5,
+     "shan": 8,
+     "xiang": 9
+    },
+    "兑": {
+     "yun": 6,
+     "shan": 7,
+     "xiang": 1
+    },
+    "艮": {
+     "yun": 7,
+     "shan": 6,
+     "xiang": 2
+    },
+    "离": {
+     "yun": 8,
+     "shan": 5,
+     "xiang": 3
+    }
+   }
+  },
+  {
+   "yun": 4,
+   "sit": "丑",
+   "sitCenter": 30,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 9,
+     "shan": 3,
+     "xiang": 6
+    },
+    "坤": {
+     "yun": 1,
+     "shan": 4,
+     "xiang": 7
+    },
+    "震": {
+     "yun": 2,
+     "shan": 5,
+     "xiang": 8
+    },
+    "巽": {
+     "yun": 3,
+     "shan": 6,
+     "xiang": 9
+    },
+    "中": {
+     "yun": 4,
+     "shan": 7,
+     "xiang": 1
+    },
+    "乾": {
+     "yun": 5,
+     "shan": 8,
+     "xiang": 2
+    },
+    "兑": {
+     "yun": 6,
+     "shan": 9,
+     "xiang": 3
+    },
+    "艮": {
+     "yun": 7,
+     "shan": 1,
+     "xiang": 4
+    },
+    "离": {
+     "yun": 8,
+     "shan": 2,
+     "xiang": 5
+    }
+   }
+  },
+  {
+   "yun": 4,
+   "sit": "艮",
+   "sitCenter": 45,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 9,
+     "shan": 2,
+     "xiang": 5
+    },
+    "坤": {
+     "yun": 1,
+     "shan": 1,
+     "xiang": 4
+    },
+    "震": {
+     "yun": 2,
+     "shan": 9,
+     "xiang": 3
+    },
+    "巽": {
+     "yun": 3,
+     "shan": 8,
+     "xiang": 2
+    },
+    "中": {
+     "yun": 4,
+     "shan": 7,
+     "xiang": 1
+    },
+    "乾": {
+     "yun": 5,
+     "shan": 6,
+     "xiang": 9
+    },
+    "兑": {
+     "yun": 6,
+     "shan": 5,
+     "xiang": 8
+    },
+    "艮": {
+     "yun": 7,
+     "shan": 4,
+     "xiang": 7
+    },
+    "离": {
+     "yun": 8,
+     "shan": 3,
+     "xiang": 6
+    }
+   }
+  },
+  {
+   "yun": 4,
+   "sit": "寅",
+   "sitCenter": 60,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 9,
+     "shan": 2,
+     "xiang": 5
+    },
+    "坤": {
+     "yun": 1,
+     "shan": 1,
+     "xiang": 4
+    },
+    "震": {
+     "yun": 2,
+     "shan": 9,
+     "xiang": 3
+    },
+    "巽": {
+     "yun": 3,
+     "shan": 8,
+     "xiang": 2
+    },
+    "中": {
+     "yun": 4,
+     "shan": 7,
+     "xiang": 1
+    },
+    "乾": {
+     "yun": 5,
+     "shan": 6,
+     "xiang": 9
+    },
+    "兑": {
+     "yun": 6,
+     "shan": 5,
+     "xiang": 8
+    },
+    "艮": {
+     "yun": 7,
+     "shan": 4,
+     "xiang": 7
+    },
+    "离": {
+     "yun": 8,
+     "shan": 3,
+     "xiang": 6
+    }
+   }
+  },
+  {
+   "yun": 4,
+   "sit": "甲",
+   "sitCenter": 75,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 9,
+     "shan": 6,
+     "xiang": 1
+    },
+    "坤": {
+     "yun": 1,
+     "shan": 5,
+     "xiang": 9
+    },
+    "震": {
+     "yun": 2,
+     "shan": 4,
+     "xiang": 8
+    },
+    "巽": {
+     "yun": 3,
+     "shan": 3,
+     "xiang": 7
+    },
+    "中": {
+     "yun": 4,
+     "shan": 2,
+     "xiang": 6
+    },
+    "乾": {
+     "yun": 5,
+     "shan": 1,
+     "xiang": 5
+    },
+    "兑": {
+     "yun": 6,
+     "shan": 9,
+     "xiang": 4
+    },
+    "艮": {
+     "yun": 7,
+     "shan": 8,
+     "xiang": 3
+    },
+    "离": {
+     "yun": 8,
+     "shan": 7,
+     "xiang": 2
+    }
+   }
+  },
+  {
+   "yun": 4,
+   "sit": "卯",
+   "sitCenter": 90,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 9,
+     "shan": 7,
+     "xiang": 2
+    },
+    "坤": {
+     "yun": 1,
+     "shan": 8,
+     "xiang": 3
+    },
+    "震": {
+     "yun": 2,
+     "shan": 9,
+     "xiang": 4
+    },
+    "巽": {
+     "yun": 3,
+     "shan": 1,
+     "xiang": 5
+    },
+    "中": {
+     "yun": 4,
+     "shan": 2,
+     "xiang": 6
+    },
+    "乾": {
+     "yun": 5,
+     "shan": 3,
+     "xiang": 7
+    },
+    "兑": {
+     "yun": 6,
+     "shan": 4,
+     "xiang": 8
+    },
+    "艮": {
+     "yun": 7,
+     "shan": 5,
+     "xiang": 9
+    },
+    "离": {
+     "yun": 8,
+     "shan": 6,
+     "xiang": 1
+    }
+   }
+  },
+  {
+   "yun": 4,
+   "sit": "乙",
+   "sitCenter": 105,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 9,
+     "shan": 7,
+     "xiang": 2
+    },
+    "坤": {
+     "yun": 1,
+     "shan": 8,
+     "xiang": 3
+    },
+    "震": {
+     "yun": 2,
+     "shan": 9,
+     "xiang": 4
+    },
+    "巽": {
+     "yun": 3,
+     "shan": 1,
+     "xiang": 5
+    },
+    "中": {
+     "yun": 4,
+     "shan": 2,
+     "xiang": 6
+    },
+    "乾": {
+     "yun": 5,
+     "shan": 3,
+     "xiang": 7
+    },
+    "兑": {
+     "yun": 6,
+     "shan": 4,
+     "xiang": 8
+    },
+    "艮": {
+     "yun": 7,
+     "shan": 5,
+     "xiang": 9
+    },
+    "离": {
+     "yun": 8,
+     "shan": 6,
+     "xiang": 1
+    }
+   }
+  },
+  {
+   "yun": 4,
+   "sit": "辰",
+   "sitCenter": 120,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 9,
+     "shan": 8,
+     "xiang": 9
+    },
+    "坤": {
+     "yun": 1,
+     "shan": 9,
+     "xiang": 8
+    },
+    "震": {
+     "yun": 2,
+     "shan": 1,
+     "xiang": 7
+    },
+    "巽": {
+     "yun": 3,
+     "shan": 2,
+     "xiang": 6
+    },
+    "中": {
+     "yun": 4,
+     "shan": 3,
+     "xiang": 5
+    },
+    "乾": {
+     "yun": 5,
+     "shan": 4,
+     "xiang": 4
+    },
+    "兑": {
+     "yun": 6,
+     "shan": 5,
+     "xiang": 3
+    },
+    "艮": {
+     "yun": 7,
+     "shan": 6,
+     "xiang": 2
+    },
+    "离": {
+     "yun": 8,
+     "shan": 7,
+     "xiang": 1
+    }
+   }
+  },
+  {
+   "yun": 4,
+   "sit": "巽",
+   "sitCenter": 135,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 9,
+     "shan": 7,
+     "xiang": 1
+    },
+    "坤": {
+     "yun": 1,
+     "shan": 6,
+     "xiang": 2
+    },
+    "震": {
+     "yun": 2,
+     "shan": 5,
+     "xiang": 3
+    },
+    "巽": {
+     "yun": 3,
+     "shan": 4,
+     "xiang": 4
+    },
+    "中": {
+     "yun": 4,
+     "shan": 3,
+     "xiang": 5
+    },
+    "乾": {
+     "yun": 5,
+     "shan": 2,
+     "xiang": 6
+    },
+    "兑": {
+     "yun": 6,
+     "shan": 1,
+     "xiang": 7
+    },
+    "艮": {
+     "yun": 7,
+     "shan": 9,
+     "xiang": 8
+    },
+    "离": {
+     "yun": 8,
+     "shan": 8,
+     "xiang": 9
+    }
+   }
+  },
+  {
+   "yun": 4,
+   "sit": "巳",
+   "sitCenter": 150,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 9,
+     "shan": 7,
+     "xiang": 1
+    },
+    "坤": {
+     "yun": 1,
+     "shan": 6,
+     "xiang": 2
+    },
+    "震": {
+     "yun": 2,
+     "shan": 5,
+     "xiang": 3
+    },
+    "巽": {
+     "yun": 3,
+     "shan": 4,
+     "xiang": 4
+    },
+    "中": {
+     "yun": 4,
+     "shan": 3,
+     "xiang": 5
+    },
+    "乾": {
+     "yun": 5,
+     "shan": 2,
+     "xiang": 6
+    },
+    "兑": {
+     "yun": 6,
+     "shan": 1,
+     "xiang": 7
+    },
+    "艮": {
+     "yun": 7,
+     "shan": 9,
+     "xiang": 8
+    },
+    "离": {
+     "yun": 8,
+     "shan": 8,
+     "xiang": 9
+    }
+   }
+  },
+  {
+   "yun": 4,
+   "sit": "丙",
+   "sitCenter": 165,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 9,
+     "shan": 3,
+     "xiang": 5
+    },
+    "坤": {
+     "yun": 1,
+     "shan": 2,
+     "xiang": 6
+    },
+    "震": {
+     "yun": 2,
+     "shan": 1,
+     "xiang": 7
+    },
+    "巽": {
+     "yun": 3,
+     "shan": 9,
+     "xiang": 8
+    },
+    "中": {
+     "yun": 4,
+     "shan": 8,
+     "xiang": 9
+    },
+    "乾": {
+     "yun": 5,
+     "shan": 7,
+     "xiang": 1
+    },
+    "兑": {
+     "yun": 6,
+     "shan": 6,
+     "xiang": 2
+    },
+    "艮": {
+     "yun": 7,
+     "shan": 5,
+     "xiang": 3
+    },
+    "离": {
+     "yun": 8,
+     "shan": 4,
+     "xiang": 4
+    }
+   }
+  },
+  {
+   "yun": 4,
+   "sit": "午",
+   "sitCenter": 180,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 9,
+     "shan": 4,
+     "xiang": 4
+    },
+    "坤": {
+     "yun": 1,
+     "shan": 5,
+     "xiang": 3
+    },
+    "震": {
+     "yun": 2,
+     "shan": 6,
+     "xiang": 2
+    },
+    "巽": {
+     "yun": 3,
+     "shan": 7,
+     "xiang": 1
+    },
+    "中": {
+     "yun": 4,
+     "shan": 8,
+     "xiang": 9
+    },
+    "乾": {
+     "yun": 5,
+     "shan": 9,
+     "xiang": 8
+    },
+    "兑": {
+     "yun": 6,
+     "shan": 1,
+     "xiang": 7
+    },
+    "艮": {
+     "yun": 7,
+     "shan": 2,
+     "xiang": 6
+    },
+    "离": {
+     "yun": 8,
+     "shan": 3,
+     "xiang": 5
+    }
+   }
+  },
+  {
+   "yun": 4,
+   "sit": "丁",
+   "sitCenter": 195,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 9,
+     "shan": 4,
+     "xiang": 4
+    },
+    "坤": {
+     "yun": 1,
+     "shan": 5,
+     "xiang": 3
+    },
+    "震": {
+     "yun": 2,
+     "shan": 6,
+     "xiang": 2
+    },
+    "巽": {
+     "yun": 3,
+     "shan": 7,
+     "xiang": 1
+    },
+    "中": {
+     "yun": 4,
+     "shan": 8,
+     "xiang": 9
+    },
+    "乾": {
+     "yun": 5,
+     "shan": 9,
+     "xiang": 8
+    },
+    "兑": {
+     "yun": 6,
+     "shan": 1,
+     "xiang": 7
+    },
+    "艮": {
+     "yun": 7,
+     "shan": 2,
+     "xiang": 6
+    },
+    "离": {
+     "yun": 8,
+     "shan": 3,
+     "xiang": 5
+    }
+   }
+  },
+  {
+   "yun": 4,
+   "sit": "未",
+   "sitCenter": 210,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 9,
+     "shan": 6,
+     "xiang": 3
+    },
+    "坤": {
+     "yun": 1,
+     "shan": 7,
+     "xiang": 4
+    },
+    "震": {
+     "yun": 2,
+     "shan": 8,
+     "xiang": 5
+    },
+    "巽": {
+     "yun": 3,
+     "shan": 9,
+     "xiang": 6
+    },
+    "中": {
+     "yun": 4,
+     "shan": 1,
+     "xiang": 7
+    },
+    "乾": {
+     "yun": 5,
+     "shan": 2,
+     "xiang": 8
+    },
+    "兑": {
+     "yun": 6,
+     "shan": 3,
+     "xiang": 9
+    },
+    "艮": {
+     "yun": 7,
+     "shan": 4,
+     "xiang": 1
+    },
+    "离": {
+     "yun": 8,
+     "shan": 5,
+     "xiang": 2
+    }
+   }
+  },
+  {
+   "yun": 4,
+   "sit": "坤",
+   "sitCenter": 225,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 9,
+     "shan": 5,
+     "xiang": 2
+    },
+    "坤": {
+     "yun": 1,
+     "shan": 4,
+     "xiang": 1
+    },
+    "震": {
+     "yun": 2,
+     "shan": 3,
+     "xiang": 9
+    },
+    "巽": {
+     "yun": 3,
+     "shan": 2,
+     "xiang": 8
+    },
+    "中": {
+     "yun": 4,
+     "shan": 1,
+     "xiang": 7
+    },
+    "乾": {
+     "yun": 5,
+     "shan": 9,
+     "xiang": 6
+    },
+    "兑": {
+     "yun": 6,
+     "shan": 8,
+     "xiang": 5
+    },
+    "艮": {
+     "yun": 7,
+     "shan": 7,
+     "xiang": 4
+    },
+    "离": {
+     "yun": 8,
+     "shan": 6,
+     "xiang": 3
+    }
+   }
+  },
+  {
+   "yun": 4,
+   "sit": "申",
+   "sitCenter": 240,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 9,
+     "shan": 5,
+     "xiang": 2
+    },
+    "坤": {
+     "yun": 1,
+     "shan": 4,
+     "xiang": 1
+    },
+    "震": {
+     "yun": 2,
+     "shan": 3,
+     "xiang": 9
+    },
+    "巽": {
+     "yun": 3,
+     "shan": 2,
+     "xiang": 8
+    },
+    "中": {
+     "yun": 4,
+     "shan": 1,
+     "xiang": 7
+    },
+    "乾": {
+     "yun": 5,
+     "shan": 9,
+     "xiang": 6
+    },
+    "兑": {
+     "yun": 6,
+     "shan": 8,
+     "xiang": 5
+    },
+    "艮": {
+     "yun": 7,
+     "shan": 7,
+     "xiang": 4
+    },
+    "离": {
+     "yun": 8,
+     "shan": 6,
+     "xiang": 3
+    }
+   }
+  },
+  {
+   "yun": 4,
+   "sit": "庚",
+   "sitCenter": 255,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 9,
+     "shan": 1,
+     "xiang": 6
+    },
+    "坤": {
+     "yun": 1,
+     "shan": 9,
+     "xiang": 5
+    },
+    "震": {
+     "yun": 2,
+     "shan": 8,
+     "xiang": 4
+    },
+    "巽": {
+     "yun": 3,
+     "shan": 7,
+     "xiang": 3
+    },
+    "中": {
+     "yun": 4,
+     "shan": 6,
+     "xiang": 2
+    },
+    "乾": {
+     "yun": 5,
+     "shan": 5,
+     "xiang": 1
+    },
+    "兑": {
+     "yun": 6,
+     "shan": 4,
+     "xiang": 9
+    },
+    "艮": {
+     "yun": 7,
+     "shan": 3,
+     "xiang": 8
+    },
+    "离": {
+     "yun": 8,
+     "shan": 2,
+     "xiang": 7
+    }
+   }
+  },
+  {
+   "yun": 4,
+   "sit": "酉",
+   "sitCenter": 270,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 9,
+     "shan": 2,
+     "xiang": 7
+    },
+    "坤": {
+     "yun": 1,
+     "shan": 3,
+     "xiang": 8
+    },
+    "震": {
+     "yun": 2,
+     "shan": 4,
+     "xiang": 9
+    },
+    "巽": {
+     "yun": 3,
+     "shan": 5,
+     "xiang": 1
+    },
+    "中": {
+     "yun": 4,
+     "shan": 6,
+     "xiang": 2
+    },
+    "乾": {
+     "yun": 5,
+     "shan": 7,
+     "xiang": 3
+    },
+    "兑": {
+     "yun": 6,
+     "shan": 8,
+     "xiang": 4
+    },
+    "艮": {
+     "yun": 7,
+     "shan": 9,
+     "xiang": 5
+    },
+    "离": {
+     "yun": 8,
+     "shan": 1,
+     "xiang": 6
+    }
+   }
+  },
+  {
+   "yun": 4,
+   "sit": "辛",
+   "sitCenter": 285,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 9,
+     "shan": 2,
+     "xiang": 7
+    },
+    "坤": {
+     "yun": 1,
+     "shan": 3,
+     "xiang": 8
+    },
+    "震": {
+     "yun": 2,
+     "shan": 4,
+     "xiang": 9
+    },
+    "巽": {
+     "yun": 3,
+     "shan": 5,
+     "xiang": 1
+    },
+    "中": {
+     "yun": 4,
+     "shan": 6,
+     "xiang": 2
+    },
+    "乾": {
+     "yun": 5,
+     "shan": 7,
+     "xiang": 3
+    },
+    "兑": {
+     "yun": 6,
+     "shan": 8,
+     "xiang": 4
+    },
+    "艮": {
+     "yun": 7,
+     "shan": 9,
+     "xiang": 5
+    },
+    "离": {
+     "yun": 8,
+     "shan": 1,
+     "xiang": 6
+    }
+   }
+  },
+  {
+   "yun": 4,
+   "sit": "戌",
+   "sitCenter": 300,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 9,
+     "shan": 9,
+     "xiang": 8
+    },
+    "坤": {
+     "yun": 1,
+     "shan": 8,
+     "xiang": 9
+    },
+    "震": {
+     "yun": 2,
+     "shan": 7,
+     "xiang": 1
+    },
+    "巽": {
+     "yun": 3,
+     "shan": 6,
+     "xiang": 2
+    },
+    "中": {
+     "yun": 4,
+     "shan": 5,
+     "xiang": 3
+    },
+    "乾": {
+     "yun": 5,
+     "shan": 4,
+     "xiang": 4
+    },
+    "兑": {
+     "yun": 6,
+     "shan": 3,
+     "xiang": 5
+    },
+    "艮": {
+     "yun": 7,
+     "shan": 2,
+     "xiang": 6
+    },
+    "离": {
+     "yun": 8,
+     "shan": 1,
+     "xiang": 7
+    }
+   }
+  },
+  {
+   "yun": 4,
+   "sit": "乾",
+   "sitCenter": 315,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 9,
+     "shan": 1,
+     "xiang": 7
+    },
+    "坤": {
+     "yun": 1,
+     "shan": 2,
+     "xiang": 6
+    },
+    "震": {
+     "yun": 2,
+     "shan": 3,
+     "xiang": 5
+    },
+    "巽": {
+     "yun": 3,
+     "shan": 4,
+     "xiang": 4
+    },
+    "中": {
+     "yun": 4,
+     "shan": 5,
+     "xiang": 3
+    },
+    "乾": {
+     "yun": 5,
+     "shan": 6,
+     "xiang": 2
+    },
+    "兑": {
+     "yun": 6,
+     "shan": 7,
+     "xiang": 1
+    },
+    "艮": {
+     "yun": 7,
+     "shan": 8,
+     "xiang": 9
+    },
+    "离": {
+     "yun": 8,
+     "shan": 9,
+     "xiang": 8
+    }
+   }
+  },
+  {
+   "yun": 4,
+   "sit": "亥",
+   "sitCenter": 330,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 9,
+     "shan": 1,
+     "xiang": 7
+    },
+    "坤": {
+     "yun": 1,
+     "shan": 2,
+     "xiang": 6
+    },
+    "震": {
+     "yun": 2,
+     "shan": 3,
+     "xiang": 5
+    },
+    "巽": {
+     "yun": 3,
+     "shan": 4,
+     "xiang": 4
+    },
+    "中": {
+     "yun": 4,
+     "shan": 5,
+     "xiang": 3
+    },
+    "乾": {
+     "yun": 5,
+     "shan": 6,
+     "xiang": 2
+    },
+    "兑": {
+     "yun": 6,
+     "shan": 7,
+     "xiang": 1
+    },
+    "艮": {
+     "yun": 7,
+     "shan": 8,
+     "xiang": 9
+    },
+    "离": {
+     "yun": 8,
+     "shan": 9,
+     "xiang": 8
+    }
+   }
+  },
+  {
+   "yun": 4,
+   "sit": "壬",
+   "sitCenter": 345,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 9,
+     "shan": 5,
+     "xiang": 3
+    },
+    "坤": {
+     "yun": 1,
+     "shan": 6,
+     "xiang": 2
+    },
+    "震": {
+     "yun": 2,
+     "shan": 7,
+     "xiang": 1
+    },
+    "巽": {
+     "yun": 3,
+     "shan": 8,
+     "xiang": 9
+    },
+    "中": {
+     "yun": 4,
+     "shan": 9,
+     "xiang": 8
+    },
+    "乾": {
+     "yun": 5,
+     "shan": 1,
+     "xiang": 7
+    },
+    "兑": {
+     "yun": 6,
+     "shan": 2,
+     "xiang": 6
+    },
+    "艮": {
+     "yun": 7,
+     "shan": 3,
+     "xiang": 5
+    },
+    "离": {
+     "yun": 8,
+     "shan": 4,
+     "xiang": 4
+    }
+   }
+  },
+  {
+   "yun": 5,
+   "sit": "子",
+   "sitCenter": 0,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 1,
+     "shan": 5,
+     "xiang": 4
+    },
+    "坤": {
+     "yun": 2,
+     "shan": 4,
+     "xiang": 3
+    },
+    "震": {
+     "yun": 3,
+     "shan": 3,
+     "xiang": 2
+    },
+    "巽": {
+     "yun": 4,
+     "shan": 2,
+     "xiang": 1
+    },
+    "中": {
+     "yun": 5,
+     "shan": 1,
+     "xiang": 9
+    },
+    "乾": {
+     "yun": 6,
+     "shan": 9,
+     "xiang": 8
+    },
+    "兑": {
+     "yun": 7,
+     "shan": 8,
+     "xiang": 7
+    },
+    "艮": {
+     "yun": 8,
+     "shan": 7,
+     "xiang": 6
+    },
+    "离": {
+     "yun": 9,
+     "shan": 6,
+     "xiang": 5
+    }
+   }
+  },
+  {
+   "yun": 5,
+   "sit": "癸",
+   "sitCenter": 15,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 1,
+     "shan": 5,
+     "xiang": 4
+    },
+    "坤": {
+     "yun": 2,
+     "shan": 4,
+     "xiang": 3
+    },
+    "震": {
+     "yun": 3,
+     "shan": 3,
+     "xiang": 2
+    },
+    "巽": {
+     "yun": 4,
+     "shan": 2,
+     "xiang": 1
+    },
+    "中": {
+     "yun": 5,
+     "shan": 1,
+     "xiang": 9
+    },
+    "乾": {
+     "yun": 6,
+     "shan": 9,
+     "xiang": 8
+    },
+    "兑": {
+     "yun": 7,
+     "shan": 8,
+     "xiang": 7
+    },
+    "艮": {
+     "yun": 8,
+     "shan": 7,
+     "xiang": 6
+    },
+    "离": {
+     "yun": 9,
+     "shan": 6,
+     "xiang": 5
+    }
+   }
+  },
+  {
+   "yun": 5,
+   "sit": "丑",
+   "sitCenter": 30,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 1,
+     "shan": 3,
+     "xiang": 6
+    },
+    "坤": {
+     "yun": 2,
+     "shan": 2,
+     "xiang": 5
+    },
+    "震": {
+     "yun": 3,
+     "shan": 1,
+     "xiang": 4
+    },
+    "巽": {
+     "yun": 4,
+     "shan": 9,
+     "xiang": 3
+    },
+    "中": {
+     "yun": 5,
+     "shan": 8,
+     "xiang": 2
+    },
+    "乾": {
+     "yun": 6,
+     "shan": 7,
+     "xiang": 1
+    },
+    "兑": {
+     "yun": 7,
+     "shan": 6,
+     "xiang": 9
+    },
+    "艮": {
+     "yun": 8,
+     "shan": 5,
+     "xiang": 8
+    },
+    "离": {
+     "yun": 9,
+     "shan": 4,
+     "xiang": 7
+    }
+   }
+  },
+  {
+   "yun": 5,
+   "sit": "艮",
+   "sitCenter": 45,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 1,
+     "shan": 4,
+     "xiang": 7
+    },
+    "坤": {
+     "yun": 2,
+     "shan": 5,
+     "xiang": 8
+    },
+    "震": {
+     "yun": 3,
+     "shan": 6,
+     "xiang": 9
+    },
+    "巽": {
+     "yun": 4,
+     "shan": 7,
+     "xiang": 1
+    },
+    "中": {
+     "yun": 5,
+     "shan": 8,
+     "xiang": 2
+    },
+    "乾": {
+     "yun": 6,
+     "shan": 9,
+     "xiang": 3
+    },
+    "兑": {
+     "yun": 7,
+     "shan": 1,
+     "xiang": 4
+    },
+    "艮": {
+     "yun": 8,
+     "shan": 2,
+     "xiang": 5
+    },
+    "离": {
+     "yun": 9,
+     "shan": 3,
+     "xiang": 6
+    }
+   }
+  },
+  {
+   "yun": 5,
+   "sit": "寅",
+   "sitCenter": 60,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 1,
+     "shan": 4,
+     "xiang": 7
+    },
+    "坤": {
+     "yun": 2,
+     "shan": 5,
+     "xiang": 8
+    },
+    "震": {
+     "yun": 3,
+     "shan": 6,
+     "xiang": 9
+    },
+    "巽": {
+     "yun": 4,
+     "shan": 7,
+     "xiang": 1
+    },
+    "中": {
+     "yun": 5,
+     "shan": 8,
+     "xiang": 2
+    },
+    "乾": {
+     "yun": 6,
+     "shan": 9,
+     "xiang": 3
+    },
+    "兑": {
+     "yun": 7,
+     "shan": 1,
+     "xiang": 4
+    },
+    "艮": {
+     "yun": 8,
+     "shan": 2,
+     "xiang": 5
+    },
+    "离": {
+     "yun": 9,
+     "shan": 3,
+     "xiang": 6
+    }
+   }
+  },
+  {
+   "yun": 5,
+   "sit": "甲",
+   "sitCenter": 75,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 1,
+     "shan": 8,
+     "xiang": 3
+    },
+    "坤": {
+     "yun": 2,
+     "shan": 9,
+     "xiang": 4
+    },
+    "震": {
+     "yun": 3,
+     "shan": 1,
+     "xiang": 5
+    },
+    "巽": {
+     "yun": 4,
+     "shan": 2,
+     "xiang": 6
+    },
+    "中": {
+     "yun": 5,
+     "shan": 3,
+     "xiang": 7
+    },
+    "乾": {
+     "yun": 6,
+     "shan": 4,
+     "xiang": 8
+    },
+    "兑": {
+     "yun": 7,
+     "shan": 5,
+     "xiang": 9
+    },
+    "艮": {
+     "yun": 8,
+     "shan": 6,
+     "xiang": 1
+    },
+    "离": {
+     "yun": 9,
+     "shan": 7,
+     "xiang": 2
+    }
+   }
+  },
+  {
+   "yun": 5,
+   "sit": "卯",
+   "sitCenter": 90,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 1,
+     "shan": 7,
+     "xiang": 2
+    },
+    "坤": {
+     "yun": 2,
+     "shan": 6,
+     "xiang": 1
+    },
+    "震": {
+     "yun": 3,
+     "shan": 5,
+     "xiang": 9
+    },
+    "巽": {
+     "yun": 4,
+     "shan": 4,
+     "xiang": 8
+    },
+    "中": {
+     "yun": 5,
+     "shan": 3,
+     "xiang": 7
+    },
+    "乾": {
+     "yun": 6,
+     "shan": 2,
+     "xiang": 6
+    },
+    "兑": {
+     "yun": 7,
+     "shan": 1,
+     "xiang": 5
+    },
+    "艮": {
+     "yun": 8,
+     "shan": 9,
+     "xiang": 4
+    },
+    "离": {
+     "yun": 9,
+     "shan": 8,
+     "xiang": 3
+    }
+   }
+  },
+  {
+   "yun": 5,
+   "sit": "乙",
+   "sitCenter": 105,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 1,
+     "shan": 7,
+     "xiang": 2
+    },
+    "坤": {
+     "yun": 2,
+     "shan": 6,
+     "xiang": 1
+    },
+    "震": {
+     "yun": 3,
+     "shan": 5,
+     "xiang": 9
+    },
+    "巽": {
+     "yun": 4,
+     "shan": 4,
+     "xiang": 8
+    },
+    "中": {
+     "yun": 5,
+     "shan": 3,
+     "xiang": 7
+    },
+    "乾": {
+     "yun": 6,
+     "shan": 2,
+     "xiang": 6
+    },
+    "兑": {
+     "yun": 7,
+     "shan": 1,
+     "xiang": 5
+    },
+    "艮": {
+     "yun": 8,
+     "shan": 9,
+     "xiang": 4
+    },
+    "离": {
+     "yun": 9,
+     "shan": 8,
+     "xiang": 3
+    }
+   }
+  },
+  {
+   "yun": 5,
+   "sit": "辰",
+   "sitCenter": 120,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 1,
+     "shan": 8,
+     "xiang": 1
+    },
+    "坤": {
+     "yun": 2,
+     "shan": 7,
+     "xiang": 9
+    },
+    "震": {
+     "yun": 3,
+     "shan": 6,
+     "xiang": 8
+    },
+    "巽": {
+     "yun": 4,
+     "shan": 5,
+     "xiang": 7
+    },
+    "中": {
+     "yun": 5,
+     "shan": 4,
+     "xiang": 6
+    },
+    "乾": {
+     "yun": 6,
+     "shan": 3,
+     "xiang": 5
+    },
+    "兑": {
+     "yun": 7,
+     "shan": 2,
+     "xiang": 4
+    },
+    "艮": {
+     "yun": 8,
+     "shan": 1,
+     "xiang": 3
+    },
+    "离": {
+     "yun": 9,
+     "shan": 9,
+     "xiang": 2
+    }
+   }
+  },
+  {
+   "yun": 5,
+   "sit": "巽",
+   "sitCenter": 135,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 1,
+     "shan": 9,
+     "xiang": 2
+    },
+    "坤": {
+     "yun": 2,
+     "shan": 1,
+     "xiang": 3
+    },
+    "震": {
+     "yun": 3,
+     "shan": 2,
+     "xiang": 4
+    },
+    "巽": {
+     "yun": 4,
+     "shan": 3,
+     "xiang": 5
+    },
+    "中": {
+     "yun": 5,
+     "shan": 4,
+     "xiang": 6
+    },
+    "乾": {
+     "yun": 6,
+     "shan": 5,
+     "xiang": 7
+    },
+    "兑": {
+     "yun": 7,
+     "shan": 6,
+     "xiang": 8
+    },
+    "艮": {
+     "yun": 8,
+     "shan": 7,
+     "xiang": 9
+    },
+    "离": {
+     "yun": 9,
+     "shan": 8,
+     "xiang": 1
+    }
+   }
+  },
+  {
+   "yun": 5,
+   "sit": "巳",
+   "sitCenter": 150,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 1,
+     "shan": 9,
+     "xiang": 2
+    },
+    "坤": {
+     "yun": 2,
+     "shan": 1,
+     "xiang": 3
+    },
+    "震": {
+     "yun": 3,
+     "shan": 2,
+     "xiang": 4
+    },
+    "巽": {
+     "yun": 4,
+     "shan": 3,
+     "xiang": 5
+    },
+    "中": {
+     "yun": 5,
+     "shan": 4,
+     "xiang": 6
+    },
+    "乾": {
+     "yun": 6,
+     "shan": 5,
+     "xiang": 7
+    },
+    "兑": {
+     "yun": 7,
+     "shan": 6,
+     "xiang": 8
+    },
+    "艮": {
+     "yun": 8,
+     "shan": 7,
+     "xiang": 9
+    },
+    "离": {
+     "yun": 9,
+     "shan": 8,
+     "xiang": 1
+    }
+   }
+  },
+  {
+   "yun": 5,
+   "sit": "丙",
+   "sitCenter": 165,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 1,
+     "shan": 5,
+     "xiang": 6
+    },
+    "坤": {
+     "yun": 2,
+     "shan": 6,
+     "xiang": 7
+    },
+    "震": {
+     "yun": 3,
+     "shan": 7,
+     "xiang": 8
+    },
+    "巽": {
+     "yun": 4,
+     "shan": 8,
+     "xiang": 9
+    },
+    "中": {
+     "yun": 5,
+     "shan": 9,
+     "xiang": 1
+    },
+    "乾": {
+     "yun": 6,
+     "shan": 1,
+     "xiang": 2
+    },
+    "兑": {
+     "yun": 7,
+     "shan": 2,
+     "xiang": 3
+    },
+    "艮": {
+     "yun": 8,
+     "shan": 3,
+     "xiang": 4
+    },
+    "离": {
+     "yun": 9,
+     "shan": 4,
+     "xiang": 5
+    }
+   }
+  },
+  {
+   "yun": 5,
+   "sit": "午",
+   "sitCenter": 180,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 1,
+     "shan": 4,
+     "xiang": 5
+    },
+    "坤": {
+     "yun": 2,
+     "shan": 3,
+     "xiang": 4
+    },
+    "震": {
+     "yun": 3,
+     "shan": 2,
+     "xiang": 3
+    },
+    "巽": {
+     "yun": 4,
+     "shan": 1,
+     "xiang": 2
+    },
+    "中": {
+     "yun": 5,
+     "shan": 9,
+     "xiang": 1
+    },
+    "乾": {
+     "yun": 6,
+     "shan": 8,
+     "xiang": 9
+    },
+    "兑": {
+     "yun": 7,
+     "shan": 7,
+     "xiang": 8
+    },
+    "艮": {
+     "yun": 8,
+     "shan": 6,
+     "xiang": 7
+    },
+    "离": {
+     "yun": 9,
+     "shan": 5,
+     "xiang": 6
+    }
+   }
+  },
+  {
+   "yun": 5,
+   "sit": "丁",
+   "sitCenter": 195,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 1,
+     "shan": 4,
+     "xiang": 5
+    },
+    "坤": {
+     "yun": 2,
+     "shan": 3,
+     "xiang": 4
+    },
+    "震": {
+     "yun": 3,
+     "shan": 2,
+     "xiang": 3
+    },
+    "巽": {
+     "yun": 4,
+     "shan": 1,
+     "xiang": 2
+    },
+    "中": {
+     "yun": 5,
+     "shan": 9,
+     "xiang": 1
+    },
+    "乾": {
+     "yun": 6,
+     "shan": 8,
+     "xiang": 9
+    },
+    "兑": {
+     "yun": 7,
+     "shan": 7,
+     "xiang": 8
+    },
+    "艮": {
+     "yun": 8,
+     "shan": 6,
+     "xiang": 7
+    },
+    "离": {
+     "yun": 9,
+     "shan": 5,
+     "xiang": 6
+    }
+   }
+  },
+  {
+   "yun": 5,
+   "sit": "未",
+   "sitCenter": 210,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 1,
+     "shan": 6,
+     "xiang": 3
+    },
+    "坤": {
+     "yun": 2,
+     "shan": 5,
+     "xiang": 2
+    },
+    "震": {
+     "yun": 3,
+     "shan": 4,
+     "xiang": 1
+    },
+    "巽": {
+     "yun": 4,
+     "shan": 3,
+     "xiang": 9
+    },
+    "中": {
+     "yun": 5,
+     "shan": 2,
+     "xiang": 8
+    },
+    "乾": {
+     "yun": 6,
+     "shan": 1,
+     "xiang": 7
+    },
+    "兑": {
+     "yun": 7,
+     "shan": 9,
+     "xiang": 6
+    },
+    "艮": {
+     "yun": 8,
+     "shan": 8,
+     "xiang": 5
+    },
+    "离": {
+     "yun": 9,
+     "shan": 7,
+     "xiang": 4
+    }
+   }
+  },
+  {
+   "yun": 5,
+   "sit": "坤",
+   "sitCenter": 225,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 1,
+     "shan": 7,
+     "xiang": 4
+    },
+    "坤": {
+     "yun": 2,
+     "shan": 8,
+     "xiang": 5
+    },
+    "震": {
+     "yun": 3,
+     "shan": 9,
+     "xiang": 6
+    },
+    "巽": {
+     "yun": 4,
+     "shan": 1,
+     "xiang": 7
+    },
+    "中": {
+     "yun": 5,
+     "shan": 2,
+     "xiang": 8
+    },
+    "乾": {
+     "yun": 6,
+     "shan": 3,
+     "xiang": 9
+    },
+    "兑": {
+     "yun": 7,
+     "shan": 4,
+     "xiang": 1
+    },
+    "艮": {
+     "yun": 8,
+     "shan": 5,
+     "xiang": 2
+    },
+    "离": {
+     "yun": 9,
+     "shan": 6,
+     "xiang": 3
+    }
+   }
+  },
+  {
+   "yun": 5,
+   "sit": "申",
+   "sitCenter": 240,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 1,
+     "shan": 7,
+     "xiang": 4
+    },
+    "坤": {
+     "yun": 2,
+     "shan": 8,
+     "xiang": 5
+    },
+    "震": {
+     "yun": 3,
+     "shan": 9,
+     "xiang": 6
+    },
+    "巽": {
+     "yun": 4,
+     "shan": 1,
+     "xiang": 7
+    },
+    "中": {
+     "yun": 5,
+     "shan": 2,
+     "xiang": 8
+    },
+    "乾": {
+     "yun": 6,
+     "shan": 3,
+     "xiang": 9
+    },
+    "兑": {
+     "yun": 7,
+     "shan": 4,
+     "xiang": 1
+    },
+    "艮": {
+     "yun": 8,
+     "shan": 5,
+     "xiang": 2
+    },
+    "离": {
+     "yun": 9,
+     "shan": 6,
+     "xiang": 3
+    }
+   }
+  },
+  {
+   "yun": 5,
+   "sit": "庚",
+   "sitCenter": 255,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 1,
+     "shan": 3,
+     "xiang": 8
+    },
+    "坤": {
+     "yun": 2,
+     "shan": 4,
+     "xiang": 9
+    },
+    "震": {
+     "yun": 3,
+     "shan": 5,
+     "xiang": 1
+    },
+    "巽": {
+     "yun": 4,
+     "shan": 6,
+     "xiang": 2
+    },
+    "中": {
+     "yun": 5,
+     "shan": 7,
+     "xiang": 3
+    },
+    "乾": {
+     "yun": 6,
+     "shan": 8,
+     "xiang": 4
+    },
+    "兑": {
+     "yun": 7,
+     "shan": 9,
+     "xiang": 5
+    },
+    "艮": {
+     "yun": 8,
+     "shan": 1,
+     "xiang": 6
+    },
+    "离": {
+     "yun": 9,
+     "shan": 2,
+     "xiang": 7
+    }
+   }
+  },
+  {
+   "yun": 5,
+   "sit": "酉",
+   "sitCenter": 270,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 1,
+     "shan": 2,
+     "xiang": 7
+    },
+    "坤": {
+     "yun": 2,
+     "shan": 1,
+     "xiang": 6
+    },
+    "震": {
+     "yun": 3,
+     "shan": 9,
+     "xiang": 5
+    },
+    "巽": {
+     "yun": 4,
+     "shan": 8,
+     "xiang": 4
+    },
+    "中": {
+     "yun": 5,
+     "shan": 7,
+     "xiang": 3
+    },
+    "乾": {
+     "yun": 6,
+     "shan": 6,
+     "xiang": 2
+    },
+    "兑": {
+     "yun": 7,
+     "shan": 5,
+     "xiang": 1
+    },
+    "艮": {
+     "yun": 8,
+     "shan": 4,
+     "xiang": 9
+    },
+    "离": {
+     "yun": 9,
+     "shan": 3,
+     "xiang": 8
+    }
+   }
+  },
+  {
+   "yun": 5,
+   "sit": "辛",
+   "sitCenter": 285,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 1,
+     "shan": 2,
+     "xiang": 7
+    },
+    "坤": {
+     "yun": 2,
+     "shan": 1,
+     "xiang": 6
+    },
+    "震": {
+     "yun": 3,
+     "shan": 9,
+     "xiang": 5
+    },
+    "巽": {
+     "yun": 4,
+     "shan": 8,
+     "xiang": 4
+    },
+    "中": {
+     "yun": 5,
+     "shan": 7,
+     "xiang": 3
+    },
+    "乾": {
+     "yun": 6,
+     "shan": 6,
+     "xiang": 2
+    },
+    "兑": {
+     "yun": 7,
+     "shan": 5,
+     "xiang": 1
+    },
+    "艮": {
+     "yun": 8,
+     "shan": 4,
+     "xiang": 9
+    },
+    "离": {
+     "yun": 9,
+     "shan": 3,
+     "xiang": 8
+    }
+   }
+  },
+  {
+   "yun": 5,
+   "sit": "戌",
+   "sitCenter": 300,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 1,
+     "shan": 1,
+     "xiang": 8
+    },
+    "坤": {
+     "yun": 2,
+     "shan": 9,
+     "xiang": 7
+    },
+    "震": {
+     "yun": 3,
+     "shan": 8,
+     "xiang": 6
+    },
+    "巽": {
+     "yun": 4,
+     "shan": 7,
+     "xiang": 5
+    },
+    "中": {
+     "yun": 5,
+     "shan": 6,
+     "xiang": 4
+    },
+    "乾": {
+     "yun": 6,
+     "shan": 5,
+     "xiang": 3
+    },
+    "兑": {
+     "yun": 7,
+     "shan": 4,
+     "xiang": 2
+    },
+    "艮": {
+     "yun": 8,
+     "shan": 3,
+     "xiang": 1
+    },
+    "离": {
+     "yun": 9,
+     "shan": 2,
+     "xiang": 9
+    }
+   }
+  },
+  {
+   "yun": 5,
+   "sit": "乾",
+   "sitCenter": 315,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 1,
+     "shan": 2,
+     "xiang": 9
+    },
+    "坤": {
+     "yun": 2,
+     "shan": 3,
+     "xiang": 1
+    },
+    "震": {
+     "yun": 3,
+     "shan": 4,
+     "xiang": 2
+    },
+    "巽": {
+     "yun": 4,
+     "shan": 5,
+     "xiang": 3
+    },
+    "中": {
+     "yun": 5,
+     "shan": 6,
+     "xiang": 4
+    },
+    "乾": {
+     "yun": 6,
+     "shan": 7,
+     "xiang": 5
+    },
+    "兑": {
+     "yun": 7,
+     "shan": 8,
+     "xiang": 6
+    },
+    "艮": {
+     "yun": 8,
+     "shan": 9,
+     "xiang": 7
+    },
+    "离": {
+     "yun": 9,
+     "shan": 1,
+     "xiang": 8
+    }
+   }
+  },
+  {
+   "yun": 5,
+   "sit": "亥",
+   "sitCenter": 330,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 1,
+     "shan": 2,
+     "xiang": 9
+    },
+    "坤": {
+     "yun": 2,
+     "shan": 3,
+     "xiang": 1
+    },
+    "震": {
+     "yun": 3,
+     "shan": 4,
+     "xiang": 2
+    },
+    "巽": {
+     "yun": 4,
+     "shan": 5,
+     "xiang": 3
+    },
+    "中": {
+     "yun": 5,
+     "shan": 6,
+     "xiang": 4
+    },
+    "乾": {
+     "yun": 6,
+     "shan": 7,
+     "xiang": 5
+    },
+    "兑": {
+     "yun": 7,
+     "shan": 8,
+     "xiang": 6
+    },
+    "艮": {
+     "yun": 8,
+     "shan": 9,
+     "xiang": 7
+    },
+    "离": {
+     "yun": 9,
+     "shan": 1,
+     "xiang": 8
+    }
+   }
+  },
+  {
+   "yun": 5,
+   "sit": "壬",
+   "sitCenter": 345,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 1,
+     "shan": 6,
+     "xiang": 5
+    },
+    "坤": {
+     "yun": 2,
+     "shan": 7,
+     "xiang": 6
+    },
+    "震": {
+     "yun": 3,
+     "shan": 8,
+     "xiang": 7
+    },
+    "巽": {
+     "yun": 4,
+     "shan": 9,
+     "xiang": 8
+    },
+    "中": {
+     "yun": 5,
+     "shan": 1,
+     "xiang": 9
+    },
+    "乾": {
+     "yun": 6,
+     "shan": 2,
+     "xiang": 1
+    },
+    "兑": {
+     "yun": 7,
+     "shan": 3,
+     "xiang": 2
+    },
+    "艮": {
+     "yun": 8,
+     "shan": 4,
+     "xiang": 3
+    },
+    "离": {
+     "yun": 9,
+     "shan": 5,
+     "xiang": 4
+    }
+   }
+  },
+  {
+   "yun": 6,
+   "sit": "子",
+   "sitCenter": 0,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 2,
+     "shan": 7,
+     "xiang": 5
+    },
+    "坤": {
+     "yun": 3,
+     "shan": 8,
+     "xiang": 4
+    },
+    "震": {
+     "yun": 4,
+     "shan": 9,
+     "xiang": 3
+    },
+    "巽": {
+     "yun": 5,
+     "shan": 1,
+     "xiang": 2
+    },
+    "中": {
+     "yun": 6,
+     "shan": 2,
+     "xiang": 1
+    },
+    "乾": {
+     "yun": 7,
+     "shan": 3,
+     "xiang": 9
+    },
+    "兑": {
+     "yun": 8,
+     "shan": 4,
+     "xiang": 8
+    },
+    "艮": {
+     "yun": 9,
+     "shan": 5,
+     "xiang": 7
+    },
+    "离": {
+     "yun": 1,
+     "shan": 6,
+     "xiang": 6
+    }
+   }
+  },
+  {
+   "yun": 6,
+   "sit": "癸",
+   "sitCenter": 15,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 2,
+     "shan": 7,
+     "xiang": 5
+    },
+    "坤": {
+     "yun": 3,
+     "shan": 8,
+     "xiang": 4
+    },
+    "震": {
+     "yun": 4,
+     "shan": 9,
+     "xiang": 3
+    },
+    "巽": {
+     "yun": 5,
+     "shan": 1,
+     "xiang": 2
+    },
+    "中": {
+     "yun": 6,
+     "shan": 2,
+     "xiang": 1
+    },
+    "乾": {
+     "yun": 7,
+     "shan": 3,
+     "xiang": 9
+    },
+    "兑": {
+     "yun": 8,
+     "shan": 4,
+     "xiang": 8
+    },
+    "艮": {
+     "yun": 9,
+     "shan": 5,
+     "xiang": 7
+    },
+    "离": {
+     "yun": 1,
+     "shan": 6,
+     "xiang": 6
+    }
+   }
+  },
+  {
+   "yun": 6,
+   "sit": "丑",
+   "sitCenter": 30,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 2,
+     "shan": 5,
+     "xiang": 8
+    },
+    "坤": {
+     "yun": 3,
+     "shan": 6,
+     "xiang": 9
+    },
+    "震": {
+     "yun": 4,
+     "shan": 7,
+     "xiang": 1
+    },
+    "巽": {
+     "yun": 5,
+     "shan": 8,
+     "xiang": 2
+    },
+    "中": {
+     "yun": 6,
+     "shan": 9,
+     "xiang": 3
+    },
+    "乾": {
+     "yun": 7,
+     "shan": 1,
+     "xiang": 4
+    },
+    "兑": {
+     "yun": 8,
+     "shan": 2,
+     "xiang": 5
+    },
+    "艮": {
+     "yun": 9,
+     "shan": 3,
+     "xiang": 6
+    },
+    "离": {
+     "yun": 1,
+     "shan": 4,
+     "xiang": 7
+    }
+   }
+  },
+  {
+   "yun": 6,
+   "sit": "艮",
+   "sitCenter": 45,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 2,
+     "shan": 4,
+     "xiang": 7
+    },
+    "坤": {
+     "yun": 3,
+     "shan": 3,
+     "xiang": 6
+    },
+    "震": {
+     "yun": 4,
+     "shan": 2,
+     "xiang": 5
+    },
+    "巽": {
+     "yun": 5,
+     "shan": 1,
+     "xiang": 4
+    },
+    "中": {
+     "yun": 6,
+     "shan": 9,
+     "xiang": 3
+    },
+    "乾": {
+     "yun": 7,
+     "shan": 8,
+     "xiang": 2
+    },
+    "兑": {
+     "yun": 8,
+     "shan": 7,
+     "xiang": 1
+    },
+    "艮": {
+     "yun": 9,
+     "shan": 6,
+     "xiang": 9
+    },
+    "离": {
+     "yun": 1,
+     "shan": 5,
+     "xiang": 8
+    }
+   }
+  },
+  {
+   "yun": 6,
+   "sit": "寅",
+   "sitCenter": 60,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 2,
+     "shan": 4,
+     "xiang": 7
+    },
+    "坤": {
+     "yun": 3,
+     "shan": 3,
+     "xiang": 6
+    },
+    "震": {
+     "yun": 4,
+     "shan": 2,
+     "xiang": 5
+    },
+    "巽": {
+     "yun": 5,
+     "shan": 1,
+     "xiang": 4
+    },
+    "中": {
+     "yun": 6,
+     "shan": 9,
+     "xiang": 3
+    },
+    "乾": {
+     "yun": 7,
+     "shan": 8,
+     "xiang": 2
+    },
+    "兑": {
+     "yun": 8,
+     "shan": 7,
+     "xiang": 1
+    },
+    "艮": {
+     "yun": 9,
+     "shan": 6,
+     "xiang": 9
+    },
+    "离": {
+     "yun": 1,
+     "shan": 5,
+     "xiang": 8
+    }
+   }
+  },
+  {
+   "yun": 6,
+   "sit": "甲",
+   "sitCenter": 75,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 2,
+     "shan": 8,
+     "xiang": 3
+    },
+    "坤": {
+     "yun": 3,
+     "shan": 7,
+     "xiang": 2
+    },
+    "震": {
+     "yun": 4,
+     "shan": 6,
+     "xiang": 1
+    },
+    "巽": {
+     "yun": 5,
+     "shan": 5,
+     "xiang": 9
+    },
+    "中": {
+     "yun": 6,
+     "shan": 4,
+     "xiang": 8
+    },
+    "乾": {
+     "yun": 7,
+     "shan": 3,
+     "xiang": 7
+    },
+    "兑": {
+     "yun": 8,
+     "shan": 2,
+     "xiang": 6
+    },
+    "艮": {
+     "yun": 9,
+     "shan": 1,
+     "xiang": 5
+    },
+    "离": {
+     "yun": 1,
+     "shan": 9,
+     "xiang": 4
+    }
+   }
+  },
+  {
+   "yun": 6,
+   "sit": "卯",
+   "sitCenter": 90,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 2,
+     "shan": 9,
+     "xiang": 4
+    },
+    "坤": {
+     "yun": 3,
+     "shan": 1,
+     "xiang": 5
+    },
+    "震": {
+     "yun": 4,
+     "shan": 2,
+     "xiang": 6
+    },
+    "巽": {
+     "yun": 5,
+     "shan": 3,
+     "xiang": 7
+    },
+    "中": {
+     "yun": 6,
+     "shan": 4,
+     "xiang": 8
+    },
+    "乾": {
+     "yun": 7,
+     "shan": 5,
+     "xiang": 9
+    },
+    "兑": {
+     "yun": 8,
+     "shan": 6,
+     "xiang": 1
+    },
+    "艮": {
+     "yun": 9,
+     "shan": 7,
+     "xiang": 2
+    },
+    "离": {
+     "yun": 1,
+     "shan": 8,
+     "xiang": 3
+    }
+   }
+  },
+  {
+   "yun": 6,
+   "sit": "乙",
+   "sitCenter": 105,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 2,
+     "shan": 9,
+     "xiang": 4
+    },
+    "坤": {
+     "yun": 3,
+     "shan": 1,
+     "xiang": 5
+    },
+    "震": {
+     "yun": 4,
+     "shan": 2,
+     "xiang": 6
+    },
+    "巽": {
+     "yun": 5,
+     "shan": 3,
+     "xiang": 7
+    },
+    "中": {
+     "yun": 6,
+     "shan": 4,
+     "xiang": 8
+    },
+    "乾": {
+     "yun": 7,
+     "shan": 5,
+     "xiang": 9
+    },
+    "兑": {
+     "yun": 8,
+     "shan": 6,
+     "xiang": 1
+    },
+    "艮": {
+     "yun": 9,
+     "shan": 7,
+     "xiang": 2
+    },
+    "离": {
+     "yun": 1,
+     "shan": 8,
+     "xiang": 3
+    }
+   }
+  },
+  {
+   "yun": 6,
+   "sit": "辰",
+   "sitCenter": 120,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 2,
+     "shan": 9,
+     "xiang": 3
+    },
+    "坤": {
+     "yun": 3,
+     "shan": 8,
+     "xiang": 4
+    },
+    "震": {
+     "yun": 4,
+     "shan": 7,
+     "xiang": 5
+    },
+    "巽": {
+     "yun": 5,
+     "shan": 6,
+     "xiang": 6
+    },
+    "中": {
+     "yun": 6,
+     "shan": 5,
+     "xiang": 7
+    },
+    "乾": {
+     "yun": 7,
+     "shan": 4,
+     "xiang": 8
+    },
+    "兑": {
+     "yun": 8,
+     "shan": 3,
+     "xiang": 9
+    },
+    "艮": {
+     "yun": 9,
+     "shan": 2,
+     "xiang": 1
+    },
+    "离": {
+     "yun": 1,
+     "shan": 1,
+     "xiang": 2
+    }
+   }
+  },
+  {
+   "yun": 6,
+   "sit": "巽",
+   "sitCenter": 135,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 2,
+     "shan": 1,
+     "xiang": 2
+    },
+    "坤": {
+     "yun": 3,
+     "shan": 2,
+     "xiang": 1
+    },
+    "震": {
+     "yun": 4,
+     "shan": 3,
+     "xiang": 9
+    },
+    "巽": {
+     "yun": 5,
+     "shan": 4,
+     "xiang": 8
+    },
+    "中": {
+     "yun": 6,
+     "shan": 5,
+     "xiang": 7
+    },
+    "乾": {
+     "yun": 7,
+     "shan": 6,
+     "xiang": 6
+    },
+    "兑": {
+     "yun": 8,
+     "shan": 7,
+     "xiang": 5
+    },
+    "艮": {
+     "yun": 9,
+     "shan": 8,
+     "xiang": 4
+    },
+    "离": {
+     "yun": 1,
+     "shan": 9,
+     "xiang": 3
+    }
+   }
+  },
+  {
+   "yun": 6,
+   "sit": "巳",
+   "sitCenter": 150,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 2,
+     "shan": 1,
+     "xiang": 2
+    },
+    "坤": {
+     "yun": 3,
+     "shan": 2,
+     "xiang": 1
+    },
+    "震": {
+     "yun": 4,
+     "shan": 3,
+     "xiang": 9
+    },
+    "巽": {
+     "yun": 5,
+     "shan": 4,
+     "xiang": 8
+    },
+    "中": {
+     "yun": 6,
+     "shan": 5,
+     "xiang": 7
+    },
+    "乾": {
+     "yun": 7,
+     "shan": 6,
+     "xiang": 6
+    },
+    "兑": {
+     "yun": 8,
+     "shan": 7,
+     "xiang": 5
+    },
+    "艮": {
+     "yun": 9,
+     "shan": 8,
+     "xiang": 4
+    },
+    "离": {
+     "yun": 1,
+     "shan": 9,
+     "xiang": 3
+    }
+   }
+  },
+  {
+   "yun": 6,
+   "sit": "丙",
+   "sitCenter": 165,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 2,
+     "shan": 6,
+     "xiang": 6
+    },
+    "坤": {
+     "yun": 3,
+     "shan": 7,
+     "xiang": 5
+    },
+    "震": {
+     "yun": 4,
+     "shan": 8,
+     "xiang": 4
+    },
+    "巽": {
+     "yun": 5,
+     "shan": 9,
+     "xiang": 3
+    },
+    "中": {
+     "yun": 6,
+     "shan": 1,
+     "xiang": 2
+    },
+    "乾": {
+     "yun": 7,
+     "shan": 2,
+     "xiang": 1
+    },
+    "兑": {
+     "yun": 8,
+     "shan": 3,
+     "xiang": 9
+    },
+    "艮": {
+     "yun": 9,
+     "shan": 4,
+     "xiang": 8
+    },
+    "离": {
+     "yun": 1,
+     "shan": 5,
+     "xiang": 7
+    }
+   }
+  },
+  {
+   "yun": 6,
+   "sit": "午",
+   "sitCenter": 180,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 2,
+     "shan": 5,
+     "xiang": 7
+    },
+    "坤": {
+     "yun": 3,
+     "shan": 4,
+     "xiang": 8
+    },
+    "震": {
+     "yun": 4,
+     "shan": 3,
+     "xiang": 9
+    },
+    "巽": {
+     "yun": 5,
+     "shan": 2,
+     "xiang": 1
+    },
+    "中": {
+     "yun": 6,
+     "shan": 1,
+     "xiang": 2
+    },
+    "乾": {
+     "yun": 7,
+     "shan": 9,
+     "xiang": 3
+    },
+    "兑": {
+     "yun": 8,
+     "shan": 8,
+     "xiang": 4
+    },
+    "艮": {
+     "yun": 9,
+     "shan": 7,
+     "xiang": 5
+    },
+    "离": {
+     "yun": 1,
+     "shan": 6,
+     "xiang": 6
+    }
+   }
+  },
+  {
+   "yun": 6,
+   "sit": "丁",
+   "sitCenter": 195,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 2,
+     "shan": 5,
+     "xiang": 7
+    },
+    "坤": {
+     "yun": 3,
+     "shan": 4,
+     "xiang": 8
+    },
+    "震": {
+     "yun": 4,
+     "shan": 3,
+     "xiang": 9
+    },
+    "巽": {
+     "yun": 5,
+     "shan": 2,
+     "xiang": 1
+    },
+    "中": {
+     "yun": 6,
+     "shan": 1,
+     "xiang": 2
+    },
+    "乾": {
+     "yun": 7,
+     "shan": 9,
+     "xiang": 3
+    },
+    "兑": {
+     "yun": 8,
+     "shan": 8,
+     "xiang": 4
+    },
+    "艮": {
+     "yun": 9,
+     "shan": 7,
+     "xiang": 5
+    },
+    "离": {
+     "yun": 1,
+     "shan": 6,
+     "xiang": 6
+    }
+   }
+  },
+  {
+   "yun": 6,
+   "sit": "未",
+   "sitCenter": 210,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 2,
+     "shan": 8,
+     "xiang": 5
+    },
+    "坤": {
+     "yun": 3,
+     "shan": 9,
+     "xiang": 6
+    },
+    "震": {
+     "yun": 4,
+     "shan": 1,
+     "xiang": 7
+    },
+    "巽": {
+     "yun": 5,
+     "shan": 2,
+     "xiang": 8
+    },
+    "中": {
+     "yun": 6,
+     "shan": 3,
+     "xiang": 9
+    },
+    "乾": {
+     "yun": 7,
+     "shan": 4,
+     "xiang": 1
+    },
+    "兑": {
+     "yun": 8,
+     "shan": 5,
+     "xiang": 2
+    },
+    "艮": {
+     "yun": 9,
+     "shan": 6,
+     "xiang": 3
+    },
+    "离": {
+     "yun": 1,
+     "shan": 7,
+     "xiang": 4
+    }
+   }
+  },
+  {
+   "yun": 6,
+   "sit": "坤",
+   "sitCenter": 225,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 2,
+     "shan": 7,
+     "xiang": 4
+    },
+    "坤": {
+     "yun": 3,
+     "shan": 6,
+     "xiang": 3
+    },
+    "震": {
+     "yun": 4,
+     "shan": 5,
+     "xiang": 2
+    },
+    "巽": {
+     "yun": 5,
+     "shan": 4,
+     "xiang": 1
+    },
+    "中": {
+     "yun": 6,
+     "shan": 3,
+     "xiang": 9
+    },
+    "乾": {
+     "yun": 7,
+     "shan": 2,
+     "xiang": 8
+    },
+    "兑": {
+     "yun": 8,
+     "shan": 1,
+     "xiang": 7
+    },
+    "艮": {
+     "yun": 9,
+     "shan": 9,
+     "xiang": 6
+    },
+    "离": {
+     "yun": 1,
+     "shan": 8,
+     "xiang": 5
+    }
+   }
+  },
+  {
+   "yun": 6,
+   "sit": "申",
+   "sitCenter": 240,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 2,
+     "shan": 7,
+     "xiang": 4
+    },
+    "坤": {
+     "yun": 3,
+     "shan": 6,
+     "xiang": 3
+    },
+    "震": {
+     "yun": 4,
+     "shan": 5,
+     "xiang": 2
+    },
+    "巽": {
+     "yun": 5,
+     "shan": 4,
+     "xiang": 1
+    },
+    "中": {
+     "yun": 6,
+     "shan": 3,
+     "xiang": 9
+    },
+    "乾": {
+     "yun": 7,
+     "shan": 2,
+     "xiang": 8
+    },
+    "兑": {
+     "yun": 8,
+     "shan": 1,
+     "xiang": 7
+    },
+    "艮": {
+     "yun": 9,
+     "shan": 9,
+     "xiang": 6
+    },
+    "离": {
+     "yun": 1,
+     "shan": 8,
+     "xiang": 5
+    }
+   }
+  },
+  {
+   "yun": 6,
+   "sit": "庚",
+   "sitCenter": 255,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 2,
+     "shan": 3,
+     "xiang": 8
+    },
+    "坤": {
+     "yun": 3,
+     "shan": 2,
+     "xiang": 7
+    },
+    "震": {
+     "yun": 4,
+     "shan": 1,
+     "xiang": 6
+    },
+    "巽": {
+     "yun": 5,
+     "shan": 9,
+     "xiang": 5
+    },
+    "中": {
+     "yun": 6,
+     "shan": 8,
+     "xiang": 4
+    },
+    "乾": {
+     "yun": 7,
+     "shan": 7,
+     "xiang": 3
+    },
+    "兑": {
+     "yun": 8,
+     "shan": 6,
+     "xiang": 2
+    },
+    "艮": {
+     "yun": 9,
+     "shan": 5,
+     "xiang": 1
+    },
+    "离": {
+     "yun": 1,
+     "shan": 4,
+     "xiang": 9
+    }
+   }
+  },
+  {
+   "yun": 6,
+   "sit": "酉",
+   "sitCenter": 270,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 2,
+     "shan": 4,
+     "xiang": 9
+    },
+    "坤": {
+     "yun": 3,
+     "shan": 5,
+     "xiang": 1
+    },
+    "震": {
+     "yun": 4,
+     "shan": 6,
+     "xiang": 2
+    },
+    "巽": {
+     "yun": 5,
+     "shan": 7,
+     "xiang": 3
+    },
+    "中": {
+     "yun": 6,
+     "shan": 8,
+     "xiang": 4
+    },
+    "乾": {
+     "yun": 7,
+     "shan": 9,
+     "xiang": 5
+    },
+    "兑": {
+     "yun": 8,
+     "shan": 1,
+     "xiang": 6
+    },
+    "艮": {
+     "yun": 9,
+     "shan": 2,
+     "xiang": 7
+    },
+    "离": {
+     "yun": 1,
+     "shan": 3,
+     "xiang": 8
+    }
+   }
+  },
+  {
+   "yun": 6,
+   "sit": "辛",
+   "sitCenter": 285,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 2,
+     "shan": 4,
+     "xiang": 9
+    },
+    "坤": {
+     "yun": 3,
+     "shan": 5,
+     "xiang": 1
+    },
+    "震": {
+     "yun": 4,
+     "shan": 6,
+     "xiang": 2
+    },
+    "巽": {
+     "yun": 5,
+     "shan": 7,
+     "xiang": 3
+    },
+    "中": {
+     "yun": 6,
+     "shan": 8,
+     "xiang": 4
+    },
+    "乾": {
+     "yun": 7,
+     "shan": 9,
+     "xiang": 5
+    },
+    "兑": {
+     "yun": 8,
+     "shan": 1,
+     "xiang": 6
+    },
+    "艮": {
+     "yun": 9,
+     "shan": 2,
+     "xiang": 7
+    },
+    "离": {
+     "yun": 1,
+     "shan": 3,
+     "xiang": 8
+    }
+   }
+  },
+  {
+   "yun": 6,
+   "sit": "戌",
+   "sitCenter": 300,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 2,
+     "shan": 3,
+     "xiang": 9
+    },
+    "坤": {
+     "yun": 3,
+     "shan": 4,
+     "xiang": 8
+    },
+    "震": {
+     "yun": 4,
+     "shan": 5,
+     "xiang": 7
+    },
+    "巽": {
+     "yun": 5,
+     "shan": 6,
+     "xiang": 6
+    },
+    "中": {
+     "yun": 6,
+     "shan": 7,
+     "xiang": 5
+    },
+    "乾": {
+     "yun": 7,
+     "shan": 8,
+     "xiang": 4
+    },
+    "兑": {
+     "yun": 8,
+     "shan": 9,
+     "xiang": 3
+    },
+    "艮": {
+     "yun": 9,
+     "shan": 1,
+     "xiang": 2
+    },
+    "离": {
+     "yun": 1,
+     "shan": 2,
+     "xiang": 1
+    }
+   }
+  },
+  {
+   "yun": 6,
+   "sit": "乾",
+   "sitCenter": 315,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 2,
+     "shan": 2,
+     "xiang": 1
+    },
+    "坤": {
+     "yun": 3,
+     "shan": 1,
+     "xiang": 2
+    },
+    "震": {
+     "yun": 4,
+     "shan": 9,
+     "xiang": 3
+    },
+    "巽": {
+     "yun": 5,
+     "shan": 8,
+     "xiang": 4
+    },
+    "中": {
+     "yun": 6,
+     "shan": 7,
+     "xiang": 5
+    },
+    "乾": {
+     "yun": 7,
+     "shan": 6,
+     "xiang": 6
+    },
+    "兑": {
+     "yun": 8,
+     "shan": 5,
+     "xiang": 7
+    },
+    "艮": {
+     "yun": 9,
+     "shan": 4,
+     "xiang": 8
+    },
+    "离": {
+     "yun": 1,
+     "shan": 3,
+     "xiang": 9
+    }
+   }
+  },
+  {
+   "yun": 6,
+   "sit": "亥",
+   "sitCenter": 330,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 2,
+     "shan": 2,
+     "xiang": 1
+    },
+    "坤": {
+     "yun": 3,
+     "shan": 1,
+     "xiang": 2
+    },
+    "震": {
+     "yun": 4,
+     "shan": 9,
+     "xiang": 3
+    },
+    "巽": {
+     "yun": 5,
+     "shan": 8,
+     "xiang": 4
+    },
+    "中": {
+     "yun": 6,
+     "shan": 7,
+     "xiang": 5
+    },
+    "乾": {
+     "yun": 7,
+     "shan": 6,
+     "xiang": 6
+    },
+    "兑": {
+     "yun": 8,
+     "shan": 5,
+     "xiang": 7
+    },
+    "艮": {
+     "yun": 9,
+     "shan": 4,
+     "xiang": 8
+    },
+    "离": {
+     "yun": 1,
+     "shan": 3,
+     "xiang": 9
+    }
+   }
+  },
+  {
+   "yun": 6,
+   "sit": "壬",
+   "sitCenter": 345,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 2,
+     "shan": 6,
+     "xiang": 6
+    },
+    "坤": {
+     "yun": 3,
+     "shan": 5,
+     "xiang": 7
+    },
+    "震": {
+     "yun": 4,
+     "shan": 4,
+     "xiang": 8
+    },
+    "巽": {
+     "yun": 5,
+     "shan": 3,
+     "xiang": 9
+    },
+    "中": {
+     "yun": 6,
+     "shan": 2,
+     "xiang": 1
+    },
+    "乾": {
+     "yun": 7,
+     "shan": 1,
+     "xiang": 2
+    },
+    "兑": {
+     "yun": 8,
+     "shan": 9,
+     "xiang": 3
+    },
+    "艮": {
+     "yun": 9,
+     "shan": 8,
+     "xiang": 4
+    },
+    "离": {
+     "yun": 1,
+     "shan": 7,
+     "xiang": 5
+    }
+   }
+  },
+  {
+   "yun": 7,
+   "sit": "子",
+   "sitCenter": 0,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 3,
+     "shan": 7,
+     "xiang": 7
+    },
+    "坤": {
+     "yun": 4,
+     "shan": 6,
+     "xiang": 8
+    },
+    "震": {
+     "yun": 5,
+     "shan": 5,
+     "xiang": 9
+    },
+    "巽": {
+     "yun": 6,
+     "shan": 4,
+     "xiang": 1
+    },
+    "中": {
+     "yun": 7,
+     "shan": 3,
+     "xiang": 2
+    },
+    "乾": {
+     "yun": 8,
+     "shan": 2,
+     "xiang": 3
+    },
+    "兑": {
+     "yun": 9,
+     "shan": 1,
+     "xiang": 4
+    },
+    "艮": {
+     "yun": 1,
+     "shan": 9,
+     "xiang": 5
+    },
+    "离": {
+     "yun": 2,
+     "shan": 8,
+     "xiang": 6
+    }
+   }
+  },
+  {
+   "yun": 7,
+   "sit": "癸",
+   "sitCenter": 15,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 3,
+     "shan": 7,
+     "xiang": 7
+    },
+    "坤": {
+     "yun": 4,
+     "shan": 6,
+     "xiang": 8
+    },
+    "震": {
+     "yun": 5,
+     "shan": 5,
+     "xiang": 9
+    },
+    "巽": {
+     "yun": 6,
+     "shan": 4,
+     "xiang": 1
+    },
+    "中": {
+     "yun": 7,
+     "shan": 3,
+     "xiang": 2
+    },
+    "乾": {
+     "yun": 8,
+     "shan": 2,
+     "xiang": 3
+    },
+    "兑": {
+     "yun": 9,
+     "shan": 1,
+     "xiang": 4
+    },
+    "艮": {
+     "yun": 1,
+     "shan": 9,
+     "xiang": 5
+    },
+    "离": {
+     "yun": 2,
+     "shan": 8,
+     "xiang": 6
+    }
+   }
+  },
+  {
+   "yun": 7,
+   "sit": "丑",
+   "sitCenter": 30,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 3,
+     "shan": 6,
+     "xiang": 8
+    },
+    "坤": {
+     "yun": 4,
+     "shan": 7,
+     "xiang": 7
+    },
+    "震": {
+     "yun": 5,
+     "shan": 8,
+     "xiang": 6
+    },
+    "巽": {
+     "yun": 6,
+     "shan": 9,
+     "xiang": 5
+    },
+    "中": {
+     "yun": 7,
+     "shan": 1,
+     "xiang": 4
+    },
+    "乾": {
+     "yun": 8,
+     "shan": 2,
+     "xiang": 3
+    },
+    "兑": {
+     "yun": 9,
+     "shan": 3,
+     "xiang": 2
+    },
+    "艮": {
+     "yun": 1,
+     "shan": 4,
+     "xiang": 1
+    },
+    "离": {
+     "yun": 2,
+     "shan": 5,
+     "xiang": 9
+    }
+   }
+  },
+  {
+   "yun": 7,
+   "sit": "艮",
+   "sitCenter": 45,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 3,
+     "shan": 5,
+     "xiang": 9
+    },
+    "坤": {
+     "yun": 4,
+     "shan": 4,
+     "xiang": 1
+    },
+    "震": {
+     "yun": 5,
+     "shan": 3,
+     "xiang": 2
+    },
+    "巽": {
+     "yun": 6,
+     "shan": 2,
+     "xiang": 3
+    },
+    "中": {
+     "yun": 7,
+     "shan": 1,
+     "xiang": 4
+    },
+    "乾": {
+     "yun": 8,
+     "shan": 9,
+     "xiang": 5
+    },
+    "兑": {
+     "yun": 9,
+     "shan": 8,
+     "xiang": 6
+    },
+    "艮": {
+     "yun": 1,
+     "shan": 7,
+     "xiang": 7
+    },
+    "离": {
+     "yun": 2,
+     "shan": 6,
+     "xiang": 8
+    }
+   }
+  },
+  {
+   "yun": 7,
+   "sit": "寅",
+   "sitCenter": 60,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 3,
+     "shan": 5,
+     "xiang": 9
+    },
+    "坤": {
+     "yun": 4,
+     "shan": 4,
+     "xiang": 1
+    },
+    "震": {
+     "yun": 5,
+     "shan": 3,
+     "xiang": 2
+    },
+    "巽": {
+     "yun": 6,
+     "shan": 2,
+     "xiang": 3
+    },
+    "中": {
+     "yun": 7,
+     "shan": 1,
+     "xiang": 4
+    },
+    "乾": {
+     "yun": 8,
+     "shan": 9,
+     "xiang": 5
+    },
+    "兑": {
+     "yun": 9,
+     "shan": 8,
+     "xiang": 6
+    },
+    "艮": {
+     "yun": 1,
+     "shan": 7,
+     "xiang": 7
+    },
+    "离": {
+     "yun": 2,
+     "shan": 6,
+     "xiang": 8
+    }
+   }
+  },
+  {
+   "yun": 7,
+   "sit": "甲",
+   "sitCenter": 75,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 3,
+     "shan": 1,
+     "xiang": 5
+    },
+    "坤": {
+     "yun": 4,
+     "shan": 2,
+     "xiang": 6
+    },
+    "震": {
+     "yun": 5,
+     "shan": 3,
+     "xiang": 7
+    },
+    "巽": {
+     "yun": 6,
+     "shan": 4,
+     "xiang": 8
+    },
+    "中": {
+     "yun": 7,
+     "shan": 5,
+     "xiang": 9
+    },
+    "乾": {
+     "yun": 8,
+     "shan": 6,
+     "xiang": 1
+    },
+    "兑": {
+     "yun": 9,
+     "shan": 7,
+     "xiang": 2
+    },
+    "艮": {
+     "yun": 1,
+     "shan": 8,
+     "xiang": 3
+    },
+    "离": {
+     "yun": 2,
+     "shan": 9,
+     "xiang": 4
+    }
+   }
+  },
+  {
+   "yun": 7,
+   "sit": "卯",
+   "sitCenter": 90,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 3,
+     "shan": 9,
+     "xiang": 4
+    },
+    "坤": {
+     "yun": 4,
+     "shan": 8,
+     "xiang": 3
+    },
+    "震": {
+     "yun": 5,
+     "shan": 7,
+     "xiang": 2
+    },
+    "巽": {
+     "yun": 6,
+     "shan": 6,
+     "xiang": 1
+    },
+    "中": {
+     "yun": 7,
+     "shan": 5,
+     "xiang": 9
+    },
+    "乾": {
+     "yun": 8,
+     "shan": 4,
+     "xiang": 8
+    },
+    "兑": {
+     "yun": 9,
+     "shan": 3,
+     "xiang": 7
+    },
+    "艮": {
+     "yun": 1,
+     "shan": 2,
+     "xiang": 6
+    },
+    "离": {
+     "yun": 2,
+     "shan": 1,
+     "xiang": 5
+    }
+   }
+  },
+  {
+   "yun": 7,
+   "sit": "乙",
+   "sitCenter": 105,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 3,
+     "shan": 9,
+     "xiang": 4
+    },
+    "坤": {
+     "yun": 4,
+     "shan": 8,
+     "xiang": 3
+    },
+    "震": {
+     "yun": 5,
+     "shan": 7,
+     "xiang": 2
+    },
+    "巽": {
+     "yun": 6,
+     "shan": 6,
+     "xiang": 1
+    },
+    "中": {
+     "yun": 7,
+     "shan": 5,
+     "xiang": 9
+    },
+    "乾": {
+     "yun": 8,
+     "shan": 4,
+     "xiang": 8
+    },
+    "兑": {
+     "yun": 9,
+     "shan": 3,
+     "xiang": 7
+    },
+    "艮": {
+     "yun": 1,
+     "shan": 2,
+     "xiang": 6
+    },
+    "离": {
+     "yun": 2,
+     "shan": 1,
+     "xiang": 5
+    }
+   }
+  },
+  {
+   "yun": 7,
+   "sit": "辰",
+   "sitCenter": 120,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 3,
+     "shan": 1,
+     "xiang": 3
+    },
+    "坤": {
+     "yun": 4,
+     "shan": 9,
+     "xiang": 2
+    },
+    "震": {
+     "yun": 5,
+     "shan": 8,
+     "xiang": 1
+    },
+    "巽": {
+     "yun": 6,
+     "shan": 7,
+     "xiang": 9
+    },
+    "中": {
+     "yun": 7,
+     "shan": 6,
+     "xiang": 8
+    },
+    "乾": {
+     "yun": 8,
+     "shan": 5,
+     "xiang": 7
+    },
+    "兑": {
+     "yun": 9,
+     "shan": 4,
+     "xiang": 6
+    },
+    "艮": {
+     "yun": 1,
+     "shan": 3,
+     "xiang": 5
+    },
+    "离": {
+     "yun": 2,
+     "shan": 2,
+     "xiang": 4
+    }
+   }
+  },
+  {
+   "yun": 7,
+   "sit": "巽",
+   "sitCenter": 135,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 3,
+     "shan": 2,
+     "xiang": 4
+    },
+    "坤": {
+     "yun": 4,
+     "shan": 3,
+     "xiang": 5
+    },
+    "震": {
+     "yun": 5,
+     "shan": 4,
+     "xiang": 6
+    },
+    "巽": {
+     "yun": 6,
+     "shan": 5,
+     "xiang": 7
+    },
+    "中": {
+     "yun": 7,
+     "shan": 6,
+     "xiang": 8
+    },
+    "乾": {
+     "yun": 8,
+     "shan": 7,
+     "xiang": 9
+    },
+    "兑": {
+     "yun": 9,
+     "shan": 8,
+     "xiang": 1
+    },
+    "艮": {
+     "yun": 1,
+     "shan": 9,
+     "xiang": 2
+    },
+    "离": {
+     "yun": 2,
+     "shan": 1,
+     "xiang": 3
+    }
+   }
+  },
+  {
+   "yun": 7,
+   "sit": "巳",
+   "sitCenter": 150,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 3,
+     "shan": 2,
+     "xiang": 4
+    },
+    "坤": {
+     "yun": 4,
+     "shan": 3,
+     "xiang": 5
+    },
+    "震": {
+     "yun": 5,
+     "shan": 4,
+     "xiang": 6
+    },
+    "巽": {
+     "yun": 6,
+     "shan": 5,
+     "xiang": 7
+    },
+    "中": {
+     "yun": 7,
+     "shan": 6,
+     "xiang": 8
+    },
+    "乾": {
+     "yun": 8,
+     "shan": 7,
+     "xiang": 9
+    },
+    "兑": {
+     "yun": 9,
+     "shan": 8,
+     "xiang": 1
+    },
+    "艮": {
+     "yun": 1,
+     "shan": 9,
+     "xiang": 2
+    },
+    "离": {
+     "yun": 2,
+     "shan": 1,
+     "xiang": 3
+    }
+   }
+  },
+  {
+   "yun": 7,
+   "sit": "丙",
+   "sitCenter": 165,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 3,
+     "shan": 6,
+     "xiang": 8
+    },
+    "坤": {
+     "yun": 4,
+     "shan": 5,
+     "xiang": 9
+    },
+    "震": {
+     "yun": 5,
+     "shan": 4,
+     "xiang": 1
+    },
+    "巽": {
+     "yun": 6,
+     "shan": 3,
+     "xiang": 2
+    },
+    "中": {
+     "yun": 7,
+     "shan": 2,
+     "xiang": 3
+    },
+    "乾": {
+     "yun": 8,
+     "shan": 1,
+     "xiang": 4
+    },
+    "兑": {
+     "yun": 9,
+     "shan": 9,
+     "xiang": 5
+    },
+    "艮": {
+     "yun": 1,
+     "shan": 8,
+     "xiang": 6
+    },
+    "离": {
+     "yun": 2,
+     "shan": 7,
+     "xiang": 7
+    }
+   }
+  },
+  {
+   "yun": 7,
+   "sit": "午",
+   "sitCenter": 180,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 3,
+     "shan": 7,
+     "xiang": 7
+    },
+    "坤": {
+     "yun": 4,
+     "shan": 8,
+     "xiang": 6
+    },
+    "震": {
+     "yun": 5,
+     "shan": 9,
+     "xiang": 5
+    },
+    "巽": {
+     "yun": 6,
+     "shan": 1,
+     "xiang": 4
+    },
+    "中": {
+     "yun": 7,
+     "shan": 2,
+     "xiang": 3
+    },
+    "乾": {
+     "yun": 8,
+     "shan": 3,
+     "xiang": 2
+    },
+    "兑": {
+     "yun": 9,
+     "shan": 4,
+     "xiang": 1
+    },
+    "艮": {
+     "yun": 1,
+     "shan": 5,
+     "xiang": 9
+    },
+    "离": {
+     "yun": 2,
+     "shan": 6,
+     "xiang": 8
+    }
+   }
+  },
+  {
+   "yun": 7,
+   "sit": "丁",
+   "sitCenter": 195,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 3,
+     "shan": 7,
+     "xiang": 7
+    },
+    "坤": {
+     "yun": 4,
+     "shan": 8,
+     "xiang": 6
+    },
+    "震": {
+     "yun": 5,
+     "shan": 9,
+     "xiang": 5
+    },
+    "巽": {
+     "yun": 6,
+     "shan": 1,
+     "xiang": 4
+    },
+    "中": {
+     "yun": 7,
+     "shan": 2,
+     "xiang": 3
+    },
+    "乾": {
+     "yun": 8,
+     "shan": 3,
+     "xiang": 2
+    },
+    "兑": {
+     "yun": 9,
+     "shan": 4,
+     "xiang": 1
+    },
+    "艮": {
+     "yun": 1,
+     "shan": 5,
+     "xiang": 9
+    },
+    "离": {
+     "yun": 2,
+     "shan": 6,
+     "xiang": 8
+    }
+   }
+  },
+  {
+   "yun": 7,
+   "sit": "未",
+   "sitCenter": 210,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 3,
+     "shan": 8,
+     "xiang": 6
+    },
+    "坤": {
+     "yun": 4,
+     "shan": 7,
+     "xiang": 7
+    },
+    "震": {
+     "yun": 5,
+     "shan": 6,
+     "xiang": 8
+    },
+    "巽": {
+     "yun": 6,
+     "shan": 5,
+     "xiang": 9
+    },
+    "中": {
+     "yun": 7,
+     "shan": 4,
+     "xiang": 1
+    },
+    "乾": {
+     "yun": 8,
+     "shan": 3,
+     "xiang": 2
+    },
+    "兑": {
+     "yun": 9,
+     "shan": 2,
+     "xiang": 3
+    },
+    "艮": {
+     "yun": 1,
+     "shan": 1,
+     "xiang": 4
+    },
+    "离": {
+     "yun": 2,
+     "shan": 9,
+     "xiang": 5
+    }
+   }
+  },
+  {
+   "yun": 7,
+   "sit": "坤",
+   "sitCenter": 225,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 3,
+     "shan": 9,
+     "xiang": 5
+    },
+    "坤": {
+     "yun": 4,
+     "shan": 1,
+     "xiang": 4
+    },
+    "震": {
+     "yun": 5,
+     "shan": 2,
+     "xiang": 3
+    },
+    "巽": {
+     "yun": 6,
+     "shan": 3,
+     "xiang": 2
+    },
+    "中": {
+     "yun": 7,
+     "shan": 4,
+     "xiang": 1
+    },
+    "乾": {
+     "yun": 8,
+     "shan": 5,
+     "xiang": 9
+    },
+    "兑": {
+     "yun": 9,
+     "shan": 6,
+     "xiang": 8
+    },
+    "艮": {
+     "yun": 1,
+     "shan": 7,
+     "xiang": 7
+    },
+    "离": {
+     "yun": 2,
+     "shan": 8,
+     "xiang": 6
+    }
+   }
+  },
+  {
+   "yun": 7,
+   "sit": "申",
+   "sitCenter": 240,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 3,
+     "shan": 9,
+     "xiang": 5
+    },
+    "坤": {
+     "yun": 4,
+     "shan": 1,
+     "xiang": 4
+    },
+    "震": {
+     "yun": 5,
+     "shan": 2,
+     "xiang": 3
+    },
+    "巽": {
+     "yun": 6,
+     "shan": 3,
+     "xiang": 2
+    },
+    "中": {
+     "yun": 7,
+     "shan": 4,
+     "xiang": 1
+    },
+    "乾": {
+     "yun": 8,
+     "shan": 5,
+     "xiang": 9
+    },
+    "兑": {
+     "yun": 9,
+     "shan": 6,
+     "xiang": 8
+    },
+    "艮": {
+     "yun": 1,
+     "shan": 7,
+     "xiang": 7
+    },
+    "离": {
+     "yun": 2,
+     "shan": 8,
+     "xiang": 6
+    }
+   }
+  },
+  {
+   "yun": 7,
+   "sit": "庚",
+   "sitCenter": 255,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 3,
+     "shan": 5,
+     "xiang": 1
+    },
+    "坤": {
+     "yun": 4,
+     "shan": 6,
+     "xiang": 2
+    },
+    "震": {
+     "yun": 5,
+     "shan": 7,
+     "xiang": 3
+    },
+    "巽": {
+     "yun": 6,
+     "shan": 8,
+     "xiang": 4
+    },
+    "中": {
+     "yun": 7,
+     "shan": 9,
+     "xiang": 5
+    },
+    "乾": {
+     "yun": 8,
+     "shan": 1,
+     "xiang": 6
+    },
+    "兑": {
+     "yun": 9,
+     "shan": 2,
+     "xiang": 7
+    },
+    "艮": {
+     "yun": 1,
+     "shan": 3,
+     "xiang": 8
+    },
+    "离": {
+     "yun": 2,
+     "shan": 4,
+     "xiang": 9
+    }
+   }
+  },
+  {
+   "yun": 7,
+   "sit": "酉",
+   "sitCenter": 270,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 3,
+     "shan": 4,
+     "xiang": 9
+    },
+    "坤": {
+     "yun": 4,
+     "shan": 3,
+     "xiang": 8
+    },
+    "震": {
+     "yun": 5,
+     "shan": 2,
+     "xiang": 7
+    },
+    "巽": {
+     "yun": 6,
+     "shan": 1,
+     "xiang": 6
+    },
+    "中": {
+     "yun": 7,
+     "shan": 9,
+     "xiang": 5
+    },
+    "乾": {
+     "yun": 8,
+     "shan": 8,
+     "xiang": 4
+    },
+    "兑": {
+     "yun": 9,
+     "shan": 7,
+     "xiang": 3
+    },
+    "艮": {
+     "yun": 1,
+     "shan": 6,
+     "xiang": 2
+    },
+    "离": {
+     "yun": 2,
+     "shan": 5,
+     "xiang": 1
+    }
+   }
+  },
+  {
+   "yun": 7,
+   "sit": "辛",
+   "sitCenter": 285,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 3,
+     "shan": 4,
+     "xiang": 9
+    },
+    "坤": {
+     "yun": 4,
+     "shan": 3,
+     "xiang": 8
+    },
+    "震": {
+     "yun": 5,
+     "shan": 2,
+     "xiang": 7
+    },
+    "巽": {
+     "yun": 6,
+     "shan": 1,
+     "xiang": 6
+    },
+    "中": {
+     "yun": 7,
+     "shan": 9,
+     "xiang": 5
+    },
+    "乾": {
+     "yun": 8,
+     "shan": 8,
+     "xiang": 4
+    },
+    "兑": {
+     "yun": 9,
+     "shan": 7,
+     "xiang": 3
+    },
+    "艮": {
+     "yun": 1,
+     "shan": 6,
+     "xiang": 2
+    },
+    "离": {
+     "yun": 2,
+     "shan": 5,
+     "xiang": 1
+    }
+   }
+  },
+  {
+   "yun": 7,
+   "sit": "戌",
+   "sitCenter": 300,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 3,
+     "shan": 3,
+     "xiang": 1
+    },
+    "坤": {
+     "yun": 4,
+     "shan": 2,
+     "xiang": 9
+    },
+    "震": {
+     "yun": 5,
+     "shan": 1,
+     "xiang": 8
+    },
+    "巽": {
+     "yun": 6,
+     "shan": 9,
+     "xiang": 7
+    },
+    "中": {
+     "yun": 7,
+     "shan": 8,
+     "xiang": 6
+    },
+    "乾": {
+     "yun": 8,
+     "shan": 7,
+     "xiang": 5
+    },
+    "兑": {
+     "yun": 9,
+     "shan": 6,
+     "xiang": 4
+    },
+    "艮": {
+     "yun": 1,
+     "shan": 5,
+     "xiang": 3
+    },
+    "离": {
+     "yun": 2,
+     "shan": 4,
+     "xiang": 2
+    }
+   }
+  },
+  {
+   "yun": 7,
+   "sit": "乾",
+   "sitCenter": 315,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 3,
+     "shan": 4,
+     "xiang": 2
+    },
+    "坤": {
+     "yun": 4,
+     "shan": 5,
+     "xiang": 3
+    },
+    "震": {
+     "yun": 5,
+     "shan": 6,
+     "xiang": 4
+    },
+    "巽": {
+     "yun": 6,
+     "shan": 7,
+     "xiang": 5
+    },
+    "中": {
+     "yun": 7,
+     "shan": 8,
+     "xiang": 6
+    },
+    "乾": {
+     "yun": 8,
+     "shan": 9,
+     "xiang": 7
+    },
+    "兑": {
+     "yun": 9,
+     "shan": 1,
+     "xiang": 8
+    },
+    "艮": {
+     "yun": 1,
+     "shan": 2,
+     "xiang": 9
+    },
+    "离": {
+     "yun": 2,
+     "shan": 3,
+     "xiang": 1
+    }
+   }
+  },
+  {
+   "yun": 7,
+   "sit": "亥",
+   "sitCenter": 330,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 3,
+     "shan": 4,
+     "xiang": 2
+    },
+    "坤": {
+     "yun": 4,
+     "shan": 5,
+     "xiang": 3
+    },
+    "震": {
+     "yun": 5,
+     "shan": 6,
+     "xiang": 4
+    },
+    "巽": {
+     "yun": 6,
+     "shan": 7,
+     "xiang": 5
+    },
+    "中": {
+     "yun": 7,
+     "shan": 8,
+     "xiang": 6
+    },
+    "乾": {
+     "yun": 8,
+     "shan": 9,
+     "xiang": 7
+    },
+    "兑": {
+     "yun": 9,
+     "shan": 1,
+     "xiang": 8
+    },
+    "艮": {
+     "yun": 1,
+     "shan": 2,
+     "xiang": 9
+    },
+    "离": {
+     "yun": 2,
+     "shan": 3,
+     "xiang": 1
+    }
+   }
+  },
+  {
+   "yun": 7,
+   "sit": "壬",
+   "sitCenter": 345,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 3,
+     "shan": 8,
+     "xiang": 6
+    },
+    "坤": {
+     "yun": 4,
+     "shan": 9,
+     "xiang": 5
+    },
+    "震": {
+     "yun": 5,
+     "shan": 1,
+     "xiang": 4
+    },
+    "巽": {
+     "yun": 6,
+     "shan": 2,
+     "xiang": 3
+    },
+    "中": {
+     "yun": 7,
+     "shan": 3,
+     "xiang": 2
+    },
+    "乾": {
+     "yun": 8,
+     "shan": 4,
+     "xiang": 1
+    },
+    "兑": {
+     "yun": 9,
+     "shan": 5,
+     "xiang": 9
+    },
+    "艮": {
+     "yun": 1,
+     "shan": 6,
+     "xiang": 8
+    },
+    "离": {
+     "yun": 2,
+     "shan": 7,
+     "xiang": 7
+    }
+   }
+  },
+  {
+   "yun": 8,
+   "sit": "子",
+   "sitCenter": 0,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 4,
+     "shan": 9,
+     "xiang": 7
+    },
+    "坤": {
+     "yun": 5,
+     "shan": 1,
+     "xiang": 6
+    },
+    "震": {
+     "yun": 6,
+     "shan": 2,
+     "xiang": 5
+    },
+    "巽": {
+     "yun": 7,
+     "shan": 3,
+     "xiang": 4
+    },
+    "中": {
+     "yun": 8,
+     "shan": 4,
+     "xiang": 3
+    },
+    "乾": {
+     "yun": 9,
+     "shan": 5,
+     "xiang": 2
+    },
+    "兑": {
+     "yun": 1,
+     "shan": 6,
+     "xiang": 1
+    },
+    "艮": {
+     "yun": 2,
+     "shan": 7,
+     "xiang": 9
+    },
+    "离": {
+     "yun": 3,
+     "shan": 8,
+     "xiang": 8
+    }
+   }
+  },
+  {
+   "yun": 8,
+   "sit": "癸",
+   "sitCenter": 15,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 4,
+     "shan": 9,
+     "xiang": 7
+    },
+    "坤": {
+     "yun": 5,
+     "shan": 1,
+     "xiang": 6
+    },
+    "震": {
+     "yun": 6,
+     "shan": 2,
+     "xiang": 5
+    },
+    "巽": {
+     "yun": 7,
+     "shan": 3,
+     "xiang": 4
+    },
+    "中": {
+     "yun": 8,
+     "shan": 4,
+     "xiang": 3
+    },
+    "乾": {
+     "yun": 9,
+     "shan": 5,
+     "xiang": 2
+    },
+    "兑": {
+     "yun": 1,
+     "shan": 6,
+     "xiang": 1
+    },
+    "艮": {
+     "yun": 2,
+     "shan": 7,
+     "xiang": 9
+    },
+    "离": {
+     "yun": 3,
+     "shan": 8,
+     "xiang": 8
+    }
+   }
+  },
+  {
+   "yun": 8,
+   "sit": "丑",
+   "sitCenter": 30,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 4,
+     "shan": 6,
+     "xiang": 9
+    },
+    "坤": {
+     "yun": 5,
+     "shan": 5,
+     "xiang": 8
+    },
+    "震": {
+     "yun": 6,
+     "shan": 4,
+     "xiang": 7
+    },
+    "巽": {
+     "yun": 7,
+     "shan": 3,
+     "xiang": 6
+    },
+    "中": {
+     "yun": 8,
+     "shan": 2,
+     "xiang": 5
+    },
+    "乾": {
+     "yun": 9,
+     "shan": 1,
+     "xiang": 4
+    },
+    "兑": {
+     "yun": 1,
+     "shan": 9,
+     "xiang": 3
+    },
+    "艮": {
+     "yun": 2,
+     "shan": 8,
+     "xiang": 2
+    },
+    "离": {
+     "yun": 3,
+     "shan": 7,
+     "xiang": 1
+    }
+   }
+  },
+  {
+   "yun": 8,
+   "sit": "艮",
+   "sitCenter": 45,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 4,
+     "shan": 7,
+     "xiang": 1
+    },
+    "坤": {
+     "yun": 5,
+     "shan": 8,
+     "xiang": 2
+    },
+    "震": {
+     "yun": 6,
+     "shan": 9,
+     "xiang": 3
+    },
+    "巽": {
+     "yun": 7,
+     "shan": 1,
+     "xiang": 4
+    },
+    "中": {
+     "yun": 8,
+     "shan": 2,
+     "xiang": 5
+    },
+    "乾": {
+     "yun": 9,
+     "shan": 3,
+     "xiang": 6
+    },
+    "兑": {
+     "yun": 1,
+     "shan": 4,
+     "xiang": 7
+    },
+    "艮": {
+     "yun": 2,
+     "shan": 5,
+     "xiang": 8
+    },
+    "离": {
+     "yun": 3,
+     "shan": 6,
+     "xiang": 9
+    }
+   }
+  },
+  {
+   "yun": 8,
+   "sit": "寅",
+   "sitCenter": 60,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 4,
+     "shan": 7,
+     "xiang": 1
+    },
+    "坤": {
+     "yun": 5,
+     "shan": 8,
+     "xiang": 2
+    },
+    "震": {
+     "yun": 6,
+     "shan": 9,
+     "xiang": 3
+    },
+    "巽": {
+     "yun": 7,
+     "shan": 1,
+     "xiang": 4
+    },
+    "中": {
+     "yun": 8,
+     "shan": 2,
+     "xiang": 5
+    },
+    "乾": {
+     "yun": 9,
+     "shan": 3,
+     "xiang": 6
+    },
+    "兑": {
+     "yun": 1,
+     "shan": 4,
+     "xiang": 7
+    },
+    "艮": {
+     "yun": 2,
+     "shan": 5,
+     "xiang": 8
+    },
+    "离": {
+     "yun": 3,
+     "shan": 6,
+     "xiang": 9
+    }
+   }
+  },
+  {
+   "yun": 8,
+   "sit": "甲",
+   "sitCenter": 75,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 4,
+     "shan": 1,
+     "xiang": 6
+    },
+    "坤": {
+     "yun": 5,
+     "shan": 9,
+     "xiang": 7
+    },
+    "震": {
+     "yun": 6,
+     "shan": 8,
+     "xiang": 8
+    },
+    "巽": {
+     "yun": 7,
+     "shan": 7,
+     "xiang": 9
+    },
+    "中": {
+     "yun": 8,
+     "shan": 6,
+     "xiang": 1
+    },
+    "乾": {
+     "yun": 9,
+     "shan": 5,
+     "xiang": 2
+    },
+    "兑": {
+     "yun": 1,
+     "shan": 4,
+     "xiang": 3
+    },
+    "艮": {
+     "yun": 2,
+     "shan": 3,
+     "xiang": 4
+    },
+    "离": {
+     "yun": 3,
+     "shan": 2,
+     "xiang": 5
+    }
+   }
+  },
+  {
+   "yun": 8,
+   "sit": "卯",
+   "sitCenter": 90,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 4,
+     "shan": 2,
+     "xiang": 5
+    },
+    "坤": {
+     "yun": 5,
+     "shan": 3,
+     "xiang": 4
+    },
+    "震": {
+     "yun": 6,
+     "shan": 4,
+     "xiang": 3
+    },
+    "巽": {
+     "yun": 7,
+     "shan": 5,
+     "xiang": 2
+    },
+    "中": {
+     "yun": 8,
+     "shan": 6,
+     "xiang": 1
+    },
+    "乾": {
+     "yun": 9,
+     "shan": 7,
+     "xiang": 9
+    },
+    "兑": {
+     "yun": 1,
+     "shan": 8,
+     "xiang": 8
+    },
+    "艮": {
+     "yun": 2,
+     "shan": 9,
+     "xiang": 7
+    },
+    "离": {
+     "yun": 3,
+     "shan": 1,
+     "xiang": 6
+    }
+   }
+  },
+  {
+   "yun": 8,
+   "sit": "乙",
+   "sitCenter": 105,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 4,
+     "shan": 2,
+     "xiang": 5
+    },
+    "坤": {
+     "yun": 5,
+     "shan": 3,
+     "xiang": 4
+    },
+    "震": {
+     "yun": 6,
+     "shan": 4,
+     "xiang": 3
+    },
+    "巽": {
+     "yun": 7,
+     "shan": 5,
+     "xiang": 2
+    },
+    "中": {
+     "yun": 8,
+     "shan": 6,
+     "xiang": 1
+    },
+    "乾": {
+     "yun": 9,
+     "shan": 7,
+     "xiang": 9
+    },
+    "兑": {
+     "yun": 1,
+     "shan": 8,
+     "xiang": 8
+    },
+    "艮": {
+     "yun": 2,
+     "shan": 9,
+     "xiang": 7
+    },
+    "离": {
+     "yun": 3,
+     "shan": 1,
+     "xiang": 6
+    }
+   }
+  },
+  {
+   "yun": 8,
+   "sit": "辰",
+   "sitCenter": 120,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 4,
+     "shan": 3,
+     "xiang": 5
+    },
+    "坤": {
+     "yun": 5,
+     "shan": 4,
+     "xiang": 6
+    },
+    "震": {
+     "yun": 6,
+     "shan": 5,
+     "xiang": 7
+    },
+    "巽": {
+     "yun": 7,
+     "shan": 6,
+     "xiang": 8
+    },
+    "中": {
+     "yun": 8,
+     "shan": 7,
+     "xiang": 9
+    },
+    "乾": {
+     "yun": 9,
+     "shan": 8,
+     "xiang": 1
+    },
+    "兑": {
+     "yun": 1,
+     "shan": 9,
+     "xiang": 2
+    },
+    "艮": {
+     "yun": 2,
+     "shan": 1,
+     "xiang": 3
+    },
+    "离": {
+     "yun": 3,
+     "shan": 2,
+     "xiang": 4
+    }
+   }
+  },
+  {
+   "yun": 8,
+   "sit": "巽",
+   "sitCenter": 135,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 4,
+     "shan": 2,
+     "xiang": 4
+    },
+    "坤": {
+     "yun": 5,
+     "shan": 1,
+     "xiang": 3
+    },
+    "震": {
+     "yun": 6,
+     "shan": 9,
+     "xiang": 2
+    },
+    "巽": {
+     "yun": 7,
+     "shan": 8,
+     "xiang": 1
+    },
+    "中": {
+     "yun": 8,
+     "shan": 7,
+     "xiang": 9
+    },
+    "乾": {
+     "yun": 9,
+     "shan": 6,
+     "xiang": 8
+    },
+    "兑": {
+     "yun": 1,
+     "shan": 5,
+     "xiang": 7
+    },
+    "艮": {
+     "yun": 2,
+     "shan": 4,
+     "xiang": 6
+    },
+    "离": {
+     "yun": 3,
+     "shan": 3,
+     "xiang": 5
+    }
+   }
+  },
+  {
+   "yun": 8,
+   "sit": "巳",
+   "sitCenter": 150,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 4,
+     "shan": 2,
+     "xiang": 4
+    },
+    "坤": {
+     "yun": 5,
+     "shan": 1,
+     "xiang": 3
+    },
+    "震": {
+     "yun": 6,
+     "shan": 9,
+     "xiang": 2
+    },
+    "巽": {
+     "yun": 7,
+     "shan": 8,
+     "xiang": 1
+    },
+    "中": {
+     "yun": 8,
+     "shan": 7,
+     "xiang": 9
+    },
+    "乾": {
+     "yun": 9,
+     "shan": 6,
+     "xiang": 8
+    },
+    "兑": {
+     "yun": 1,
+     "shan": 5,
+     "xiang": 7
+    },
+    "艮": {
+     "yun": 2,
+     "shan": 4,
+     "xiang": 6
+    },
+    "离": {
+     "yun": 3,
+     "shan": 3,
+     "xiang": 5
+    }
+   }
+  },
+  {
+   "yun": 8,
+   "sit": "丙",
+   "sitCenter": 165,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 4,
+     "shan": 8,
+     "xiang": 8
+    },
+    "坤": {
+     "yun": 5,
+     "shan": 9,
+     "xiang": 7
+    },
+    "震": {
+     "yun": 6,
+     "shan": 1,
+     "xiang": 6
+    },
+    "巽": {
+     "yun": 7,
+     "shan": 2,
+     "xiang": 5
+    },
+    "中": {
+     "yun": 8,
+     "shan": 3,
+     "xiang": 4
+    },
+    "乾": {
+     "yun": 9,
+     "shan": 4,
+     "xiang": 3
+    },
+    "兑": {
+     "yun": 1,
+     "shan": 5,
+     "xiang": 2
+    },
+    "艮": {
+     "yun": 2,
+     "shan": 6,
+     "xiang": 1
+    },
+    "离": {
+     "yun": 3,
+     "shan": 7,
+     "xiang": 9
+    }
+   }
+  },
+  {
+   "yun": 8,
+   "sit": "午",
+   "sitCenter": 180,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 4,
+     "shan": 7,
+     "xiang": 9
+    },
+    "坤": {
+     "yun": 5,
+     "shan": 6,
+     "xiang": 1
+    },
+    "震": {
+     "yun": 6,
+     "shan": 5,
+     "xiang": 2
+    },
+    "巽": {
+     "yun": 7,
+     "shan": 4,
+     "xiang": 3
+    },
+    "中": {
+     "yun": 8,
+     "shan": 3,
+     "xiang": 4
+    },
+    "乾": {
+     "yun": 9,
+     "shan": 2,
+     "xiang": 5
+    },
+    "兑": {
+     "yun": 1,
+     "shan": 1,
+     "xiang": 6
+    },
+    "艮": {
+     "yun": 2,
+     "shan": 9,
+     "xiang": 7
+    },
+    "离": {
+     "yun": 3,
+     "shan": 8,
+     "xiang": 8
+    }
+   }
+  },
+  {
+   "yun": 8,
+   "sit": "丁",
+   "sitCenter": 195,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 4,
+     "shan": 7,
+     "xiang": 9
+    },
+    "坤": {
+     "yun": 5,
+     "shan": 6,
+     "xiang": 1
+    },
+    "震": {
+     "yun": 6,
+     "shan": 5,
+     "xiang": 2
+    },
+    "巽": {
+     "yun": 7,
+     "shan": 4,
+     "xiang": 3
+    },
+    "中": {
+     "yun": 8,
+     "shan": 3,
+     "xiang": 4
+    },
+    "乾": {
+     "yun": 9,
+     "shan": 2,
+     "xiang": 5
+    },
+    "兑": {
+     "yun": 1,
+     "shan": 1,
+     "xiang": 6
+    },
+    "艮": {
+     "yun": 2,
+     "shan": 9,
+     "xiang": 7
+    },
+    "离": {
+     "yun": 3,
+     "shan": 8,
+     "xiang": 8
+    }
+   }
+  },
+  {
+   "yun": 8,
+   "sit": "未",
+   "sitCenter": 210,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 4,
+     "shan": 9,
+     "xiang": 6
+    },
+    "坤": {
+     "yun": 5,
+     "shan": 8,
+     "xiang": 5
+    },
+    "震": {
+     "yun": 6,
+     "shan": 7,
+     "xiang": 4
+    },
+    "巽": {
+     "yun": 7,
+     "shan": 6,
+     "xiang": 3
+    },
+    "中": {
+     "yun": 8,
+     "shan": 5,
+     "xiang": 2
+    },
+    "乾": {
+     "yun": 9,
+     "shan": 4,
+     "xiang": 1
+    },
+    "兑": {
+     "yun": 1,
+     "shan": 3,
+     "xiang": 9
+    },
+    "艮": {
+     "yun": 2,
+     "shan": 2,
+     "xiang": 8
+    },
+    "离": {
+     "yun": 3,
+     "shan": 1,
+     "xiang": 7
+    }
+   }
+  },
+  {
+   "yun": 8,
+   "sit": "坤",
+   "sitCenter": 225,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 4,
+     "shan": 1,
+     "xiang": 7
+    },
+    "坤": {
+     "yun": 5,
+     "shan": 2,
+     "xiang": 8
+    },
+    "震": {
+     "yun": 6,
+     "shan": 3,
+     "xiang": 9
+    },
+    "巽": {
+     "yun": 7,
+     "shan": 4,
+     "xiang": 1
+    },
+    "中": {
+     "yun": 8,
+     "shan": 5,
+     "xiang": 2
+    },
+    "乾": {
+     "yun": 9,
+     "shan": 6,
+     "xiang": 3
+    },
+    "兑": {
+     "yun": 1,
+     "shan": 7,
+     "xiang": 4
+    },
+    "艮": {
+     "yun": 2,
+     "shan": 8,
+     "xiang": 5
+    },
+    "离": {
+     "yun": 3,
+     "shan": 9,
+     "xiang": 6
+    }
+   }
+  },
+  {
+   "yun": 8,
+   "sit": "申",
+   "sitCenter": 240,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 4,
+     "shan": 1,
+     "xiang": 7
+    },
+    "坤": {
+     "yun": 5,
+     "shan": 2,
+     "xiang": 8
+    },
+    "震": {
+     "yun": 6,
+     "shan": 3,
+     "xiang": 9
+    },
+    "巽": {
+     "yun": 7,
+     "shan": 4,
+     "xiang": 1
+    },
+    "中": {
+     "yun": 8,
+     "shan": 5,
+     "xiang": 2
+    },
+    "乾": {
+     "yun": 9,
+     "shan": 6,
+     "xiang": 3
+    },
+    "兑": {
+     "yun": 1,
+     "shan": 7,
+     "xiang": 4
+    },
+    "艮": {
+     "yun": 2,
+     "shan": 8,
+     "xiang": 5
+    },
+    "离": {
+     "yun": 3,
+     "shan": 9,
+     "xiang": 6
+    }
+   }
+  },
+  {
+   "yun": 8,
+   "sit": "庚",
+   "sitCenter": 255,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 4,
+     "shan": 6,
+     "xiang": 1
+    },
+    "坤": {
+     "yun": 5,
+     "shan": 7,
+     "xiang": 9
+    },
+    "震": {
+     "yun": 6,
+     "shan": 8,
+     "xiang": 8
+    },
+    "巽": {
+     "yun": 7,
+     "shan": 9,
+     "xiang": 7
+    },
+    "中": {
+     "yun": 8,
+     "shan": 1,
+     "xiang": 6
+    },
+    "乾": {
+     "yun": 9,
+     "shan": 2,
+     "xiang": 5
+    },
+    "兑": {
+     "yun": 1,
+     "shan": 3,
+     "xiang": 4
+    },
+    "艮": {
+     "yun": 2,
+     "shan": 4,
+     "xiang": 3
+    },
+    "离": {
+     "yun": 3,
+     "shan": 5,
+     "xiang": 2
+    }
+   }
+  },
+  {
+   "yun": 8,
+   "sit": "酉",
+   "sitCenter": 270,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 4,
+     "shan": 5,
+     "xiang": 2
+    },
+    "坤": {
+     "yun": 5,
+     "shan": 4,
+     "xiang": 3
+    },
+    "震": {
+     "yun": 6,
+     "shan": 3,
+     "xiang": 4
+    },
+    "巽": {
+     "yun": 7,
+     "shan": 2,
+     "xiang": 5
+    },
+    "中": {
+     "yun": 8,
+     "shan": 1,
+     "xiang": 6
+    },
+    "乾": {
+     "yun": 9,
+     "shan": 9,
+     "xiang": 7
+    },
+    "兑": {
+     "yun": 1,
+     "shan": 8,
+     "xiang": 8
+    },
+    "艮": {
+     "yun": 2,
+     "shan": 7,
+     "xiang": 9
+    },
+    "离": {
+     "yun": 3,
+     "shan": 6,
+     "xiang": 1
+    }
+   }
+  },
+  {
+   "yun": 8,
+   "sit": "辛",
+   "sitCenter": 285,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 4,
+     "shan": 5,
+     "xiang": 2
+    },
+    "坤": {
+     "yun": 5,
+     "shan": 4,
+     "xiang": 3
+    },
+    "震": {
+     "yun": 6,
+     "shan": 3,
+     "xiang": 4
+    },
+    "巽": {
+     "yun": 7,
+     "shan": 2,
+     "xiang": 5
+    },
+    "中": {
+     "yun": 8,
+     "shan": 1,
+     "xiang": 6
+    },
+    "乾": {
+     "yun": 9,
+     "shan": 9,
+     "xiang": 7
+    },
+    "兑": {
+     "yun": 1,
+     "shan": 8,
+     "xiang": 8
+    },
+    "艮": {
+     "yun": 2,
+     "shan": 7,
+     "xiang": 9
+    },
+    "离": {
+     "yun": 3,
+     "shan": 6,
+     "xiang": 1
+    }
+   }
+  },
+  {
+   "yun": 8,
+   "sit": "戌",
+   "sitCenter": 300,
+   "pattern": "上山下水",
+   "grid": {
+    "坎": {
+     "yun": 4,
+     "shan": 5,
+     "xiang": 3
+    },
+    "坤": {
+     "yun": 5,
+     "shan": 6,
+     "xiang": 4
+    },
+    "震": {
+     "yun": 6,
+     "shan": 7,
+     "xiang": 5
+    },
+    "巽": {
+     "yun": 7,
+     "shan": 8,
+     "xiang": 6
+    },
+    "中": {
+     "yun": 8,
+     "shan": 9,
+     "xiang": 7
+    },
+    "乾": {
+     "yun": 9,
+     "shan": 1,
+     "xiang": 8
+    },
+    "兑": {
+     "yun": 1,
+     "shan": 2,
+     "xiang": 9
+    },
+    "艮": {
+     "yun": 2,
+     "shan": 3,
+     "xiang": 1
+    },
+    "离": {
+     "yun": 3,
+     "shan": 4,
+     "xiang": 2
+    }
+   }
+  },
+  {
+   "yun": 8,
+   "sit": "乾",
+   "sitCenter": 315,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 4,
+     "shan": 4,
+     "xiang": 2
+    },
+    "坤": {
+     "yun": 5,
+     "shan": 3,
+     "xiang": 1
+    },
+    "震": {
+     "yun": 6,
+     "shan": 2,
+     "xiang": 9
+    },
+    "巽": {
+     "yun": 7,
+     "shan": 1,
+     "xiang": 8
+    },
+    "中": {
+     "yun": 8,
+     "shan": 9,
+     "xiang": 7
+    },
+    "乾": {
+     "yun": 9,
+     "shan": 8,
+     "xiang": 6
+    },
+    "兑": {
+     "yun": 1,
+     "shan": 7,
+     "xiang": 5
+    },
+    "艮": {
+     "yun": 2,
+     "shan": 6,
+     "xiang": 4
+    },
+    "离": {
+     "yun": 3,
+     "shan": 5,
+     "xiang": 3
+    }
+   }
+  },
+  {
+   "yun": 8,
+   "sit": "亥",
+   "sitCenter": 330,
+   "pattern": "旺山旺向（到山到向）",
+   "grid": {
+    "坎": {
+     "yun": 4,
+     "shan": 4,
+     "xiang": 2
+    },
+    "坤": {
+     "yun": 5,
+     "shan": 3,
+     "xiang": 1
+    },
+    "震": {
+     "yun": 6,
+     "shan": 2,
+     "xiang": 9
+    },
+    "巽": {
+     "yun": 7,
+     "shan": 1,
+     "xiang": 8
+    },
+    "中": {
+     "yun": 8,
+     "shan": 9,
+     "xiang": 7
+    },
+    "乾": {
+     "yun": 9,
+     "shan": 8,
+     "xiang": 6
+    },
+    "兑": {
+     "yun": 1,
+     "shan": 7,
+     "xiang": 5
+    },
+    "艮": {
+     "yun": 2,
+     "shan": 6,
+     "xiang": 4
+    },
+    "离": {
+     "yun": 3,
+     "shan": 5,
+     "xiang": 3
+    }
+   }
+  },
+  {
+   "yun": 8,
+   "sit": "壬",
+   "sitCenter": 345,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 4,
+     "shan": 8,
+     "xiang": 8
+    },
+    "坤": {
+     "yun": 5,
+     "shan": 7,
+     "xiang": 9
+    },
+    "震": {
+     "yun": 6,
+     "shan": 6,
+     "xiang": 1
+    },
+    "巽": {
+     "yun": 7,
+     "shan": 5,
+     "xiang": 2
+    },
+    "中": {
+     "yun": 8,
+     "shan": 4,
+     "xiang": 3
+    },
+    "乾": {
+     "yun": 9,
+     "shan": 3,
+     "xiang": 4
+    },
+    "兑": {
+     "yun": 1,
+     "shan": 2,
+     "xiang": 5
+    },
+    "艮": {
+     "yun": 2,
+     "shan": 1,
+     "xiang": 6
+    },
+    "离": {
+     "yun": 3,
+     "shan": 9,
+     "xiang": 7
+    }
+   }
+  },
+  {
+   "yun": 9,
+   "sit": "子",
+   "sitCenter": 0,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 5,
+     "shan": 9,
+     "xiang": 9
+    },
+    "坤": {
+     "yun": 6,
+     "shan": 8,
+     "xiang": 1
+    },
+    "震": {
+     "yun": 7,
+     "shan": 7,
+     "xiang": 2
+    },
+    "巽": {
+     "yun": 8,
+     "shan": 6,
+     "xiang": 3
+    },
+    "中": {
+     "yun": 9,
+     "shan": 5,
+     "xiang": 4
+    },
+    "乾": {
+     "yun": 1,
+     "shan": 4,
+     "xiang": 5
+    },
+    "兑": {
+     "yun": 2,
+     "shan": 3,
+     "xiang": 6
+    },
+    "艮": {
+     "yun": 3,
+     "shan": 2,
+     "xiang": 7
+    },
+    "离": {
+     "yun": 4,
+     "shan": 1,
+     "xiang": 8
+    }
+   }
+  },
+  {
+   "yun": 9,
+   "sit": "癸",
+   "sitCenter": 15,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 5,
+     "shan": 9,
+     "xiang": 9
+    },
+    "坤": {
+     "yun": 6,
+     "shan": 8,
+     "xiang": 1
+    },
+    "震": {
+     "yun": 7,
+     "shan": 7,
+     "xiang": 2
+    },
+    "巽": {
+     "yun": 8,
+     "shan": 6,
+     "xiang": 3
+    },
+    "中": {
+     "yun": 9,
+     "shan": 5,
+     "xiang": 4
+    },
+    "乾": {
+     "yun": 1,
+     "shan": 4,
+     "xiang": 5
+    },
+    "兑": {
+     "yun": 2,
+     "shan": 3,
+     "xiang": 6
+    },
+    "艮": {
+     "yun": 3,
+     "shan": 2,
+     "xiang": 7
+    },
+    "离": {
+     "yun": 4,
+     "shan": 1,
+     "xiang": 8
+    }
+   }
+  },
+  {
+   "yun": 9,
+   "sit": "丑",
+   "sitCenter": 30,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 5,
+     "shan": 8,
+     "xiang": 1
+    },
+    "坤": {
+     "yun": 6,
+     "shan": 9,
+     "xiang": 9
+    },
+    "震": {
+     "yun": 7,
+     "shan": 1,
+     "xiang": 8
+    },
+    "巽": {
+     "yun": 8,
+     "shan": 2,
+     "xiang": 7
+    },
+    "中": {
+     "yun": 9,
+     "shan": 3,
+     "xiang": 6
+    },
+    "乾": {
+     "yun": 1,
+     "shan": 4,
+     "xiang": 5
+    },
+    "兑": {
+     "yun": 2,
+     "shan": 5,
+     "xiang": 4
+    },
+    "艮": {
+     "yun": 3,
+     "shan": 6,
+     "xiang": 3
+    },
+    "离": {
+     "yun": 4,
+     "shan": 7,
+     "xiang": 2
+    }
+   }
+  },
+  {
+   "yun": 9,
+   "sit": "艮",
+   "sitCenter": 45,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 5,
+     "shan": 7,
+     "xiang": 2
+    },
+    "坤": {
+     "yun": 6,
+     "shan": 6,
+     "xiang": 3
+    },
+    "震": {
+     "yun": 7,
+     "shan": 5,
+     "xiang": 4
+    },
+    "巽": {
+     "yun": 8,
+     "shan": 4,
+     "xiang": 5
+    },
+    "中": {
+     "yun": 9,
+     "shan": 3,
+     "xiang": 6
+    },
+    "乾": {
+     "yun": 1,
+     "shan": 2,
+     "xiang": 7
+    },
+    "兑": {
+     "yun": 2,
+     "shan": 1,
+     "xiang": 8
+    },
+    "艮": {
+     "yun": 3,
+     "shan": 9,
+     "xiang": 9
+    },
+    "离": {
+     "yun": 4,
+     "shan": 8,
+     "xiang": 1
+    }
+   }
+  },
+  {
+   "yun": 9,
+   "sit": "寅",
+   "sitCenter": 60,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 5,
+     "shan": 7,
+     "xiang": 2
+    },
+    "坤": {
+     "yun": 6,
+     "shan": 6,
+     "xiang": 3
+    },
+    "震": {
+     "yun": 7,
+     "shan": 5,
+     "xiang": 4
+    },
+    "巽": {
+     "yun": 8,
+     "shan": 4,
+     "xiang": 5
+    },
+    "中": {
+     "yun": 9,
+     "shan": 3,
+     "xiang": 6
+    },
+    "乾": {
+     "yun": 1,
+     "shan": 2,
+     "xiang": 7
+    },
+    "兑": {
+     "yun": 2,
+     "shan": 1,
+     "xiang": 8
+    },
+    "艮": {
+     "yun": 3,
+     "shan": 9,
+     "xiang": 9
+    },
+    "离": {
+     "yun": 4,
+     "shan": 8,
+     "xiang": 1
+    }
+   }
+  },
+  {
+   "yun": 9,
+   "sit": "甲",
+   "sitCenter": 75,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 5,
+     "shan": 3,
+     "xiang": 6
+    },
+    "坤": {
+     "yun": 6,
+     "shan": 4,
+     "xiang": 5
+    },
+    "震": {
+     "yun": 7,
+     "shan": 5,
+     "xiang": 4
+    },
+    "巽": {
+     "yun": 8,
+     "shan": 6,
+     "xiang": 3
+    },
+    "中": {
+     "yun": 9,
+     "shan": 7,
+     "xiang": 2
+    },
+    "乾": {
+     "yun": 1,
+     "shan": 8,
+     "xiang": 1
+    },
+    "兑": {
+     "yun": 2,
+     "shan": 9,
+     "xiang": 9
+    },
+    "艮": {
+     "yun": 3,
+     "shan": 1,
+     "xiang": 8
+    },
+    "离": {
+     "yun": 4,
+     "shan": 2,
+     "xiang": 7
+    }
+   }
+  },
+  {
+   "yun": 9,
+   "sit": "卯",
+   "sitCenter": 90,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 5,
+     "shan": 2,
+     "xiang": 7
+    },
+    "坤": {
+     "yun": 6,
+     "shan": 1,
+     "xiang": 8
+    },
+    "震": {
+     "yun": 7,
+     "shan": 9,
+     "xiang": 9
+    },
+    "巽": {
+     "yun": 8,
+     "shan": 8,
+     "xiang": 1
+    },
+    "中": {
+     "yun": 9,
+     "shan": 7,
+     "xiang": 2
+    },
+    "乾": {
+     "yun": 1,
+     "shan": 6,
+     "xiang": 3
+    },
+    "兑": {
+     "yun": 2,
+     "shan": 5,
+     "xiang": 4
+    },
+    "艮": {
+     "yun": 3,
+     "shan": 4,
+     "xiang": 5
+    },
+    "离": {
+     "yun": 4,
+     "shan": 3,
+     "xiang": 6
+    }
+   }
+  },
+  {
+   "yun": 9,
+   "sit": "乙",
+   "sitCenter": 105,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 5,
+     "shan": 2,
+     "xiang": 7
+    },
+    "坤": {
+     "yun": 6,
+     "shan": 1,
+     "xiang": 8
+    },
+    "震": {
+     "yun": 7,
+     "shan": 9,
+     "xiang": 9
+    },
+    "巽": {
+     "yun": 8,
+     "shan": 8,
+     "xiang": 1
+    },
+    "中": {
+     "yun": 9,
+     "shan": 7,
+     "xiang": 2
+    },
+    "乾": {
+     "yun": 1,
+     "shan": 6,
+     "xiang": 3
+    },
+    "兑": {
+     "yun": 2,
+     "shan": 5,
+     "xiang": 4
+    },
+    "艮": {
+     "yun": 3,
+     "shan": 4,
+     "xiang": 5
+    },
+    "离": {
+     "yun": 4,
+     "shan": 3,
+     "xiang": 6
+    }
+   }
+  },
+  {
+   "yun": 9,
+   "sit": "辰",
+   "sitCenter": 120,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 5,
+     "shan": 3,
+     "xiang": 6
+    },
+    "坤": {
+     "yun": 6,
+     "shan": 2,
+     "xiang": 7
+    },
+    "震": {
+     "yun": 7,
+     "shan": 1,
+     "xiang": 8
+    },
+    "巽": {
+     "yun": 8,
+     "shan": 9,
+     "xiang": 9
+    },
+    "中": {
+     "yun": 9,
+     "shan": 8,
+     "xiang": 1
+    },
+    "乾": {
+     "yun": 1,
+     "shan": 7,
+     "xiang": 2
+    },
+    "兑": {
+     "yun": 2,
+     "shan": 6,
+     "xiang": 3
+    },
+    "艮": {
+     "yun": 3,
+     "shan": 5,
+     "xiang": 4
+    },
+    "离": {
+     "yun": 4,
+     "shan": 4,
+     "xiang": 5
+    }
+   }
+  },
+  {
+   "yun": 9,
+   "sit": "巽",
+   "sitCenter": 135,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 5,
+     "shan": 4,
+     "xiang": 5
+    },
+    "坤": {
+     "yun": 6,
+     "shan": 5,
+     "xiang": 4
+    },
+    "震": {
+     "yun": 7,
+     "shan": 6,
+     "xiang": 3
+    },
+    "巽": {
+     "yun": 8,
+     "shan": 7,
+     "xiang": 2
+    },
+    "中": {
+     "yun": 9,
+     "shan": 8,
+     "xiang": 1
+    },
+    "乾": {
+     "yun": 1,
+     "shan": 9,
+     "xiang": 9
+    },
+    "兑": {
+     "yun": 2,
+     "shan": 1,
+     "xiang": 8
+    },
+    "艮": {
+     "yun": 3,
+     "shan": 2,
+     "xiang": 7
+    },
+    "离": {
+     "yun": 4,
+     "shan": 3,
+     "xiang": 6
+    }
+   }
+  },
+  {
+   "yun": 9,
+   "sit": "巳",
+   "sitCenter": 150,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 5,
+     "shan": 4,
+     "xiang": 5
+    },
+    "坤": {
+     "yun": 6,
+     "shan": 5,
+     "xiang": 4
+    },
+    "震": {
+     "yun": 7,
+     "shan": 6,
+     "xiang": 3
+    },
+    "巽": {
+     "yun": 8,
+     "shan": 7,
+     "xiang": 2
+    },
+    "中": {
+     "yun": 9,
+     "shan": 8,
+     "xiang": 1
+    },
+    "乾": {
+     "yun": 1,
+     "shan": 9,
+     "xiang": 9
+    },
+    "兑": {
+     "yun": 2,
+     "shan": 1,
+     "xiang": 8
+    },
+    "艮": {
+     "yun": 3,
+     "shan": 2,
+     "xiang": 7
+    },
+    "离": {
+     "yun": 4,
+     "shan": 3,
+     "xiang": 6
+    }
+   }
+  },
+  {
+   "yun": 9,
+   "sit": "丙",
+   "sitCenter": 165,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 5,
+     "shan": 8,
+     "xiang": 1
+    },
+    "坤": {
+     "yun": 6,
+     "shan": 7,
+     "xiang": 2
+    },
+    "震": {
+     "yun": 7,
+     "shan": 6,
+     "xiang": 3
+    },
+    "巽": {
+     "yun": 8,
+     "shan": 5,
+     "xiang": 4
+    },
+    "中": {
+     "yun": 9,
+     "shan": 4,
+     "xiang": 5
+    },
+    "乾": {
+     "yun": 1,
+     "shan": 3,
+     "xiang": 6
+    },
+    "兑": {
+     "yun": 2,
+     "shan": 2,
+     "xiang": 7
+    },
+    "艮": {
+     "yun": 3,
+     "shan": 1,
+     "xiang": 8
+    },
+    "离": {
+     "yun": 4,
+     "shan": 9,
+     "xiang": 9
+    }
+   }
+  },
+  {
+   "yun": 9,
+   "sit": "午",
+   "sitCenter": 180,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 5,
+     "shan": 9,
+     "xiang": 9
+    },
+    "坤": {
+     "yun": 6,
+     "shan": 1,
+     "xiang": 8
+    },
+    "震": {
+     "yun": 7,
+     "shan": 2,
+     "xiang": 7
+    },
+    "巽": {
+     "yun": 8,
+     "shan": 3,
+     "xiang": 6
+    },
+    "中": {
+     "yun": 9,
+     "shan": 4,
+     "xiang": 5
+    },
+    "乾": {
+     "yun": 1,
+     "shan": 5,
+     "xiang": 4
+    },
+    "兑": {
+     "yun": 2,
+     "shan": 6,
+     "xiang": 3
+    },
+    "艮": {
+     "yun": 3,
+     "shan": 7,
+     "xiang": 2
+    },
+    "离": {
+     "yun": 4,
+     "shan": 8,
+     "xiang": 1
+    }
+   }
+  },
+  {
+   "yun": 9,
+   "sit": "丁",
+   "sitCenter": 195,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 5,
+     "shan": 9,
+     "xiang": 9
+    },
+    "坤": {
+     "yun": 6,
+     "shan": 1,
+     "xiang": 8
+    },
+    "震": {
+     "yun": 7,
+     "shan": 2,
+     "xiang": 7
+    },
+    "巽": {
+     "yun": 8,
+     "shan": 3,
+     "xiang": 6
+    },
+    "中": {
+     "yun": 9,
+     "shan": 4,
+     "xiang": 5
+    },
+    "乾": {
+     "yun": 1,
+     "shan": 5,
+     "xiang": 4
+    },
+    "兑": {
+     "yun": 2,
+     "shan": 6,
+     "xiang": 3
+    },
+    "艮": {
+     "yun": 3,
+     "shan": 7,
+     "xiang": 2
+    },
+    "离": {
+     "yun": 4,
+     "shan": 8,
+     "xiang": 1
+    }
+   }
+  },
+  {
+   "yun": 9,
+   "sit": "未",
+   "sitCenter": 210,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 5,
+     "shan": 1,
+     "xiang": 8
+    },
+    "坤": {
+     "yun": 6,
+     "shan": 9,
+     "xiang": 9
+    },
+    "震": {
+     "yun": 7,
+     "shan": 8,
+     "xiang": 1
+    },
+    "巽": {
+     "yun": 8,
+     "shan": 7,
+     "xiang": 2
+    },
+    "中": {
+     "yun": 9,
+     "shan": 6,
+     "xiang": 3
+    },
+    "乾": {
+     "yun": 1,
+     "shan": 5,
+     "xiang": 4
+    },
+    "兑": {
+     "yun": 2,
+     "shan": 4,
+     "xiang": 5
+    },
+    "艮": {
+     "yun": 3,
+     "shan": 3,
+     "xiang": 6
+    },
+    "离": {
+     "yun": 4,
+     "shan": 2,
+     "xiang": 7
+    }
+   }
+  },
+  {
+   "yun": 9,
+   "sit": "坤",
+   "sitCenter": 225,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 5,
+     "shan": 2,
+     "xiang": 7
+    },
+    "坤": {
+     "yun": 6,
+     "shan": 3,
+     "xiang": 6
+    },
+    "震": {
+     "yun": 7,
+     "shan": 4,
+     "xiang": 5
+    },
+    "巽": {
+     "yun": 8,
+     "shan": 5,
+     "xiang": 4
+    },
+    "中": {
+     "yun": 9,
+     "shan": 6,
+     "xiang": 3
+    },
+    "乾": {
+     "yun": 1,
+     "shan": 7,
+     "xiang": 2
+    },
+    "兑": {
+     "yun": 2,
+     "shan": 8,
+     "xiang": 1
+    },
+    "艮": {
+     "yun": 3,
+     "shan": 9,
+     "xiang": 9
+    },
+    "离": {
+     "yun": 4,
+     "shan": 1,
+     "xiang": 8
+    }
+   }
+  },
+  {
+   "yun": 9,
+   "sit": "申",
+   "sitCenter": 240,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 5,
+     "shan": 2,
+     "xiang": 7
+    },
+    "坤": {
+     "yun": 6,
+     "shan": 3,
+     "xiang": 6
+    },
+    "震": {
+     "yun": 7,
+     "shan": 4,
+     "xiang": 5
+    },
+    "巽": {
+     "yun": 8,
+     "shan": 5,
+     "xiang": 4
+    },
+    "中": {
+     "yun": 9,
+     "shan": 6,
+     "xiang": 3
+    },
+    "乾": {
+     "yun": 1,
+     "shan": 7,
+     "xiang": 2
+    },
+    "兑": {
+     "yun": 2,
+     "shan": 8,
+     "xiang": 1
+    },
+    "艮": {
+     "yun": 3,
+     "shan": 9,
+     "xiang": 9
+    },
+    "离": {
+     "yun": 4,
+     "shan": 1,
+     "xiang": 8
+    }
+   }
+  },
+  {
+   "yun": 9,
+   "sit": "庚",
+   "sitCenter": 255,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 5,
+     "shan": 6,
+     "xiang": 3
+    },
+    "坤": {
+     "yun": 6,
+     "shan": 5,
+     "xiang": 4
+    },
+    "震": {
+     "yun": 7,
+     "shan": 4,
+     "xiang": 5
+    },
+    "巽": {
+     "yun": 8,
+     "shan": 3,
+     "xiang": 6
+    },
+    "中": {
+     "yun": 9,
+     "shan": 2,
+     "xiang": 7
+    },
+    "乾": {
+     "yun": 1,
+     "shan": 1,
+     "xiang": 8
+    },
+    "兑": {
+     "yun": 2,
+     "shan": 9,
+     "xiang": 9
+    },
+    "艮": {
+     "yun": 3,
+     "shan": 8,
+     "xiang": 1
+    },
+    "离": {
+     "yun": 4,
+     "shan": 7,
+     "xiang": 2
+    }
+   }
+  },
+  {
+   "yun": 9,
+   "sit": "酉",
+   "sitCenter": 270,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 5,
+     "shan": 7,
+     "xiang": 2
+    },
+    "坤": {
+     "yun": 6,
+     "shan": 8,
+     "xiang": 1
+    },
+    "震": {
+     "yun": 7,
+     "shan": 9,
+     "xiang": 9
+    },
+    "巽": {
+     "yun": 8,
+     "shan": 1,
+     "xiang": 8
+    },
+    "中": {
+     "yun": 9,
+     "shan": 2,
+     "xiang": 7
+    },
+    "乾": {
+     "yun": 1,
+     "shan": 3,
+     "xiang": 6
+    },
+    "兑": {
+     "yun": 2,
+     "shan": 4,
+     "xiang": 5
+    },
+    "艮": {
+     "yun": 3,
+     "shan": 5,
+     "xiang": 4
+    },
+    "离": {
+     "yun": 4,
+     "shan": 6,
+     "xiang": 3
+    }
+   }
+  },
+  {
+   "yun": 9,
+   "sit": "辛",
+   "sitCenter": 285,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 5,
+     "shan": 7,
+     "xiang": 2
+    },
+    "坤": {
+     "yun": 6,
+     "shan": 8,
+     "xiang": 1
+    },
+    "震": {
+     "yun": 7,
+     "shan": 9,
+     "xiang": 9
+    },
+    "巽": {
+     "yun": 8,
+     "shan": 1,
+     "xiang": 8
+    },
+    "中": {
+     "yun": 9,
+     "shan": 2,
+     "xiang": 7
+    },
+    "乾": {
+     "yun": 1,
+     "shan": 3,
+     "xiang": 6
+    },
+    "兑": {
+     "yun": 2,
+     "shan": 4,
+     "xiang": 5
+    },
+    "艮": {
+     "yun": 3,
+     "shan": 5,
+     "xiang": 4
+    },
+    "离": {
+     "yun": 4,
+     "shan": 6,
+     "xiang": 3
+    }
+   }
+  },
+  {
+   "yun": 9,
+   "sit": "戌",
+   "sitCenter": 300,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 5,
+     "shan": 6,
+     "xiang": 3
+    },
+    "坤": {
+     "yun": 6,
+     "shan": 7,
+     "xiang": 2
+    },
+    "震": {
+     "yun": 7,
+     "shan": 8,
+     "xiang": 1
+    },
+    "巽": {
+     "yun": 8,
+     "shan": 9,
+     "xiang": 9
+    },
+    "中": {
+     "yun": 9,
+     "shan": 1,
+     "xiang": 8
+    },
+    "乾": {
+     "yun": 1,
+     "shan": 2,
+     "xiang": 7
+    },
+    "兑": {
+     "yun": 2,
+     "shan": 3,
+     "xiang": 6
+    },
+    "艮": {
+     "yun": 3,
+     "shan": 4,
+     "xiang": 5
+    },
+    "离": {
+     "yun": 4,
+     "shan": 5,
+     "xiang": 4
+    }
+   }
+  },
+  {
+   "yun": 9,
+   "sit": "乾",
+   "sitCenter": 315,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 5,
+     "shan": 5,
+     "xiang": 4
+    },
+    "坤": {
+     "yun": 6,
+     "shan": 4,
+     "xiang": 5
+    },
+    "震": {
+     "yun": 7,
+     "shan": 3,
+     "xiang": 6
+    },
+    "巽": {
+     "yun": 8,
+     "shan": 2,
+     "xiang": 7
+    },
+    "中": {
+     "yun": 9,
+     "shan": 1,
+     "xiang": 8
+    },
+    "乾": {
+     "yun": 1,
+     "shan": 9,
+     "xiang": 9
+    },
+    "兑": {
+     "yun": 2,
+     "shan": 8,
+     "xiang": 1
+    },
+    "艮": {
+     "yun": 3,
+     "shan": 7,
+     "xiang": 2
+    },
+    "离": {
+     "yun": 4,
+     "shan": 6,
+     "xiang": 3
+    }
+   }
+  },
+  {
+   "yun": 9,
+   "sit": "亥",
+   "sitCenter": 330,
+   "pattern": "双星到坐",
+   "grid": {
+    "坎": {
+     "yun": 5,
+     "shan": 5,
+     "xiang": 4
+    },
+    "坤": {
+     "yun": 6,
+     "shan": 4,
+     "xiang": 5
+    },
+    "震": {
+     "yun": 7,
+     "shan": 3,
+     "xiang": 6
+    },
+    "巽": {
+     "yun": 8,
+     "shan": 2,
+     "xiang": 7
+    },
+    "中": {
+     "yun": 9,
+     "shan": 1,
+     "xiang": 8
+    },
+    "乾": {
+     "yun": 1,
+     "shan": 9,
+     "xiang": 9
+    },
+    "兑": {
+     "yun": 2,
+     "shan": 8,
+     "xiang": 1
+    },
+    "艮": {
+     "yun": 3,
+     "shan": 7,
+     "xiang": 2
+    },
+    "离": {
+     "yun": 4,
+     "shan": 6,
+     "xiang": 3
+    }
+   }
+  },
+  {
+   "yun": 9,
+   "sit": "壬",
+   "sitCenter": 345,
+   "pattern": "双星到向",
+   "grid": {
+    "坎": {
+     "yun": 5,
+     "shan": 1,
+     "xiang": 8
+    },
+    "坤": {
+     "yun": 6,
+     "shan": 2,
+     "xiang": 7
+    },
+    "震": {
+     "yun": 7,
+     "shan": 3,
+     "xiang": 6
+    },
+    "巽": {
+     "yun": 8,
+     "shan": 4,
+     "xiang": 5
+    },
+    "中": {
+     "yun": 9,
+     "shan": 5,
+     "xiang": 4
+    },
+    "乾": {
+     "yun": 1,
+     "shan": 6,
+     "xiang": 3
+    },
+    "兑": {
+     "yun": 2,
+     "shan": 7,
+     "xiang": 2
+    },
+    "艮": {
+     "yun": 3,
+     "shan": 8,
+     "xiang": 1
+    },
+    "离": {
+     "yun": 4,
+     "shan": 9,
+     "xiang": 9
+    }
+   }
+  }
+ ]
+}

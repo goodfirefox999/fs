@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!--
+      渲染层只跑本地打包产物：禁远程脚本、禁内联脚本；样式由 Vite 注入故放行 inline。
+      注意：当前 img-src / connect-src 只允许同源 file://。将来加载本地地图瓦片或 DEM 时，
+      需按资源实际来源扩展（file: 或 http://localhost:<port>），否则会被 CSP 静默拦截。
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' ws://localhost:5199"
+    />
+    <title>居境罗盘 · 择日工作台</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

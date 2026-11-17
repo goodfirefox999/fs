@@ -1,0 +1,503 @@
+/* ═══════════════════════════════════════════════════════════════════
+   「墨韵 · 天圆地方」 设计体系
+   ─────────────────────────────────────────────────────────────
+   中国传统美学驱动的 UI 变量与组件样式
+   底色如宣纸，墨色分层次，朱砂作点睛
+   ═══════════════════════════════════════════════════════════════════ */
+
+page,
+:root {
+  /* ── 底色：宣纸系列 ── */
+  --bg: #F7F3EC;              /* 生宣 · 主底色 */
+  --surface: #FDFAF4;         /* 熟宣 · 卡片底 */
+  --surface-2: #F0EADC;       /* 茶宣 · 次级底 */
+  --surface-warm: #FAF5EB;    /* 暖宣 · 强调底 */
+
+  /* ── 墨色：浓淡五阶 ── */
+  --ink: #1C1A17;             /* 浓墨 · 主文字 */
+  --ink-2: #3D3630;           /* 重墨 · 次文字 */
+  --ink-3: #6B5E52;           /* 中墨 · 辅助 */
+  --muted: #8C8074;           /* 淡墨 · 弱信息 */
+  --ink-faint: #B5A99C;       /* 极淡墨 · 水印级 */
+
+  /* ── 朱砂 · 印章红 ── */
+  --accent: #B03A2E;          /* 朱砂 · 主色 */
+  --accent-deep: #8E2B20;     /* 深朱 · 按下态 */
+  --accent-soft: rgba(176, 58, 46, 0.08);
+  --accent-faint: rgba(176, 58, 46, 0.04);
+
+  /* ── 靛青 · 青花 ── */
+  --jade: #2D5A4A;            /* 松绿 · 稳定/正面 */
+  --jade-deep: #1E4438;
+  --jade-soft: rgba(45, 90, 74, 0.08);
+
+  /* ── 金与警示 ── */
+  --gold: #A08048;            /* 赤金 · 装饰/提示 */
+  --gold-light: #C4A46A;
+  --gold-soft: rgba(160, 128, 72, 0.12);
+  --danger: #8E3B2F;          /* 暗朱 · 危险 */
+  --danger-soft: rgba(142, 59, 47, 0.08);
+
+  /* ── 线条与分隔 ── */
+  --line: rgba(28, 26, 23, 0.08);
+  --line-strong: rgba(28, 26, 23, 0.14);
+  --line-gold: rgba(160, 128, 72, 0.25);
+
+  /* ── 阴影 ── */
+  --shadow-card: 0 2rpx 16rpx rgba(28, 26, 23, 0.04), 0 0 0 1rpx rgba(28, 26, 23, 0.04);
+  --shadow-lift: 0 6rpx 28rpx rgba(28, 26, 23, 0.08);
+  --shadow-hero: 0 12rpx 48rpx rgba(28, 26, 23, 0.06);
+
+  /* ── 圆角 ── */
+  --radius: 16rpx;
+  --radius-lg: 24rpx;
+  --radius-sm: 8rpx;
+
+  /* ── 间距 ── */
+  --page-padding: 36rpx;
+  --card-padding: 36rpx;
+  --gap: 24rpx;
+  --gap-sm: 16rpx;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   页面基底
+   ══════════════════════════════════════════════════════════════ */
+
+page {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', sans-serif;
+  font-size: 28rpx;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: 0.01em;
+}
+
+view, text, scroll-view, swiper, swiper-item, canvas {
+  box-sizing: border-box;
+}
+
+.shell {
+  max-width: 1040rpx;
+  margin: 0 auto;
+  padding: 0 var(--page-padding);
+}
+
+.page {
+  min-height: 100vh;
+  padding-bottom: calc(48rpx + env(safe-area-inset-bottom));
+}
+
+.page.with-tab {
+  padding-bottom: calc(140rpx + env(safe-area-inset-bottom));
+}
+
+/* ══════════════════════════════════════════════════════════════
+   字体层级
+   ══════════════════════════════════════════════════════════════ */
+
+.serif {
+  font-family: 'Songti SC', 'STSong', 'Noto Serif SC', 'SimSun', Georgia, serif;
+  letter-spacing: 0.06em;
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  color: var(--gold);
+  font-size: 20rpx;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+}
+
+.eyebrow::before {
+  content: '';
+  width: 32rpx;
+  height: 1rpx;
+  background: var(--gold);
+  opacity: 0.5;
+}
+
+.display {
+  font-size: 56rpx;
+  line-height: 1.25;
+  letter-spacing: 0.08em;
+}
+
+.title {
+  font-size: 40rpx;
+  line-height: 1.4;
+  letter-spacing: 0.06em;
+}
+
+.subtitle {
+  color: var(--ink-3);
+  font-size: 26rpx;
+  line-height: 1.75;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.tiny {
+  font-size: 22rpx;
+  line-height: 1.55;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   卡片 · 宣纸质感
+   ══════════════════════════════════════════════════════════════ */
+
+.card {
+  background: var(--surface);
+  border: 1rpx solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--card-padding);
+  box-shadow: var(--shadow-card);
+  position: relative;
+}
+
+.card + .card {
+  margin-top: var(--gap);
+}
+
+.card-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20rpx;
+  margin-bottom: 24rpx;
+}
+
+.card-title text:first-child {
+  font-size: 30rpx;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+}
+
+/* 装饰性角线 — 传统书页边框 */
+.card-bordered {
+  position: relative;
+}
+.card-bordered::before,
+.card-bordered::after {
+  content: '';
+  position: absolute;
+  width: 40rpx;
+  height: 40rpx;
+  pointer-events: none;
+}
+.card-bordered::before {
+  top: -1rpx;
+  left: -1rpx;
+  border-top: 2rpx solid var(--gold);
+  border-left: 2rpx solid var(--gold);
+  border-top-left-radius: var(--radius);
+  opacity: 0.4;
+}
+.card-bordered::after {
+  bottom: -1rpx;
+  right: -1rpx;
+  border-bottom: 2rpx solid var(--gold);
+  border-right: 2rpx solid var(--gold);
+  border-bottom-right-radius: var(--radius);
+  opacity: 0.4;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   布局工具
+   ══════════════════════════════════════════════════════════════ */
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.row-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.wrap {
+  flex-wrap: wrap;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20rpx;
+}
+
+.divider {
+  height: 1rpx;
+  background: var(--line);
+  margin: 28rpx 0;
+}
+
+.divider-ornament {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin: 32rpx 0;
+}
+.divider-ornament::before,
+.divider-ornament::after {
+  content: '';
+  flex: 1;
+  height: 1rpx;
+  background: var(--line-gold);
+}
+.divider-ornament .divider-label {
+  color: var(--gold);
+  font-size: 22rpx;
+  letter-spacing: 0.2em;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   标签 · 印章风
+   ══════════════════════════════════════════════════════════════ */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 8rpx 20rpx;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-size: 22rpx;
+  line-height: 1.4;
+  border: 1rpx solid transparent;
+}
+
+.chip.accent {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: rgba(176, 58, 46, 0.12);
+}
+
+.chip.jade {
+  background: var(--jade-soft);
+  color: var(--jade);
+  border-color: rgba(45, 90, 74, 0.12);
+}
+
+.chip.gold {
+  background: var(--gold-soft);
+  color: #7D6332;
+  border-color: rgba(160, 128, 72, 0.15);
+}
+
+/* 印章风标签 */
+.seal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10rpx 18rpx;
+  border: 2rpx solid var(--accent);
+  border-radius: var(--radius-sm);
+  color: var(--accent);
+  font-family: 'Songti SC', 'STSong', serif;
+  font-size: 22rpx;
+  line-height: 1.2;
+  letter-spacing: 0.1em;
+  position: relative;
+  opacity: 0.85;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   按钮
+   ══════════════════════════════════════════════════════════════ */
+
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  min-height: 96rpx;
+  padding: 0 36rpx;
+  border-radius: var(--radius);
+  border: 1rpx solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 28rpx;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  transition: all 0.2s ease;
+}
+
+.btn::after {
+  border: none;
+}
+
+.btn:active {
+  transform: scale(0.97);
+  opacity: 0.9;
+}
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #FFF8EE;
+  box-shadow: 0 4rpx 16rpx rgba(176, 58, 46, 0.2);
+}
+
+.btn-primary:active {
+  background: var(--accent-deep);
+  border-color: var(--accent-deep);
+}
+
+.btn-ghost {
+  background: transparent;
+}
+
+.btn-ghost:active {
+  background: var(--surface-2);
+}
+
+.btn-jade {
+  background: var(--jade);
+  border-color: var(--jade);
+  color: #F5F3EA;
+  box-shadow: 0 4rpx 16rpx rgba(45, 90, 74, 0.2);
+}
+
+.btn-sm {
+  min-height: 72rpx;
+  padding: 0 28rpx;
+  font-size: 24rpx;
+  border-radius: var(--radius-sm);
+}
+
+.btn[disabled] {
+  opacity: 0.4;
+  transform: none !important;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   表单
+   ══════════════════════════════════════════════════════════════ */
+
+.input,
+.textarea,
+.picker-field {
+  width: 100%;
+  min-height: 92rpx;
+  padding: 20rpx 24rpx;
+  border: 1rpx solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-warm);
+  color: var(--ink);
+  font-size: 28rpx;
+  transition: border-color 0.2s ease;
+}
+
+.input:focus,
+.textarea:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.textarea {
+  min-height: 180rpx;
+}
+
+.field {
+  margin-bottom: 28rpx;
+}
+
+.field-label {
+  display: block;
+  margin-bottom: 12rpx;
+  color: var(--ink-2);
+  font-size: 24rpx;
+  letter-spacing: 0.02em;
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 22rpx;
+  line-height: 1.7;
+}
+
+.warn {
+  color: var(--danger);
+}
+
+.good {
+  color: var(--jade);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   徽章
+   ══════════════════════════════════════════════════════════════ */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6rpx 16rpx;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-size: 20rpx;
+  line-height: 1.5;
+}
+
+.badge.danger {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.badge.caution {
+  background: var(--gold-soft);
+  color: #7D6332;
+}
+
+.badge.info {
+  background: var(--jade-soft);
+  color: var(--jade);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   其他
+   ══════════════════════════════════════════════════════════════ */
+
+.empty {
+  padding: 80rpx 36rpx;
+  text-align: center;
+  color: var(--muted);
+}
+
+.safe-bottom {
+  padding-bottom: calc(32rpx + env(safe-area-inset-bottom));
+}
+
+.hairline-top {
+  border-top: 1rpx solid var(--line);
+}
+
+.link {
+  color: var(--accent);
+}
+
+.plain-button {
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  line-height: inherit;
+  font-size: inherit;
+  color: inherit;
+  text-align: left;
+}
+
+.plain-button::after {
+  border: none;
+}

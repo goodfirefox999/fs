@@ -1,0 +1,166 @@
+:root {
+  --paper: #fbf7ef;
+  --surface: #fffdf8;
+  --surface-2: #f4ece0;
+  --ink: #2b2620;
+  --ink-2: #5e5548;
+  --muted: #8a7f70;
+  --line: rgba(43, 38, 32, 0.12);
+  --jade: #3f6b5a;
+  --jade-soft: rgba(63, 107, 90, 0.12);
+  --gold: #b08a4f;
+  --gold-soft: rgba(176, 138, 79, 0.14);
+  --clay: #a8442a;
+  --clay-soft: rgba(168, 68, 42, 0.1);
+  --serif: 'Songti SC', 'Source Han Serif SC', 'Noto Serif CJK SC', serif;
+  --sans: -apple-system, 'PingFang SC', 'Helvetica Neue', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 13px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+}
+
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: var(--ink);
+}
+
+.serif {
+  font-family: var(--serif);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.card-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-family: var(--serif);
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  margin-bottom: 10px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.field-label {
+  color: var(--ink-2);
+  font-size: 12px;
+}
+
+.input,
+.select {
+  width: 100%;
+  padding: 6px 8px;
+  background: #fffefb;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.input:focus,
+.select:focus {
+  outline: none;
+  border-color: var(--jade);
+}
+
+.btn {
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-2);
+}
+
+.btn.primary {
+  background: var(--jade);
+  border-color: var(--jade);
+  color: #fdfaf4;
+}
+
+.btn.primary:hover {
+  background: #365c4d;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.chip.on {
+  border-color: var(--jade);
+  background: var(--jade-soft);
+  color: var(--jade);
+}
+
+.chip.warn {
+  border-color: var(--gold);
+  background: var(--gold-soft);
+  color: #8a6524;
+}
+
+.chip.bad {
+  border-color: rgba(168, 68, 42, 0.5);
+  background: var(--clay-soft);
+  color: var(--clay);
+}
+
+.scroll {
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scroll::-webkit-scrollbar-thumb {
+  background: rgba(43, 38, 32, 0.18);
+  border-radius: 8px;
+}

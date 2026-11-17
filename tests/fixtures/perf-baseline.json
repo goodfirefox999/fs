@@ -1,0 +1,7 @@
+{
+  "recordedAt": "2026-11-02",
+  "machine": "Apple Silicon (arm64) 本机，全量 vitest 并发跑",
+  "probeMs": 41.5,
+  "msPerDay": 2.72,
+  "note": "CPU 探针为 1e7 次乘加的最小耗时，用于折算机器快慢；msPerDay 为暖态 60 天 buildFacts 三次采样的最小值。基线必须在与 CI 相同的并发条件下记录，单文件独跑可到 1.5ms/天，不可用作基线。放宽阈值只能人工改本文件并在 PR 说明原因。"
+}
