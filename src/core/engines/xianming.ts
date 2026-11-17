@@ -106,24 +106,11 @@ export function analyzeXianMing(
       code: 'FENJIN_KE_MING',
       name: '分金克仙命',
       severity: 'CAUTION',
-      detail: `分金${fenJin.slot.ganZhi}纳音属${fenJin.slot.element}，克仙命纳音，可考虑同山其他旺相分金。`,
+      detail: `分金${fenJin.slot.ganZhi}纳音属${fenJin.slot.element}，克仙命纳音，可考虑同山其他分金线度。`,
     })
   }
-  if (fenJin.slot.quality === 'KONG_WANG') {
-    tabooHits.push({
-      code: 'FENJIN_KONG_WANG',
-      name: '分金空亡',
-      severity: 'CAUTION',
-      detail: `${fenJin.slot.ganZhi}属龟甲空亡线，传统上不作为立向主线。`,
-    })
-  } else if (fenJin.slot.quality === 'GU_XU') {
-    tabooHits.push({
-      code: 'FENJIN_GU_XU',
-      name: '分金孤虚',
-      severity: 'CAUTION',
-      detail: `${fenJin.slot.ganZhi}属${fenJin.slot.qualityDetail}，传统上建议调整至旺相分金。`,
-    })
-  }
+  // 分金旺相/孤虚/空亡的吉凶分类未经三源核验（施工依据附录 E 第 6 条），
+  // 不得作为禁忌命中或 verdict 依据。仅保留几何事实（干支/纳音/兼向）。
 
   if (fenJin.isJianXiang) {
     const adjacent = adjacentMountain(mountName, fenJin.offset)
@@ -141,7 +128,7 @@ export function analyzeXianMing(
   let verdict: XianMingAnalysis['verdict']
   if (tabooHits.some((hit) => hit.severity === 'AVOID')) {
     verdict = 'AVOID'
-  } else if (tabooHits.length > 0 || fenJin.slot.quality !== 'WANG_XIANG') {
+  } else if (tabooHits.length > 0) {
     verdict = 'ADJUST'
   } else {
     verdict = 'SUITABLE'
@@ -151,7 +138,7 @@ export function analyzeXianMing(
     verdict === 'SUITABLE'
       ? '按年干支纳音与坐山、分金五行的对应关系，未发现需要回避的组合；仍建议实地复核地形与排水。'
       : verdict === 'ADJUST'
-        ? '存在需要调整或复核的项目，可优先考虑同山旺相分金，并请专业人士现场确认。'
+        ? '存在需要调整或复核的项目，请专业人士现场确认。'
         : '存在传统上建议回避的组合，建议更换坐山或分金线度后再评估。'
 
   const notes = [
@@ -211,7 +198,7 @@ export function analyzeYinMatch(
     verdict === 'SUITABLE'
       ? '已录入仙命与当前坐向未发现需回避的组合，可继续核对地形、排水与现场安全。'
       : verdict === 'ADJUST'
-        ? '当前坐向或分金存在需调整的项目，可参考旺相分金与专业意见。'
+        ? '当前坐向或分金存在需调整的项目，请结合专业意见与现场复核。'
         : verdict === 'AVOID'
           ? '当前坐向与仙命存在传统上建议回避的组合，建议更换坐山或分金后再评估。'
           : '缺少可用的仙命出生信息，暂无法给出结论。'

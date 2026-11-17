@@ -17,6 +17,11 @@ const AD_LAW = ['最佳', '最强', '最好', '第一品牌', '唯一', '顶级'
 const CAUTIOUS = ['化解', '煞气', '吉凶', '风水', '阴阳宅', '丁财两旺']
 const SWITCHES = ['enable_yinzhai_mode', 'reviewMode', 'auditMode', '隐藏入口', '审核开关']
 
+// 施工依据 v1.0 附录 E 第 6 条：120 分金的旺相/孤虚/空亡吉凶口径未经三源核验，
+// 首版不得在用户可见文案里出现。扫描 UI 模板与报告文案，硬阻断。
+const FENJIN_VERDICT = ['旺相', '孤虚', '龟甲空亡', '煞曜']
+const fenjinClaimFiles = (file) => /\.vue$/.test(file) || /src\/core\/engines\/(xianming|report)\.ts$/.test(file)
+
 function isTextClaim(line) {
   if (/linear-gradient|radial-gradient|Math\.|toFixed|\.style|calc\(/.test(line)) return false
   if (/^\s*[\w-]+\s*:\s*[^;]*100%\s*;?\s*$/.test(line)) return false
@@ -41,6 +46,7 @@ const absoluteHits = []
 const adHits = []
 const cautiousHits = []
 const switchHits = []
+const fenjinHits = []
 
 for (const file of files) {
   const relative = path.relative(root, file)
@@ -63,6 +69,16 @@ for (const file of files) {
     for (const word of SWITCHES) {
       if (line.includes(word)) switchHits.push(`${at}  ${word}`)
     }
+    if (fenjinClaimFiles(relative)) {
+      // 豁免说明合规约束的注释/免责声明：它们出现吉凶词是为了解释为何不输出。
+      const isComplianceNote = /^\s*(\/\/|\*|\/\*|<!--|['"`])/.test(line)
+        && /(未经|不得|未核验|红线|附录\s*E|不输出|禁止|合规)/.test(line)
+      if (!isComplianceNote) {
+        for (const word of FENJIN_VERDICT) {
+          if (line.includes(word)) fenjinHits.push(`${at}  ${word}`)
+        }
+      }
+    }
   })
 }
 
@@ -79,12 +95,16 @@ if (switchHits.length) {
   console.error(`\n[审核开关] ${switchHits.length}`)
   switchHits.forEach((hit) => console.error(`  ${hit}`))
 }
+if (fenjinHits.length) {
+  console.error(`\n[分金红线] ${fenjinHits.length}（附录 E：未核验吉凶不得出现在用户可见文案）`)
+  fenjinHits.forEach((hit) => console.error(`  ${hit}`))
+}
 if (cautiousHits.length) {
   console.warn(`\n[谨慎词] ${cautiousHits.length}（需人工确认语境）`)
   cautiousHits.forEach((hit) => console.warn(`  ${hit}`))
 }
 
-if (absoluteHits.length || adHits.length || switchHits.length) {
+if (absoluteHits.length || adHits.length || switchHits.length || fenjinHits.length) {
   process.exit(1)
 }
 console.log('compliance scan passed')

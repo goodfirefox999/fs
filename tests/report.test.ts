@@ -106,7 +106,8 @@ describe('报告组装', () => {
     expect(report.fenjin?.slot.ganZhi).toBe('戊子')
     expect(report.fenjin?.slot.quality).toBe('KONG_WANG')
     expect(report.yinMatch?.verdict).toBe('AVOID')
-    expect(report.warnings.some((item) => item.code === 'FENJIN')).toBe(true)
+    // 分金吉凶未经三源核验，报告不得产生 FENJIN 吉凶警告（附录 E 红线）。
+    expect(report.warnings.some((item) => item.code === 'FENJIN')).toBe(false)
     expect(report.warnings.some((item) => item.code === 'YIN_VERDICT')).toBe(true)
     const face = report.insights.find((item) => item.palace === 9)
     expect(face?.analysis).toContain('纪念地')

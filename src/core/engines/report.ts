@@ -205,7 +205,7 @@ export function buildReport(archive: Archive, options: ReportOptions = {}): Repo
         warnings.push({
           code: 'YIN_VERDICT',
           level: 'CAUTION',
-          text: '当前分金或仙命关系存在需调整的项目，建议参考旺相分金并由专业人士现场复核。',
+          text: '当前分金或仙命关系存在需调整的项目，请由专业人士现场复核。',
         })
       }
     }

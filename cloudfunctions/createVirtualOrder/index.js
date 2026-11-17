@@ -78,18 +78,36 @@ exports.main = async (event) => {
 
     const db = cloud.database()
     const now = Date.now()
-    const outTradeNo = `R${now.toString(36)}${crypto.randomBytes(5).toString('hex')}`
-    const order = {
-      outTradeNo,
+
+    // 防重（施工依据 §9.3.4：写库前查重）：同一用户+档案+商品若已有 PENDING 订单，
+    // 直接复用原 outTradeNo 与签名参数。否则重复点击会生成多笔待支付单，
+    // 用户可能为同一份报告付两次钱，且回调侧的幂等无法覆盖「两笔都支付成功」。
+    const PENDING_WINDOW_MS = 30 * 60 * 1000
+    const existing = await db.collection('orders').where({
       openid: OPENID,
       archiveId,
       productId,
-      price: product.price,
-      title: product.title,
       status: 'PENDING',
-      createdAt: now,
+      createdAt: cloud.database().command.gte(now - PENDING_WINDOW_MS),
+    }).orderBy('createdAt', 'desc').limit(1).get()
+
+    let outTradeNo
+    if (existing.data && existing.data.length) {
+      outTradeNo = existing.data[0].outTradeNo
+    } else {
+      outTradeNo = `R${now.toString(36)}${crypto.randomBytes(5).toString('hex')}`
+      const order = {
+        outTradeNo,
+        openid: OPENID,
+        archiveId,
+        productId,
+        price: product.price,
+        title: product.title,
+        status: 'PENDING',
+        createdAt: now,
+      }
+      await db.collection('orders').add({ data: order })
     }
-    await db.collection('orders').add({ data: order })
 
     const signData = JSON.stringify({
       offerId: getEnv('XPAY_OFFER_ID'),

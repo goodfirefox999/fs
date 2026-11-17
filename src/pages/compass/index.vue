@@ -300,7 +300,7 @@ function save(openWizard = false) {
           <button class="layer-chip" :class="{ active: showBagua }" @click="showBagua = !showBagua">后天八卦</button>
           <button class="layer-chip" :class="{ active: showFenJin }" @click="showFenJin = !showFenJin">一百二十分金</button>
           <text class="tiny muted">
-            {{ showFenJin ? '绿线为旺相分金，红为龟甲空亡，黄为孤虚；仅作线度参考。' : '叠加分金层可核对旺相与空亡线位。' }}
+            {{ showFenJin ? '分金层按六十甲子几何分格着色，仅作线度参考；吉凶口径未经核验，不作判断。' : '叠加分金层可核对干支线位。' }}
           </text>
         </view>
         <CompassDial

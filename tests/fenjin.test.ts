@@ -38,11 +38,12 @@ describe('一百二十分金', () => {
     ])
   })
 
-  it('0° 落在戊子空亡', () => {
+  it('0° 落在戊子，几何事实可查但不输出吉凶', () => {
     const result = resolveFenJin(0)
     expect(result.slot.ganZhi).toBe('戊子')
+    // 内部分类保留供后续考证使用，但用户可见文案不得含吉凶结论。
     expect(result.slot.quality).toBe('KONG_WANG')
-    expect(result.warning).toContain('空亡')
+    expect(result.warning).toBeNull()
   })
 
   it('3° 落在庚子旺相', () => {

@@ -44,10 +44,12 @@ describe('仙命分析', () => {
     expect(analysis?.summary).toContain('回避')
   })
 
-  it('空亡分金提示', () => {
+  it('分金吉凶不参与结论（合规红线）', () => {
     const analysis = analyzeXianMing(person, '午', resolveFenJin(180))
-    expect(analysis?.verdict).toBe('ADJUST')
-    expect(analysis?.tabooHits.some((hit) => hit.code === 'FENJIN_KONG_WANG')).toBe(true)
+    // 180° 的戊午格旧口径判「空亡」，但未经三源核验，不得产生禁忌与调整建议。
+    expect(analysis?.verdict).toBe('SUITABLE')
+    expect(analysis?.tabooHits.some((hit) => hit.code === 'FENJIN_KONG_WANG')).toBe(false)
+    expect(analysis?.tabooHits.some((hit) => hit.code === 'FENJIN_GU_XU')).toBe(false)
   })
 
   it('多仙命汇总与建议分金', () => {

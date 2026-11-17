@@ -23,12 +23,15 @@ function qualityOf(stem: string): FenJinQuality {
   return 'GU_XU'
 }
 
+/**
+ * 用户可见的分金说明仅描述几何/历法事实（天干与六十甲子纳音）。
+ *
+ * 合规约束（施工依据 v1.0 §0.3 与附录 E 第 6 条）：外部方案的旺相/孤虚/空亡
+ * 吉凶分类未经三源核验，首版不得显示。内部的 quality/usableForYin 字段保留
+ * 供算法与后续考证使用，但任何面向用户的文案都不得输出吉凶结论。
+ */
 function qualityDetailOf(stem: string): string {
-  if (stem === '丙' || stem === '庚') return '旺'
-  if (stem === '丁' || stem === '辛') return '相'
-  if (stem === '甲' || stem === '壬') return '阳孤'
-  if (stem === '乙' || stem === '癸') return '阴虚'
-  return '龟甲空亡'
+  return `${stem}干·几何分格`
 }
 
 function buildSlots(): FenJinSlot[] {
@@ -86,11 +89,9 @@ export function resolveFenJin(deg: number): {
   let warning: string | null = null
   if (jianXiang) {
     warning = `当前线度已进入兼向区（偏离${slot.mount}山中心 ${Math.abs(offset).toFixed(1)}°），传统立向需专业罗盘复核。`
-  } else if (slot.quality === 'KONG_WANG') {
-    warning = `当前线度落在${slot.ganZhi}（${slot.qualityDetail}），传统分金不建议作为立向主线，可微调至同山旺相分金。`
-  } else if (slot.quality === 'GU_XU') {
-    warning = `当前线度落在${slot.ganZhi}（${slot.qualityDetail}），传统分金视为孤虚格，建议调整至旺相分金。`
   }
+  // 不再输出旺相/孤虚/空亡类吉凶建议：该口径未经三源核验，属施工依据附录 E 红线。
+  // 兼向/两山交界等几何提醒由 checkKongWangLine() 单独负责，与吉凶判定无关。
 
   return { slot, offset, isJianXiang: jianXiang, warning }
 }
@@ -130,10 +131,9 @@ export function describeFenJin(slot: FenJinSlot): string {
   return `${slot.ganZhi}·${slot.qualityDetail}·${slot.nayin}`
 }
 
-export function qualityLabel(quality: FenJinQuality): string {
-  if (quality === 'WANG_XIANG') return '旺相'
-  if (quality === 'KONG_WANG') return '空亡'
-  return '孤虚'
+/** 用户可见标签：吉凶口径未核验，统一返回中性说明，不暴露 quality。 */
+export function qualityLabel(_quality: FenJinQuality): string {
+  return '未核验'
 }
 
 export function nearestUsableSlot(deg: number): FenJinSlot {
