@@ -96,4 +96,7 @@ def load_config(config_path: str | Path = "config.yaml") -> AppConfig:
 
 DownloadStatus = Literal[
     "PENDING", "DONE", "SKIPPED_PENDING_AUTHORIZATION", "FAILED",
+    # 两线实际都在写这两个状态（龙坛 200 空体=DEAD，fs168 404=DEAD、
+    # 200-HTML=EXTERNAL_UNAVAILABLE），枚举必须与实际数据一致。
+    "DEAD", "EXTERNAL_UNAVAILABLE",
 ]

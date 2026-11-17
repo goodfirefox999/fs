@@ -171,6 +171,9 @@ def parse_digest_page(h: str, fid: int) -> list[dict]:
             'replies': replies, 'views': views,
             'is_sticky': 1 if 'stickthread' in m.group(0)[:30] else 0,
             'has_img': has_img,
+            # 本函数专扫精华区（forum.php?mod=guide&view=digest），命中即为精华帖。
+            # 原实现 INSERT 时硬写 0，导致 is_digest 全表 0 条、元数据失真。
+            'is_digest': 1,
         })
     return rows
 
@@ -210,14 +213,16 @@ def sweep_board(con: sqlite3.Connection, fid: int, max_pages: int = 200) -> tupl
             con.execute(
                 "INSERT INTO threads(tid,fid,board,title,tag,author,author_uid,"
                 "post_date,replies,views,is_digest,is_sticky,crawl_status,discover_time,"
-                "has_image,source_url,license_note) VALUES (?,?,?,?,?,?,?,?,?,?,0,?,"
+                "has_image,source_url,license_note) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,"
                 "'PENDING',datetime('now'),?,?,?) "
                 "ON CONFLICT(tid) DO UPDATE SET replies=excluded.replies, "
                 "views=excluded.views, title=excluded.title, tag=excluded.tag, "
-                "author=excluded.author, has_image=excluded.has_image",
+                "author=excluded.author, has_image=excluded.has_image, "
+                "is_digest=MAX(is_digest, excluded.is_digest)",
                 (r['tid'], fid, BOARDS.get(fid, '?'), r['title'], r['tag'], r['author'],
                  r['author_uid'], r['post_date'], r['replies'], r['views'],
-                 r['is_sticky'], r['has_img'], url, '个人研究用途，不公开分发、不再传播。版权归原作者（天機易學論壇原作者）所有。'))
+                 r.get('is_digest', 0), r['is_sticky'], r['has_img'], url,
+                 '个人研究用途，不公开分发、不再传播。版权归原作者（天機易學論壇原作者）所有。'))
             new += 1
         con.execute("INSERT INTO sweep_log VALUES (?,?,?,datetime('now'))", (fid, page, len(rows)))
         con.commit()

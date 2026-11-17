@@ -25,7 +25,7 @@ from .clean import assert_clean, clean_floor_html
 from .config import load_config
 from .discover import run_discovery
 from .extract_bearing import extract_bearings
-from .extract_sections import analyze_sections
+from .extract_sections import analyze_sections, split_sections
 from .http import AlertLogger, BrowserSession, HttpMetrics, decode_gb18030, is_valid_thread
 from .images import ImageRegistry
 from .parse_post import parse_page
@@ -240,11 +240,13 @@ def _reparse_thread(cfg: Any, con: Any, tid: int) -> None:
     page_of: dict[str, int] = {}
     title = forum_name = None
     thread_fid = fid
+    paywalled = False
     for page_no, html_text in enumerate(pages_html, start=1):
         pp = parse_page(html_text, tid, page_no)
         title = pp.title or title
         forum_name = pp.forum_name or forum_name
         thread_fid = pp.fid or thread_fid
+        paywalled = paywalled or pp.paywalled
         for fl in pp.floors:
             if fl.pid in all_floors:
                 continue
@@ -316,11 +318,14 @@ def _reparse_thread(cfg: Any, con: Any, tid: int) -> None:
         if fl.author_uid == 1 or fl.is_op
     )
     sec = analyze_sections(uid1_text)
+    # 用 split_sections 的 order（原实现恒写 0，section_order 字段形同虚设）。
+    section_order = {s.name: s.order for s in split_sections(uid1_text)}
     for name, content in sec.sections.items():
         con.execute(
             "INSERT INTO section(tid,pid,section_name,section_order,content,item_count) "
             "VALUES (?,?,?,?,?,?)",
-            (tid, f"{tid}_tpc", name, 0, content, len(sec.data_lines if name == "数据" else [])),
+            (tid, f"{tid}_tpc", name, section_order.get(name, 0), content,
+             len(sec.data_lines if name == "数据" else [])),
         )
         sid = con.execute("SELECT last_insert_rowid()").fetchone()[0]
         items: list[Any] = []
@@ -388,8 +393,8 @@ def _reparse_thread(cfg: Any, con: Any, tid: int) -> None:
                 )
 
     con.execute(
-        "UPDATE thread_index SET has_structured_template=?, template_richness=? WHERE tid=?",
-        (int(sec.has_structured_template), sec.template_richness, tid),
+        "UPDATE thread_index SET has_structured_template=?, template_richness=?, paywalled=? WHERE tid=?",
+        (int(sec.has_structured_template), sec.template_richness, int(paywalled), tid),
     )
     # 不在 _reparse_thread 内提交：调用方按单帖 commit / rollback 控制原子性。
 
@@ -705,12 +710,35 @@ def cmd_bearings(cfg: Any, tid: int | None) -> int:
     return 0
 
 
+def _report_success_count(text: str) -> int | None:
+    """从报告文本中提取「成功 N」；提取不到返回 None。"""
+    import re as _re
+    m = _re.search(r"成功\s*(\d+)", text)
+    return int(m.group(1)) if m else None
+
+
 def cmd_report(cfg: Any) -> int:
     con = dbm.connect(cfg.paths.db_path)
     text = build_report(con, cfg)
+
+    # 一致性自检：报告生成后必须核对「成功帖数」与库内 DONE 数一致。
+    # 原实现无自检，导致 11-04 扩展批后报告长期停在旧口径而无声滞后。
+    reported = _report_success_count(text)
+    db_done = con.execute(
+        "SELECT COUNT(*) FROM thread_index WHERE crawl_status='DONE'"
+    ).fetchone()[0]
+    if reported != db_done:
+        print(
+            f"REPORT-INCONSISTENT: 报告写「成功 {reported if reported is not None else '?'}」，"
+            f"库内 DONE={db_done}；拒绝写入滞后报告。",
+            file=sys.stderr,
+        )
+        con.close()
+        return 2
+
     Path(cfg.paths.report_path).write_text(text, encoding="utf-8")
     con.close()
-    print(f"报告已写入 {cfg.paths.report_path}")
+    print(f"报告已写入 {cfg.paths.report_path}（DONE={db_done} 已核对）")
     return 0
 
 
