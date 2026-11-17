@@ -100,7 +100,12 @@ def pace() -> None:
 
 
 def fetch(url: str, _refreshed: bool = False) -> str:
-    """带 Cookie 抓取；质询页自动从 Tabbit 续期一次。"""
+    """带 Cookie 抓取；质询页自动从 Tabbit 续期一次。
+
+    所有 HTTP 出口唯一收口在此（深采/补页/精华扫描共用），因此限速放在这里，
+    确保 §2.1 的 0.5 req/s 对每一条请求路径都生效。递归续期重试同样受桶约束。
+    """
+    pace()
     s = load_session()
     p = subprocess.run(
         ['curl', '-sS', '-L', '-m', '25', '--compressed', '-A', s.get('ua', UA),
