@@ -86,6 +86,25 @@ function summary(facingDeg: number) {
         <button class="btn btn-primary btn-sm create" @click="create">新建</button>
       </view>
 
+      <!-- 迁移失败的条目必须让用户看见：原始数据没丢（有失败项时不回写），但界面若只显示「少了 N 份」，
+           用户会以为档案被吃掉了。 -->
+      <view v-if="archiveStore.migrationFailures.length" class="migrate-alert">
+        <text class="migrate-title">
+          有 {{ archiveStore.migrationFailures.length }} 份旧档案暂时读不出来
+        </text>
+        <text class="migrate-body">
+          原始数据仍完整保存在本机，未被改写。通常是档案来自更新版本的程序，或文件内容不完整。
+          请先更新到最新版本再打开；暂时不要清除本机存储。
+        </text>
+        <text
+          v-for="item in archiveStore.migrationFailures"
+          :key="item.index"
+          class="migrate-item"
+        >
+          第 {{ item.index + 1 }} 份：{{ item.error }}
+        </text>
+      </view>
+
       <view class="segmented">
         <button
           v-for="item in filters"
@@ -387,6 +406,36 @@ function summary(facingDeg: number) {
 .danger-text,
 .archive-actions .danger-text {
   color: var(--danger);
+}
+
+.migrate-alert {
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+  margin-bottom: 24rpx;
+  padding: 24rpx 28rpx;
+  border: 1rpx solid var(--line-gold);
+  border-left: 6rpx solid var(--gold);
+  border-radius: var(--radius);
+  background: var(--gold-soft);
+}
+
+.migrate-title {
+  color: var(--ink);
+  font-size: 26rpx;
+  font-weight: 600;
+}
+
+.migrate-body {
+  color: var(--ink-2);
+  font-size: 23rpx;
+  line-height: 1.7;
+}
+
+.migrate-item {
+  color: var(--muted);
+  font-size: 22rpx;
+  line-height: 1.6;
 }
 
 .empty-card {
