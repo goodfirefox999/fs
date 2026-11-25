@@ -36,7 +36,7 @@ export function circularConcentration(samples: number[]): number {
  * 圆中位数：使「到各样本的圆弧角距之和」最小的那个样本点。
  *
  * 不能按「离均值的距离」排序后取中间——那不是角度顺序：[10, 12, 14, 16] 会选出
- * 离均值最远的 10，中位数就成了离群值。绝对角距之和还能在对跱点平局时
+ * 离均值最远的 10，中位数就成了离群值。用角距之和还能在对跱点平局时
  * 靠多数一方取胜（[10, 10, 10, 190] → 10）。
  */
 export function circularMedian(samples: number[]): number {
