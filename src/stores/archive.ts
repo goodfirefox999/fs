@@ -3,6 +3,7 @@ import type { Archive, SceneMode } from '@/core/types'
 import { ARCHIVE_SCHEMA_VERSION, inputHashOf, migrateArchives } from '@/core/archive'
 import { RULE_PACK_VERSION } from '@/core/zeri/version'
 import { periodFromYear } from '@/core/engines/xuankong'
+import { todayYmd } from '@/core/utils/date'
 import {
   STORAGE_KEYS,
   readStorage,
@@ -75,6 +76,9 @@ export const useArchiveStore = defineStore('archive', {
         period: periodFromYear(input.eventYear) as Archive['period'],
         createdAt: now,
         updatedAt: now,
+        // 报告锚点在新建时定下，之后改输入也不动：它是「这份档案的结论从哪一天起算」，
+        // 跟着创建日走，这样同一份档案在任何一天打开都是同一份结论。
+        asOfDate: todayYmd(),
         schemaVersion: ARCHIVE_SCHEMA_VERSION,
         rulePackVersion: RULE_PACK_VERSION,
       }
@@ -97,8 +101,14 @@ export const useArchiveStore = defineStore('archive', {
         schemaVersion: ARCHIVE_SCHEMA_VERSION,
         rulePackVersion: RULE_PACK_VERSION,
       }
+      // 锚点只认原档案的值：patch 里即使带了 asOfDate 也不让它被覆盖，
+      // 否则改一次输入就等于把择日起点挪到另一天，归因基准全部错位。
+      const anchored: Archive = {
+        ...merged,
+        asOfDate: this.archives[index].asOfDate ?? todayYmd(),
+      }
       // 放在最后算，外部即使传了 inputHash 也不会污染
-      const next: Archive = { ...merged, inputHash: inputHashOf(merged) }
+      const next: Archive = { ...anchored, inputHash: inputHashOf(anchored) }
       this.archives.splice(index, 1, next)
       this.persist()
       return next

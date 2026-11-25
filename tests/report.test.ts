@@ -1,6 +1,8 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { migrateArchive } from '@/core/archive/migrate'
+import { ymdUtcOf } from '@/core/utils/date'
 import {
   buildArchiveZeRi,
   buildReport,
@@ -126,5 +128,63 @@ describe('报告组装', () => {
     expect(zeri.items.length).toBeLessThanOrEqual(5)
     const report = buildReport(archive, { zeri: zeri.items })
     expect(report.zeri).toBe(zeri.items)
+  })
+})
+
+describe('报告锚点 asOfDate：同一份档案在任何一天打开都是同一份结论', () => {
+  const FIXTURES = path.resolve(process.cwd(), 'tests/fixtures')
+  const read = (name: string) =>
+    JSON.parse(fs.readFileSync(path.join(FIXTURES, name), 'utf8')) as Archive
+
+  /** generatedAt 是「何时生成」的元数据，不是结论；比较结论时要剔除。 */
+  function conclusionOf(report: ReturnType<typeof buildReport>) {
+    const { generatedAt: _meta, ...conclusion } = report
+    return JSON.stringify(conclusion)
+  }
+
+  const setClock = (year: number, month: number, day: number) =>
+    vi.setSystemTime(new Date(year, month - 1, day, 10, 0, 0))
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('有锚点的档案：系统日期不同，报告除 generatedAt 外完全相同', () => {
+    // 样本的 asOfDate=2026-01-01、eventYear=2026：择日窗口与 2026 年 1 月的月盘都被冻结在锚点上
+    const archive = migrateArchive(read('archive-v3.json'))
+    const options = { contents: bundle, unlocked: true, zeriDays: 20 }
+    vi.useFakeTimers({ toFake: ['Date'] })
+
+    setClock(2026, 3, 10)
+    const inMarch = buildReport(archive, options)
+    setClock(2027, 8, 15)
+    const nextYear = buildReport(archive, options)
+
+    expect(conclusionOf(nextYear)).toBe(conclusionOf(inMarch))
+    expect(inMarch.monthly).toBeDefined()
+    for (const item of inMarch.zeri) {
+      expect(item.solarDate >= '2026-01-01').toBe(true)
+      expect(item.solarDate < '2026-01-21').toBe(true)
+    }
+  })
+
+  it('对照组：没有锚点的旧档案仍会随系统日期漂移（证明上面的用例不是假阳性）', () => {
+    // 未经迁移的 v1 样本没有 asOfDate，退回读系统时间——正是 v3 要消灭的行为
+    const legacy = read('archive-v1.json')
+    const options = { contents: bundle, unlocked: true, zeriDays: 20 }
+    vi.useFakeTimers({ toFake: ['Date'] })
+
+    setClock(2026, 1, 1)
+    const onAnchorDay = buildReport(legacy, options)
+    setClock(2026, 3, 10)
+    const inMarch = buildReport(legacy, options)
+
+    expect(conclusionOf(inMarch)).not.toBe(conclusionOf(onAnchorDay))
+  })
+
+  it('锚点回填用 UTC 日期：迁移结果与机器时区无关', () => {
+    // 2026-01-01T00:00:00Z 在 UTC-8 的本地日期是 2025-12-31；取本地日期会让同一份档案随机器变 hash
+    expect(ymdUtcOf(1767225600000)).toBe('2026-01-01')
+    expect(ymdUtcOf(Date.UTC(2026, 11, 31, 23, 59, 59))).toBe('2026-12-31')
   })
 })

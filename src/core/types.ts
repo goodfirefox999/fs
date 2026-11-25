@@ -81,6 +81,16 @@ export interface BaseArchive {
   inputHash?: string
   /** 生成该档案结论时的规则包版本；v1 迁移后为 `legacy-unrecorded` */
   rulePackVersion?: string
+  /**
+   * 报告锚点（YYYY-MM-DD）：择日预览的起点与月盘所属的月份都以它为准，
+   * 而不是「打开报告的那一天」。否则同一份档案隔天打开结论会变，
+   * 而 inputHash 没变，归因层只能判「不稳定」。
+   *
+   * 新建时写入当天；v3 之前的档案迁移时用 `createdAt` 的 UTC 日期回填（UTC 是为了
+   * 迁移结果与机器时区无关——同一份档案在任何端读出来必须是同一个值）。
+   * 它影响结论，所以参与 inputHash。
+   */
+  asOfDate?: string
 }
 
 export type Archive = BaseArchive & {

@@ -13,6 +13,7 @@
  */
 
 import type { Archive } from '../types'
+import { ymdUtcOf } from '../utils/date'
 import { LEGACY_RULE_PACK_VERSION } from '../zeri/version'
 import { ARCHIVE_SCHEMA_VERSION, LEGACY_ARCHIVE_SCHEMA_VERSION, inputHashOf } from './schema'
 
@@ -46,6 +47,36 @@ export const MIGRATIONS: Record<number, Migration> = {
     inputHash: inputHashOf(archive as unknown as Archive),
     schemaVersion: 2,
   }),
+  /**
+   * v2 → v3：补 `asOfDate`（报告锚点）并重算 `inputHash`。
+   *
+   * 回填用 `createdAt` 的 **UTC** 日期，不用本地日期：迁移结果必须与机器时区无关，
+   * 否则同一份旧档案在不同时区的机器上会得到不同的 inputHash。
+   * 必须重算 hash：INPUT_FIELDS 新增了 `asOfDate`，旧 hash 对应的是旧的输入边界，
+   * 保留它会让之后每一次对比都误报「输入变了」。
+   */
+  2: (archive) => {
+    const existing = archive.asOfDate
+    let asOfDate: string
+    if (typeof existing === 'string' && existing) {
+      asOfDate = existing
+    } else {
+      const createdAt = archive.createdAt
+      if (typeof createdAt !== 'number' || !Number.isFinite(createdAt)) {
+        throw new ArchiveMigrationError(
+          'v2 → v3 需要 createdAt 才能回填 asOfDate',
+          2,
+        )
+      }
+      asOfDate = ymdUtcOf(createdAt)
+    }
+    const next = { ...archive, asOfDate }
+    return {
+      ...next,
+      inputHash: inputHashOf(next as unknown as Archive),
+      schemaVersion: 3,
+    }
+  },
 }
 
 function readVersion(raw: RawArchive): number {

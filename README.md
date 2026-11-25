@@ -162,14 +162,15 @@ npm run content   # 重新生成 cloudfunctions/getReportContent/content/shuangx
 
 数据层在 `src/core/archive/`，三端（小程序 / H5 / Electron）共用，不碰 UI 与 IPC。
 
-**当前 `ARCHIVE_SCHEMA_VERSION = 2`。**
+**当前 `ARCHIVE_SCHEMA_VERSION = 3`。**
 
 | 版本 | 变更 | 迁移 |
 | --- | --- | --- |
 | v1 | 裸档案，有 `schemaVersion: 1`，无输入哈希、无规则包版本 | — |
 | v2 | 新增 `inputHash` 与 `rulePackVersion`，使跨版本对比可归因 | `1 → 2` 补算两项 |
+| v3 | 新增 `asOfDate`（报告锚点：择日起点与月盘所属月以它为准，不再读「今天」），并纳入 inputHash | `2 → 3` 用 `createdAt` 的 **UTC** 日期回填（与机器时区无关）并重算 inputHash |
 
-- **`inputHash` 算法固定为** `sha256(canonicalize({ mode, eventYear, reading, yang, yin }))`，
+- **`inputHash` 算法固定为** `sha256(canonicalize({ mode, eventYear, reading, yang, yin, asOfDate }))`，
   写死在 `core/archive/schema.ts`。换算法等于换哈希语义，必须同时升 `ARCHIVE_SCHEMA_VERSION`
   并在迁移里重算，否则跨版本 diff 会把「算法变了」误报成「输入变了」。
 - 刻意排除 `id` / `title` / `createdAt` / `updatedAt`：改备注不该让哈希变。
@@ -183,8 +184,12 @@ npm run content   # 重新生成 cloudfunctions/getReportContent/content/shuangx
   每步必须推进版本，否则抛错而非死循环。
 - 批量迁移时单条失败不拖垮其余，`migrateArchives()` 返回 `failed` 明细；
   `archiveStore.hydrate()` 在有失败项时**不回写**，避免用可读子集覆盖用户原始档案。
-- 固定样本：`tests/fixtures/archive-v1.json`（历史）与 `archive-v2.json`（迁移后），
-  测试断言迁移结果与样本逐字段相等。
+- 固定样本：`tests/fixtures/archive-v1.json`（历史）、`archive-v2.json`（历史）、`archive-v3.json`（当前），
+  测试断言 v1 直迁与 v2 再迁都和 v3 样本逐字段相等。
+- **报告锚点 `asOfDate`**：报告里的择日预览起点与月盘所属月读档案自己的锚点，不读系统时间。
+  否则同一份档案隔天打开结论会变而 inputHash 没变，`attributeDiff()` 只能判 `unstable`——
+  归因功能被自己的时间依赖反复触发。新建时写入当天，之后改输入也不动；
+  `tests/report.test.ts` 用两组系统日期验证「有锚点不漂移、无锚点会漂移」。
 - 对比归因 `attributeDiff()` 分五类：`none` / `input_only` / `rules_only` / `both` / `unstable`。
   输入与规则包都未变却结论不同时返回 `unstable` 并提示人工复核，**不谎称「无变化」**。
 

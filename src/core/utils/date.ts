@@ -30,8 +30,27 @@ export function addDays(value: string, days: number): string {
 }
 
 export function todayYmd(): string {
-  const now = new Date()
-  return `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`
+  return ymdOf(new Date())
+}
+
+/**
+ * 毫秒时间戳 → 本地日期字符串（YYYY-MM-DD）。与 `todayYmd()` 同一时区口径，
+ * 用于把时间戳换算成「用户当时看到的日期」。
+ */
+export function ymdOf(date: Date): string {
+  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`
+}
+
+/**
+ * 毫秒时间戳 → UTC 日期字符串（YYYY-MM-DD）。
+ *
+ * 只用于**迁移回填**这类必须与机器时区无关的场合：同一份旧档案在任何时区的
+ * 机器上迁移，都必须得到同一个回填值，否则 inputHash 会随机器变。
+ * 不要拿它代替 `todayYmd()` 表示「今天」。
+ */
+export function ymdUtcOf(epochMs: number): string {
+  const date = new Date(epochMs)
+  return `${date.getUTCFullYear()}-${pad2(date.getUTCMonth() + 1)}-${pad2(date.getUTCDate())}`
 }
 
 export function compareYmd(a: string, b: string): number {

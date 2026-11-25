@@ -142,11 +142,15 @@ export function buildReport(archive: Archive, options: ReportOptions = {}): Repo
   const period = periodFromYear(archive.eventYear)
   const chart = buildXuanKong({ period, sittingDeg })
   const annual = annualInfo(archive.eventYear)
-  // 月盘依赖「当前月」；档案只存 eventYear。跨年时把今年月盘叠到另一年的年盘上
+  // 月盘与择日预览的起点都以档案自己的锚点 `asOfDate` 为准，不读「打开报告的那一天」：
+  // 否则同一份档案隔天打开结论会变，而 inputHash 没变，归因层只能判「不稳定」。
+  // 旧档案未经迁移没有锚点时才退回系统时间（正常流程读盘即迁移，走不到这里）。
+  const anchor = archive.asOfDate ?? todayYmd()
+  // 档案只存 eventYear。锚点与事件不同年时，把锚点年的月盘叠到另一年的年盘上
   // 会得到两张互不匹配的盘，此时不提供月盘（页面显示为「—」）。
-  const currentYear = Number(todayYmd().slice(0, 4))
+  const anchorYear = Number(anchor.slice(0, 4))
   const monthly: MonthlyInfo | undefined =
-    archive.eventYear === currentYear ? monthlyForDate(todayYmd()) : undefined
+    archive.eventYear === anchorYear ? monthlyForDate(anchor) : undefined
 
   chart.palaces.forEach((palace) => {
     palace.annual = annual.chart.byPalace[palace.palace]
@@ -233,7 +237,7 @@ export function buildReport(archive: Archive, options: ReportOptions = {}): Repo
     options.zeri ??
     buildArchiveZeRi(
       archive,
-      options.zeriStart ?? todayYmd(),
+      options.zeriStart ?? anchor,
       options.zeriDays ?? 90,
       options.zeriMax ?? 8
     ).items

@@ -4,8 +4,11 @@
  * 版本史（README「本地档案库」一节必须同步）：
  * - **v1**：裸档案。有 `schemaVersion: 1`，但没有 inputHash，也没有 rulePackVersion，
  *   无法做跨版本 diff 归因。
- * - **v2**（当前）：新增 `inputHash` 与 `rulePackVersion`，使「同一输入、不同规则包」
+ * - **v2**：新增 `inputHash` 与 `rulePackVersion`，使「同一输入、不同规则包」
  *   的差异可以被机器归因，而不是靠人回忆。
+ * - **v3**（当前）：新增 `asOfDate`（报告锚点）并把它纳入 inputHash。此前择日预览的起点
+ *   与月盘所属月都读系统时间，同一份档案隔天打开结论会变而 hash 不变，归因恒判
+ *   「不稳定」。迁移时用 `createdAt` 的 UTC 日期回填（与机器时区无关）。
  *
  * 为什么升到 2 而不是假装仍是 1：v1 的档案已经在桌面端落盘过。偷偷给 v1 加字段
  * 会让「旧档案缺 inputHash」变成运行期 undefined，而不是一次显式迁移——
@@ -17,7 +20,7 @@ import { canonicalize } from './canonical'
 import { sha256Hex } from './sha256'
 
 /** 当前档案 schema 版本。新建档案一律写这个值。 */
-export const ARCHIVE_SCHEMA_VERSION = 2
+export const ARCHIVE_SCHEMA_VERSION = 3
 
 /** v1 是历史版本，仅用于迁移起点与 fixture。 */
 export const LEGACY_ARCHIVE_SCHEMA_VERSION = 1
@@ -29,8 +32,10 @@ export const LEGACY_ARCHIVE_SCHEMA_VERSION = 1
  * - `id` / `createdAt` / `updatedAt`：同一地点改个备注不该让 hash 变；
  * - `title`：显示名称，不进入任何规则；
  * - `schemaVersion` / `inputHash` / `rulePackVersion`：元数据，不是输入。
+ *
+ * 包含 `asOfDate`：它决定择日预览的起点与月盘所属月，是会改变结论的输入。
  */
-const INPUT_FIELDS = ['mode', 'eventYear', 'reading', 'yang', 'yin'] as const
+const INPUT_FIELDS = ['mode', 'eventYear', 'reading', 'yang', 'yin', 'asOfDate'] as const
 
 /** 影响结论的输入子集（深拷贝前先做一次结构投影，避免把元数据带进 hash）。 */
 export function inputPayload(archive: Pick<Archive, (typeof INPUT_FIELDS)[number]>): unknown {

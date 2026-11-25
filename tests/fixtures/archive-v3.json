@@ -1,0 +1,51 @@
+{
+  "id": "a_legacy_0001",
+  "mode": "YIN",
+  "title": "祖坟·丙山壬向",
+  "eventYear": 2026,
+  "period": 9,
+  "reading": {
+    "facingDeg": 345,
+    "mountDeg": 165,
+    "northType": "TRUE",
+    "declination": 0,
+    "stability": 0.9,
+    "inputMethod": "MANUAL_SHAN",
+    "uncertainty": 1.5
+  },
+  "createdAt": 1767225600000,
+  "updatedAt": 1767225600000,
+  "schemaVersion": 3,
+  "yin": {
+    "monumentType": "SINGLE",
+    "deceased": [
+      {
+        "label": "先父",
+        "birth": {
+          "date": "1938-04-12",
+          "precision": "DAY",
+          "gender": "M"
+        }
+      }
+    ],
+    "descendants": [
+      {
+        "label": "长子",
+        "birth": {
+          "date": "1965-09-03",
+          "precision": "DAY",
+          "gender": "M"
+        }
+      }
+    ],
+    "terrain": {
+      "backSupport": "STRONG",
+      "frontView": "OPEN",
+      "leftRight": "BALANCED"
+    },
+    "incomingDragon": "丙"
+  },
+  "rulePackVersion": "legacy-unrecorded",
+  "inputHash": "c8ba8343f9836c1f854ec464f9f583818ea132e4718296010869d505cceb3469",
+  "asOfDate": "2026-01-01"
+}

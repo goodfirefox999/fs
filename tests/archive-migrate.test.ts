@@ -92,6 +92,8 @@ describe('inputHash：只覆盖影响结论的字段', () => {
       } as never),
     ).not.toBe(original)
     expect(inputHashOf({ ...base, eventYear: 2027 } as never)).not.toBe(original)
+    // 报告锚点决定择日起点与月盘所属月，是输入的一部分
+    expect(inputHashOf({ ...base, asOfDate: '2026-06-01' } as never)).not.toBe(original)
 
     const yin = base.yin as Record<string, unknown>
     expect(
@@ -116,12 +118,26 @@ describe('inputHash：只覆盖影响结论的字段', () => {
 describe('迁移链', () => {
   const v1 = readFixture('archive-v1.json')
 
-  it('v1 → v2 补出 rulePackVersion 与 inputHash', () => {
+  it('v1 → v3 补出 rulePackVersion、inputHash 与 asOfDate', () => {
     const migrated = migrateArchive(v1)
     expect(migrated.schemaVersion).toBe(ARCHIVE_SCHEMA_VERSION)
     expect(migrated.rulePackVersion).toBe(LEGACY_RULE_PACK_VERSION)
     expect(migrated.inputHash).toMatch(/^[0-9a-f]{64}$/)
     expect(migrated.inputHash).toBe(inputHashOf(migrated))
+    // createdAt=1767225600000 是 2026-01-01T00:00:00Z；回填取 UTC 日期，与机器时区无关
+    expect(migrated.asOfDate).toBe('2026-01-01')
+  })
+
+  it('v2 样本 → v3：已有字段原样保留，只多锚点并重算 hash', () => {
+    const v2 = readFixture('archive-v2.json')
+    const v3 = migrateArchive(v2)
+    const { asOfDate, schemaVersion, inputHash, ...rest } = v3
+    const { schemaVersion: _v, inputHash: _h, ...v2Rest } = v2 as typeof v3
+    expect(schemaVersion).toBe(ARCHIVE_SCHEMA_VERSION)
+    expect(asOfDate).toBe('2026-01-01')
+    // INPUT_FIELDS 多了 asOfDate，旧 hash 必须被替换，否则之后每次对比都误报「输入变了」
+    expect(inputHash).not.toBe((v2 as { inputHash: string }).inputHash)
+    expect(rest).toEqual(v2Rest)
   })
 
   it('迁移幂等：v2 再迁一次不变', () => {
@@ -165,9 +181,16 @@ describe('迁移链', () => {
     expect(migrateArchives(null)).toEqual({ archives: [], failed: [] })
   })
 
-  it('与固定样本 archive-v2.json 完全一致', () => {
-    const expected = readFixture('archive-v2.json')
+  it('与固定样本 archive-v3.json 完全一致（v1 直迁与经 v2 再迁是同一结果）', () => {
+    const expected = readFixture('archive-v3.json')
     expect(migrateArchive(v1)).toEqual(expected)
+    // v2 是曾落盘过的历史版本，必须能从它单独升上来
+    expect(migrateArchive(readFixture('archive-v2.json'))).toEqual(expected)
+  })
+
+  it('v2 → v3 缺 createdAt 时拒绝迁移，不编造锚点', () => {
+    const { createdAt: _drop, ...noCreatedAt } = readFixture('archive-v2.json') as Record<string, unknown>
+    expect(() => migrateArchive(noCreatedAt)).toThrow(/createdAt/)
   })
 
   it('IPC 往返（JSON 序列化）后迁移结果不变', () => {
