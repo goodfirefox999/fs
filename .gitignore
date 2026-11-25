@@ -3,6 +3,7 @@ node_modules/
 dist/
 dist-desktop/
 release/
+coverage/
 *.local
 
 # 编辑器/系统

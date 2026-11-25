@@ -32,15 +32,28 @@ export function circularConcentration(samples: number[]): number {
   return Math.sqrt((sinSum / samples.length) ** 2 + (cosSum / samples.length) ** 2)
 }
 
+/**
+ * 圆中位数：使「到各样本的圆弧角距之和」最小的那个样本点。
+ *
+ * 不能按「离均值的距离」排序后取中间——那不是角度顺序：[10, 12, 14, 16] 会选出
+ * 离均值最远的 10，中位数就成了离群值。绝对角距之和还能在对跱点平局时
+ * 靠多数一方取胜（[10, 10, 10, 190] → 10）。
+ */
 export function circularMedian(samples: number[]): number {
   if (!samples.length) return 0
-  const mean = circularMean(samples)
-  const sorted = [...samples].sort((a, b) => {
-    const da = Math.abs(((a - mean + 540) % 360) - 180)
-    const db = Math.abs(((b - mean + 540) % 360) - 180)
-    return da - db
-  })
-  return normalizeDeg(sorted[Math.floor(sorted.length / 2)])
+  let best = samples[0]
+  let bestDeviation = Number.POSITIVE_INFINITY
+  for (const candidate of samples) {
+    let deviation = 0
+    for (const other of samples) {
+      deviation += Math.abs(((other - candidate + 540) % 360) - 180)
+    }
+    if (deviation < bestDeviation) {
+      bestDeviation = deviation
+      best = candidate
+    }
+  }
+  return normalizeDeg(best)
 }
 
 export class CompassSampler {
@@ -171,6 +184,11 @@ export function mountainSnapshot(deg: number) {
   }
 }
 
+/**
+ * 先四舍五入到 0.1° 再取模：359.96° 必须显示 0.0°，
+ * 不能先格式化再让它四舍五入成「360.0°」。
+ */
 export function formatDegree(deg: number): string {
-  return `${normalizeDeg(deg).toFixed(1)}°`
+  const tenths = Math.round(normalizeDeg(deg) * 10) % 3600
+  return `${(tenths / 10).toFixed(1)}°`
 }

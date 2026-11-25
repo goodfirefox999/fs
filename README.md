@@ -12,6 +12,7 @@ npm run dev:h5       # 浏览器预览（含本地内容接口）
 npm run dev:mp-weixin
 npm test             # 全量单元测试（含 cnlunar / 独立实现交叉校验）
 npm run test:perf    # 性能测试（独占进程，不与其它测试并发，否则会因邻居负载假失败）
+npm run test:coverage # src/core 行覆盖率（独立跑；门槛见 vitest.config.ts）
 npm run typecheck    # 核心引擎类型检查
 npm run scan         # 合规词扫描
 npm run build:h5
