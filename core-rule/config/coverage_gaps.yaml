@@ -88,14 +88,16 @@ gaps:
   - id: GAP-WUTU
     gap_type: 实现面差额（派别存在但未建模）
     claim: 乌兔太阳择日（起日/起时/到方三诀）未实现
-    quote_ref: 派别清单「乌兔太阳法」条；三诀仅存口诀提要，未见完整排山图
-    evidence_level: 事实（代码无 wutu 模块）
+    quote_ref: 派别清单「乌兔太阳法」条；2026-11-26 全网学习取得**三源逐字一致**的电子文转述
+      （dskfs.com / laiboyee.com 经典页 / holyrange.com：起日诀+截法图+排山图+变格），
+      全文存 docs/research/2026-11-26-paijie-web-learning.md §2
+    evidence_level: 三源一致电子文（仍非影印，不得当 A 级）
     blocked_by: >-
-      排山图（土金孛罗日月计木 九曜配九宫）与截法图的具体排布未取得可核抄本，
-      口诀「阳顺阴逆数至月朔日」的起点与步长在转述本中互相矛盾。
-      按本项目铁律「禁止为填满字段而编造引文」，宁可不实现。
-    owner_question: 待提供可核抄本（影印/整理本页码）
-    note: 实现成本低（纯查表），一旦取得抄本可快速补齐
+      起例已收集（Q-032），但三源为网络转述、无影印页码，且与其它传本是否同源未知。
+      按本项目铁律「禁止为填满字段而编造引文」，实现前须经 Q-032 人类裁定
+      （是否接受电子文三源一致口径实现为参考层）。
+    owner_question: Q-032
+    note: 实现成本低（纯查表：月朔与逐日干支 core-time 已可产出）；裁定后不影响任何现有规则命中面
     implementation:
       status: unimplemented
       fact_roots: [wutu]
