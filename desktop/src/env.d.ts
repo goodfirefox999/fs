@@ -12,7 +12,7 @@ interface DesktopLoadResult {
   archives: unknown[]
   /** 主进程在读取时发现的问题（如原文件损坏并已备份），必须展示给用户 */
   warning?: string
-  /** 原文件损坏且备份失败：本次会话禁止写入，避免覆盖唯一副本 */
+  /** 原文件损坏且备份失败：本次会话禁止写入，避免覆盖仅有的一份副本 */
   readOnly?: boolean
 }
 

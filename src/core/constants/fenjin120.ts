@@ -1,36 +1,23 @@
-import type { FenJinQuality, FenJinSlot } from '../types'
+import type { FenJinSlot } from '../types'
 import {
   SHAN_24_LIST,
-  angularDelta,
   getMountain,
   mountainOffset,
   normalizeDeg,
-  resolveMountain,
 } from './shan24'
 import { ZHI, nayinOfGanZhi } from './nayin60'
 
 const YANG_STEMS = ['甲', '丙', '戊', '庚', '壬']
 const YIN_STEMS = ['乙', '丁', '己', '辛', '癸']
 
-const WANG_XIANG = new Set(['丙', '丁', '庚', '辛'])
-const GU_XU = new Set(['甲', '壬', '乙', '癸'])
-const KONG_WANG = new Set(['戊', '己'])
-
-function qualityOf(stem: string): FenJinQuality {
-  if (WANG_XIANG.has(stem)) return 'WANG_XIANG'
-  if (GU_XU.has(stem)) return 'GU_XU'
-  if (KONG_WANG.has(stem)) return 'KONG_WANG'
-  return 'GU_XU'
-}
-
 /**
- * 用户可见的分金说明仅描述几何/历法事实（天干与六十甲子纳音）。
+ * 分格说明只描述几何/历法事实（天干 + 几何分格）。
  *
- * 合规约束（施工依据 v1.0 §0.3 与附录 E 第 6 条）：外部方案的旺相/孤虚/空亡
- * 吉凶分类未经三源核验，首版不得显示。内部的 quality/usableForYin 字段保留
- * 供算法与后续考证使用，但任何面向用户的文案都不得输出吉凶结论。
+ * 合规约束（施工依据 v1.0 §0.3 与附录 E 第 6 条）：外部方案按天干把分金分成
+ * 「旺相／孤虚／空亡」的吉凶口径未经三源核验，不得进入数据结构与界面。
+ * 这里连内部分类都不保留——留着就会有人再把它接到界面上。
  */
-function qualityDetailOf(stem: string): string {
+function slotNoteOf(stem: string): string {
   return `${stem}干·几何分格`
 }
 
@@ -46,7 +33,6 @@ function buildSlots(): FenJinSlot[] {
       const stem = stems[i]
       const ganZhi = stem + branch
       const nayin = nayinOfGanZhi(ganZhi)
-      const quality = qualityOf(stem)
       const startDeg = normalizeDeg(firstStart + i * 3)
       slots.push({
         index: mountain.index * 5 + i,
@@ -58,11 +44,9 @@ function buildSlots(): FenJinSlot[] {
         startDeg,
         endDeg: normalizeDeg(startDeg + 3),
         centerDeg: normalizeDeg(startDeg + 1.5),
-        quality,
-        qualityDetail: qualityDetailOf(stem),
+        slotNote: slotNoteOf(stem),
         nayin: nayin.name,
         element: nayin.element,
-        usableForYin: quality === 'WANG_XIANG',
       })
     }
   }
@@ -90,8 +74,7 @@ export function resolveFenJin(deg: number): {
   if (jianXiang) {
     warning = `当前线度已进入兼向区（偏离${slot.mount}山中心 ${Math.abs(offset).toFixed(1)}°），传统立向需专业罗盘复核。`
   }
-  // 不再输出旺相/孤虚/空亡类吉凶建议：该口径未经三源核验，属施工依据附录 E 红线。
-  // 兼向/两山交界等几何提醒由 checkKongWangLine() 单独负责，与吉凶判定无关。
+  // 兼向等几何提醒保留；未核验的吉凶口径不在这里、也不在任何字段里。
 
   return { slot, offset, isJianXiang: jianXiang, warning }
 }
@@ -102,10 +85,6 @@ export function fenJinOfMountain(mountName: string): FenJinSlot[] {
 
 export function findFenJin(mountName: string, ganZhi: string): FenJinSlot | null {
   return BY_GANZHI.get(`${mountName}:${ganZhi}`) ?? null
-}
-
-export function suggestFenJinSlots(mountName: string): FenJinSlot[] {
-  return fenJinOfMountain(mountName).filter((slot) => slot.usableForYin)
 }
 
 export function checkKongWangLine(deg: number, threshold = 1): string | null {
@@ -128,21 +107,5 @@ export function checkKongWangLine(deg: number, threshold = 1): string | null {
 }
 
 export function describeFenJin(slot: FenJinSlot): string {
-  return `${slot.ganZhi}·${slot.qualityDetail}·${slot.nayin}`
-}
-
-/** 用户可见标签：吉凶口径未核验，统一返回中性说明，不暴露 quality。 */
-export function qualityLabel(_quality: FenJinQuality): string {
-  return '未核验'
-}
-
-export function nearestUsableSlot(deg: number): FenJinSlot {
-  const mountain = resolveMountain(deg)
-  const usable = suggestFenJinSlots(mountain.name)
-  if (!usable.length) return resolveFenJin(deg).slot
-  return usable.reduce((best, slot) =>
-    Math.abs(angularDelta(deg, slot.centerDeg)) < Math.abs(angularDelta(deg, best.centerDeg))
-      ? slot
-      : best
-  )
+  return `${slot.ganZhi}·${slot.slotNote}·${slot.nayin}`
 }

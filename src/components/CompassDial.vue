@@ -5,11 +5,6 @@ import { FENJIN_SLOTS } from '@/core/constants/fenjin120'
 
 /** 后天八卦方位（自北顺时针） */
 const BAGUA_RING = ['坎', '艮', '震', '巽', '离', '坤', '兑', '乾']
-const QUALITY_COLORS: Record<string, string> = {
-  WANG_XIANG: '#3F6B5A',
-  KONG_WANG: '#A8442A',
-  GU_XU: '#B9975B',
-}
 
 const props = withDefaults(
   defineProps<{

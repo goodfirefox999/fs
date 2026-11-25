@@ -19,7 +19,7 @@ import {
   branchOfMountain,
   getMountain,
 } from '../constants/shan24'
-import { suggestFenJinSlots } from '../constants/fenjin120'
+import { fenJinOfMountain } from '../constants/fenjin120'
 import { effectiveYearOfBirth, ganZhiOfYear } from '../utils/date'
 import { isInAngularSector, sanShaSectorOf } from './feixing'
 
@@ -188,7 +188,9 @@ export function analyzeYinMatch(
     verdict = 'ADJUST'
   }
 
-  const suggestedSlots = suggestFenJinSlots(mountName)
+  // 候选是该山的全部 5 个分格，只按纳音生克筛选——这是有出处的规则（仙命纳音与分金纳音的关系）。
+  // 不再先按「旺相」预筛：那套口径未经三源核验（附录 E），不应影响任何给用户的建议。
+  const suggestedSlots = fenJinOfMountain(mountName)
     .filter((slot) =>
       deceased.every((person) => relationOf(slot.element, person.element) !== 'KE')
     )

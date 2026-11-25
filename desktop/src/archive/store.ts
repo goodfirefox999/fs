@@ -170,7 +170,7 @@ async function save(
  * 与 save() 的区别是刻意不写快照，否则每次扫一下都会把「上次结论」刷新成当前，
  * rules_only / unstable 归因会永远消失（见 recordEvaluation 的注释）。
  * 只在已有当前档案时生效；无档案时不自动创建，避免用户随手改个字段就多出一条档案。
- * 写盘由主进程的 tmp+rename 保证原子性，本函数走同一条串行写队列。
+ * 写盘由主进程以 tmp+rename 做到原子性，本函数走同一条串行写队列。
  */
 async function autosave(state: WorkbenchState): Promise<boolean> {
   const existing = current()

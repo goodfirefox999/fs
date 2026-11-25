@@ -163,10 +163,10 @@ const guaLabel = computed(() => TRIGRAMS.map((name, index) => ({
       x="200"
       y="232"
       text-anchor="middle"
-      :fill="fenJin.slot.quality === 'WANG_XIANG' ? '#3F6B5A' : fenJin.slot.quality === 'KONG_WANG' ? '#A8442A' : '#B08A4F'"
+      fill="#6B5E52"
       font-size="10"
     >
-      {{ fenJin.slot.ganZhi }} · {{ fenJin.slot.qualityDetail }}
+      {{ fenJin.slot.ganZhi }} · {{ fenJin.slot.slotNote }}
     </text>
   </svg>
 </template>

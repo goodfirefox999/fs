@@ -137,8 +137,8 @@ function step(delta: number) {
           <div><dt>三元龙</dt><dd>{{ YUAN_LABEL[mountain.yuan] }}</dd></div>
           <div>
             <dt>分金</dt>
-            <dd :class="{ warn: fenJin.slot.quality !== 'WANG_XIANG' }">
-              {{ fenJin.slot.ganZhi }} · {{ fenJin.slot.qualityDetail }}
+            <dd>
+              {{ fenJin.slot.ganZhi }} · {{ fenJin.slot.slotNote }}
             </dd>
           </div>
         </dl>

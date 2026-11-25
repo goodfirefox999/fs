@@ -3,7 +3,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const targets = ['src', 'cloudfunctions', 'README.md']
+// 桌面端的模板与样式同样面向用户，必须进扫描范围（此前漏扫：分金着色就藏在 desktop/src 里）
+const targets = ['src', 'desktop/src', 'cloudfunctions', 'README.md']
 const ignoreDirs = new Set(['node_modules', 'dist', 'unpackage', '.git'])
 
 const ABSOLUTE = [
@@ -22,9 +23,22 @@ const SWITCHES = ['enable_yinzhai_mode', 'reviewMode', 'auditMode', '隐藏入�
 const FENJIN_VERDICT = ['旺相', '孤虚', '龟甲空亡', '煞曜']
 const fenjinClaimFiles = (file) => /\.vue$/.test(file) || /src\/core\/engines\/(xianming|report)\.ts$/.test(file)
 
+// 分金吉凶口径已从类型与引擎里拆除（2026-11-26）：FenJinSlot 不再有 quality / usableForYin，
+// 旺相预筛的「建议分金」也已去掉。下面这些标识符任何一个回到代码里都是回退，硬阻断。
+// 注意用词边界：玄空格局 WANG_SHAN_WANG_XIANG 是另一回事，不能误伤。
+const FENJIN_ENUM = /\b(WANG_XIANG|KONG_WANG|GU_XU|FenJinQuality|usableForYin|suggestFenJinSlots|nearestUsableSlot|qualityLabel|qualityDetail)\b/
+// 界面不得再按任何分金字段着吉凶色：模板绑定里出现 .quality 即视为回退
+const FENJIN_UI_BINDING = /:(class|fill|style)="[^"]*\.quality\b/
+
 function isTextClaim(line) {
   if (/linear-gradient|radial-gradient|Math\.|toFixed|\.style|calc\(/.test(line)) return false
   if (/^\s*[\w-]+\s*:\s*[^;]*100%\s*;?\s*$/.test(line)) return false
+  // 剥离「属性: 值」与「属性="值"」里的 100%（SVG offset、CSS 宽高等纯技术值），
+  // 剩下的文本若还有 100% 才是文案式用法。值内不允许空白与中文标点，避免把整句话吃掉。
+  const rest = line
+    .replace(/[\w-]+\s*=\s*"[^"]*100%[^"]*"/g, '')
+    .replace(/[\w-]+\s*:\s*[^\s;{}，。]*100%[^\s;{}，。]*/g, '')
+  if (!rest.includes('100%')) return false
   return true
 }
 
@@ -47,6 +61,7 @@ const adHits = []
 const cautiousHits = []
 const switchHits = []
 const fenjinHits = []
+const fenjinEnumHits = []
 
 for (const file of files) {
   const relative = path.relative(root, file)
@@ -68,6 +83,9 @@ for (const file of files) {
     }
     for (const word of SWITCHES) {
       if (line.includes(word)) switchHits.push(`${at}  ${word}`)
+    }
+    if (FENJIN_ENUM.test(line) || FENJIN_UI_BINDING.test(line)) {
+      fenjinEnumHits.push(`${at}  ${FENJIN_ENUM.test(line) ? '分金吉凶枚举' : '分金字段着色'}`)
     }
     if (fenjinClaimFiles(relative)) {
       // 豁免说明合规约束的注释/免责声明：它们出现吉凶词是为了解释为何不输出。
@@ -95,6 +113,10 @@ if (switchHits.length) {
   console.error(`\n[审核开关] ${switchHits.length}`)
   switchHits.forEach((hit) => console.error(`  ${hit}`))
 }
+if (fenjinEnumHits.length) {
+  console.error(`\n[分金回退] ${fenjinEnumHits.length}（吉凶枚举已拆除，不得回到代码或界面绑定）`)
+  fenjinEnumHits.forEach((hit) => console.error(`  ${hit}`))
+}
 if (fenjinHits.length) {
   console.error(`\n[分金红线] ${fenjinHits.length}（附录 E：未核验吉凶不得出现在用户可见文案）`)
   fenjinHits.forEach((hit) => console.error(`  ${hit}`))
@@ -104,7 +126,7 @@ if (cautiousHits.length) {
   cautiousHits.forEach((hit) => console.warn(`  ${hit}`))
 }
 
-if (absoluteHits.length || adHits.length || switchHits.length || fenjinHits.length) {
+if (absoluteHits.length || adHits.length || switchHits.length || fenjinHits.length || fenjinEnumHits.length) {
   process.exit(1)
 }
 console.log('compliance scan passed')

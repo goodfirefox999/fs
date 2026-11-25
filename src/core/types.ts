@@ -181,8 +181,13 @@ export interface BaZhaiResult {
   notes: string[]
 }
 
-export type FenJinQuality = 'WANG_XIANG' | 'GU_XU' | 'KONG_WANG'
-
+/**
+ * 一百二十分金的分格：**只承载几何与历法事实**（度数、天干、六十甲子纳音）。
+ *
+ * 这里刻意没有「旺相／孤虚／空亡」之类的吉凶字段：该口径未经三源核验
+ * （施工依据 v1.0 §6.8.1 与附录 E），不得进入数据结构——留在类型里，
+ * 迟早会有人再把它接到界面上。要恢复必须先完成附录 E 的核验协议并以 fixture 固化。
+ */
 export interface FenJinSlot {
   index: number
   mount: string
@@ -193,11 +198,10 @@ export interface FenJinSlot {
   startDeg: number
   endDeg: number
   centerDeg: number
-  quality: FenJinQuality
-  qualityDetail: string
+  /** 分格说明：天干 + 几何分格，中性描述 */
+  slotNote: string
   nayin: string
   element: FiveElement
-  usableForYin: boolean
 }
 
 export interface FenJinResolution {

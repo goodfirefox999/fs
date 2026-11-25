@@ -408,8 +408,8 @@ function submit() {
         <view v-if="fenJin" class="fenjin-box">
           <view class="row-between">
             <text class="tiny muted">当前分金</text>
-            <text class="badge" :class="fenJin.slot.quality === 'WANG_XIANG' ? 'info' : 'caution'">
-              {{ fenJin.slot.qualityDetail }}
+            <text class="badge info">
+              {{ fenJin.slot.slotNote }}
             </text>
           </view>
           <text class="fenjin-name serif">
@@ -675,7 +675,7 @@ function submit() {
         <template v-else>
           <view class="summary-row"><text>仙命</text><text>{{ deceased.length }} 位</text></view>
           <view class="summary-row">
-            <text>分金</text><text>{{ fenJin?.slot.ganZhi }} · {{ fenJin?.slot.qualityDetail }}</text>
+            <text>分金</text><text>{{ fenJin?.slot.ganZhi }} · {{ fenJin?.slot.slotNote }}</text>
           </view>
         </template>
         <text class="hint summary-hint">

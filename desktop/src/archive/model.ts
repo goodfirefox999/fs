@@ -199,7 +199,7 @@ function normalizeDeg(value: number): number {
 }
 
 /**
- * 外部 JSON（导入文件、手工改过的存档）进入工作台前的唯一闸门。
+ * 外部 JSON（导入文件、手工改过的存档）进入工作台前的最后一道闸门。
  * 缺省字段按当前默认值补齐；类型或取值不合法直接报错，不把畸形数据灌进界面。
  */
 export function normalizeWorkbenchState(raw: unknown): WorkbenchState {

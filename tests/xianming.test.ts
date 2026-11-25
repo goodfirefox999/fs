@@ -3,6 +3,7 @@ import {
   analyzeXianMing,
   analyzeYinMatch,
   relationText,
+  slotRelationToElement,
 } from '@/core/engines/xianming'
 import { resolveFenJin } from '@/core/constants/fenjin120'
 import type { YinData } from '@/core/types'
@@ -63,7 +64,12 @@ describe('仙命分析', () => {
     expect(match.verdict).toBe('AVOID')
     expect(match.deceased).toHaveLength(1)
     expect(match.suggestedSlots.length).toBeGreaterThan(0)
-    expect(match.suggestedSlots.every((slot) => slot.usableForYin)).toBe(true)
+    // 建议候选是本山的分格，只按纳音生克筛选；不再有「旺相」预筛（该口径未核验，附录 E）
+    expect(match.suggestedSlots.length).toBeLessThanOrEqual(3)
+    for (const slot of match.suggestedSlots) {
+      expect(slot.mount).toBe('子')
+      expect(slotRelationToElement(slot, match.deceased[0].element)).not.toBe('KE')
+    }
     expect(match.notes.length).toBeGreaterThan(0)
   })
 })

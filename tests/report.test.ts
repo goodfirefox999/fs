@@ -106,7 +106,7 @@ describe('报告组装', () => {
   it('阴宅报告含分金与仙命结论', () => {
     const report = buildReport(yinArchive(), { contents: bundle, unlocked: true })
     expect(report.fenjin?.slot.ganZhi).toBe('戊子')
-    expect(report.fenjin?.slot.quality).toBe('KONG_WANG')
+    expect(report.fenjin?.slot.nayin).toBe('霹雳火')
     expect(report.yinMatch?.verdict).toBe('AVOID')
     // 分金吉凶未经三源核验，报告不得产生 FENJIN 吉凶警告（附录 E 红线）。
     expect(report.warnings.some((item) => item.code === 'FENJIN')).toBe(false)

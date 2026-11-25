@@ -397,7 +397,7 @@ async function retryContent() {
               <text class="summary-label">分金</text>
               <text>
                 {{ report.fenjin.slot.mount }}山 {{ report.fenjin.slot.ganZhi }} ·
-                {{ report.fenjin.slot.qualityDetail }}
+                {{ report.fenjin.slot.slotNote }}
               </text>
             </view>
             <view class="summary-row">
@@ -640,8 +640,8 @@ async function retryContent() {
             <view v-if="report.fenjin" class="card">
               <view class="card-title">
                 <text>当前分金</text>
-                <text class="badge" :class="report.fenjin.slot.quality === 'WANG_XIANG' ? 'info' : 'caution'">
-                  {{ report.fenjin.slot.qualityDetail }}
+                <text class="badge info">
+                  {{ report.fenjin.slot.slotNote }}
                 </text>
               </view>
               <view class="fenjin-row">
