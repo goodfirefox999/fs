@@ -16,3 +16,6 @@ logs/
 
 # 系统
 .DS_Store
+
+# 测试运行时临时产物
+tests/_tmp_*/
