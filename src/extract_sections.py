@@ -50,7 +50,13 @@ class SectionResult:
 
 
 def split_sections(text: str) -> list[Section]:
-    """按锚点位置切分；锚点间文本归属前一个锚点。"""
+    """按锚点位置切分；锚点间文本归属前一个锚点。
+
+    - 首锚点之前的正文保留为「开篇」段（2026-11-26 修复：此前直接丢弃）；
+      开篇不是锚点，不计入 template_richness。
+    - 同名锚点多次出现时保留为多个 Section，由 ``analyze_sections`` 聚合时
+      以换行连接（修复：此前 dict 组装时后者覆盖前者）。
+    """
     hits: list[tuple[int, str]] = []
     for anchor in SECTION_ANCHORS:
         start = 0
@@ -62,10 +68,17 @@ def split_sections(text: str) -> list[Section]:
             start = i + len(anchor)
     hits.sort()
     sections: list[Section] = []
-    for k, (pos, name) in enumerate(hits):
-        end = hits[k + 1][0] if k + 1 < len(hits) else len(text)
+    order = 0
+    if hits and hits[0][0] > 0:
+        head = text[: hits[0][0]].strip()
+        if head:
+            sections.append(Section(name="开篇", content=head, order=order))
+            order += 1
+    for _k, (pos, name) in enumerate(hits):
+        end = hits[_k + 1][0] if _k + 1 < len(hits) else len(text)
         body = text[pos + len(name) : end].strip()
-        sections.append(Section(name=name.strip("【】《》"), content=body, order=k))
+        sections.append(Section(name=name.strip("【】《》"), content=body, order=order))
+        order += 1
     return sections
 
 
@@ -95,23 +108,31 @@ def extract_history_item(content: str) -> HistoryItem:
 
 def analyze_sections(uid1_text: str) -> SectionResult:
     sections = split_sections(uid1_text)
-    names = [s.name for s in sections]
+    # 开篇不是锚点，不计入模板丰富度（否则「开头有正言 + 两个锚点」会被误判为结构化帖）
+    names = [s.name for s in sections if s.name != "开篇"]
     richness = len(set(names))
     data_lines: list[str] = []
     qianxi_items: list[str] = []
     history_items: list[HistoryItem] = []
     for s in sections:
         if s.name == "数据":
-            data_lines = [ln.strip() for ln in s.content.splitlines() if ln.strip()]
-            s.items = data_lines
+            lines = [ln.strip() for ln in s.content.splitlines() if ln.strip()]
+            # 同名锚点追加而非覆盖（v3 评审 N-10）
+            data_lines.extend(lines)
+            s.items = lines
         elif s.name == "浅析":
-            qianxi_items = split_numbered_items(s.content)
-            s.items = qianxi_items
+            items = split_numbered_items(s.content)
+            qianxi_items.extend(items)
+            s.items = items
         elif s.name in ("历史查证", "历史勘验"):
-            history_items = [extract_history_item(x) for x in split_numbered_items(s.content)]
+            items = [extract_history_item(x) for x in split_numbered_items(s.content)]
+            history_items.extend(items)
             s.items = [h.content for h in history_items]
+    merged: dict[str, str] = {}
+    for s in sections:
+        merged[s.name] = merged[s.name] + "\n" + s.content if s.name in merged else s.content
     return SectionResult(
-        sections={s.name: s.content for s in sections},
+        sections=merged,
         template_richness=richness,
         has_structured_template=richness >= 3,
         data_lines=data_lines,

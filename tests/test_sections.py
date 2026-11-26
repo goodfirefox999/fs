@@ -124,3 +124,25 @@ def test_listing_rows_parse() -> None:
     assert r2.tid == 4961 and r2.is_digest is True and r2.is_pinned is False
     assert r2.has_image is False and r2.topic_pages == 1
     assert r2.author_uid == 6104 and r2.reply_count == 640
+
+
+def test_text_before_first_anchor_preserved() -> None:
+    """v3 N-10 修复：首锚点之前的正文保留为「开篇」，且不计入丰富度。"""
+    text = "本帖是楼主实地考察的手记。\n【数据】\n碑坐寅山66度\n"
+    result = analyze_sections(text)
+    assert "开篇" in result.sections
+    assert "实地考察的手记" in result.sections["开篇"]
+    assert result.sections["数据"].strip() == "碑坐寅山66度"
+    # 开篇不是锚点：不得把「有开头正文 + 少量锚点」误判为结构化帖
+    assert result.template_richness == 1
+    assert result.has_structured_template is False
+
+
+def test_duplicate_anchor_appends_not_overwrites() -> None:
+    """v3 N-10 修复：同名锚点追加而非覆盖，两段数据行都参与罗盘抽取。"""
+    text = "【数据】\n甲山100度\n【浅析】\n1，前段。\n【数据】\n乙山200度\n"
+    result = analyze_sections(text)
+    assert "甲山100度" in result.sections["数据"]
+    assert "乙山200度" in result.sections["数据"]
+    assert result.data_lines == ["甲山100度", "乙山200度"]
+    assert result.template_richness == 2
