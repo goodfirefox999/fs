@@ -74,16 +74,29 @@ _ASTRO_CONTEXT = (
     "冬至", "夏至", "春分", "秋分", "回归年", "恒星年", "岁差", "宿度", "周天",
 )
 _DIRECTION_CONTEXT = ("山", "向", "水口", "来龙", "砂", "坐", "朝", "案", "分金")
+# 教程/典籍散文语境（2026-11-26 实测 1,385 条 UNCLASSIFIED 的主要来源）：
+# 「判断罗盘每山」「每个字向方位角」「方法计算…」「所以每山相距」——
+# 带山/向字样但根本不是观测，属于教程讲解文本。
+_NOISE_CONTEXT = (
+    "每山", "字向方位角", "判断罗盘", "计算罗盘", "方法计算", "五个小格",
+    "相距", "接下来", "有相同", "范围有",
+)
 
 
 def _is_bearing_context(obs) -> bool:
     raw = getattr(obs, "raw_text", "") or ""
     if any(k in raw for k in _ASTRO_CONTEXT):
         return False
-    # 有山名的一律保留（最高置信）；无山名则要求 label/raw 带罗盘语义。
+    # 教程散文噪声（带山/向字样但不是观测）
+    label = getattr(obs, "label", "") or ""
+    if any(k in (raw + label) for k in _NOISE_CONTEXT):
+        return False
+    # 有山名的一律保留（最高置信）；无山名则要求 label/raw 带罗盘语义或
+    # label 以「方」结尾（甲方/戌方等方位指示，与龙坛层「方位」类别口径一致）。
     if getattr(obs, "shan24", None):
         return True
-    label = getattr(obs, "label", "") or ""
+    if label.endswith("方"):
+        return True
     return any(k in (raw + label) for k in _DIRECTION_CONTEXT)
 
 

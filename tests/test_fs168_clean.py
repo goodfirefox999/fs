@@ -53,3 +53,20 @@ def test_guest_login_link_removed() -> None:
     assert "登录/注册后可看大图" not in text
     assert "[[IMG:1:abc]]" in text
     assert "后续正文" in text
+
+
+def test_discuz_edit_mark_and_nbsp_stripped() -> None:
+    """2026-11-26：posts_clean 残留 15.7 万行「本帖最后由…编辑」与 NBSP，清洗器补规则。"""
+    raw = (
+        '<td class="t_f" id="postmessage_1">'
+        "正文一。\n"
+        "\u00a0本帖最后由 张三 于 2026-1-1 12:00 编辑\n"
+        "理由：编辑补充内容。\u00a0正文二。</td>"
+    )
+    text, _ = clean_post_html(raw)
+    assert "本帖最后由" not in text
+    assert "\u00a0" not in text
+    assert "正文一。" in text and "正文二。" in text
+    assert "理由：编辑补充内容。" in text
+    assert assert_clean("本帖最后由 a 编辑") == ["discuz_edit_mark"]
+    assert assert_clean("x\u00a0y") == ["nbsp"]

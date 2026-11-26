@@ -33,6 +33,22 @@ BEARING_CATEGORY: dict[str, list[str]] = {
     "去水": ["水口", "出水", "内水口", "外水口", "水出", "去水"],
 }
 
+# 前缀词表覆盖不到的两类高频形态（实测龙坆 856 条 UNCLASSIFIED 里 101 条「周天」、
+# 110 条「X方」、17 条「X山Y向」）：
+# - 「X山Y向（兼…）（周天）」→ 坐向（罗盘实测的坐向陈述）
+# - 「周天」→ 周天度数观测（事实类，不判吉凶）
+# - 「X方」结尾 → 方位指示
+_XIANG_SIT = re.compile(r"山.{0,6}向")
+
+# DEG_ONLY 兜底捞进来的散文/地理/教程噪声（不是罗盘观测）：直接不入库，
+# 否则全是 UNCLASSIFIED + needs_review 的假阳性（实测占 UNCLASSIFIED 一半以上）。
+_NOISE_PAT = re.compile(
+    r"北纬|南纬|东经|西经|每隔|寻龙尺|天星缠度|立命|阴阳宅|每一方位|缠度"
+)
+#: DEG_ONLY 观测必须有方位指示字，否则视为散文片段丢弃
+_DEG_HINT = ("山", "向", "坐", "兼", "周天", "峰", "砂", "水口", "来水", "去水",
+             "龙", "穴", "线", "针", "分金")
+
 
 @dataclass
 class BearingObservation:
@@ -92,7 +108,7 @@ def validate(label: str, shan_text: str | None, deg: float) -> BearingObservatio
 
 
 def classify(obs: BearingObservation) -> str:
-    """按 label 前缀词归类（文档 §5.5）。"""
+    """按 label 前缀词归类（文档 §5.5）；前缀表外的形态用形状规则补充（2026-11-26）。"""
     label = obs.label
     if not label:
         return "UNCLASSIFIED"
@@ -100,6 +116,13 @@ def classify(obs: BearingObservation) -> str:
         for p in prefixes:
             if p in label:
                 return category
+    # 前缀表覆盖不到的高频形态：X山Y向（兼…）（周天）→ 坐向；含「周天」→ 周天；「X方」→ 方位
+    if _XIANG_SIT.search(label):
+        return "坐向"
+    if "周天" in label:
+        return "周天"
+    if label.endswith("方"):
+        return "方位"
     return "UNCLASSIFIED"
 
 
@@ -149,7 +172,7 @@ def extract_bearings(text: str, stats: dict[str, int] | None = None) -> list[Bea
     """
     out: list[BearingObservation] = []
     consumed: list[tuple[int, int]] = []
-    skipped_jx = skipped_astro = 0
+    skipped_jx = skipped_astro = skipped_noise = 0
     for m in BEARING_PAT.finditer(text):
         label = m.group("label") or ""
         shan = m.group("shan")
@@ -164,6 +187,12 @@ def extract_bearings(text: str, stats: dict[str, int] | None = None) -> list[Bea
             skipped_astro += 1
             consumed.append(m.span())
             continue
+        # 噪声词检查同样适用带山名分支：「田宅亥宫。是日天星缠度：日寅24度」这类
+        # 天星/缠度陈述曾带出山名矛盾假阳性（collection_report §4 样例）。
+        if _NOISE_PAT.search(label):
+            skipped_noise += 1
+            consumed.append(m.span())
+            continue
         obs = validate(label, shan, deg)
         obs.raw_text = m.group(0)
         out.append(obs)
@@ -174,15 +203,24 @@ def extract_bearings(text: str, stats: dict[str, int] | None = None) -> list[Bea
         deg = float(m.group("deg"))
         if deg > 360:
             continue
-        if _is_astro_label(m.group("label") or ""):
+        label = m.group("label") or ""
+        if _is_astro_label(label):
             skipped_astro += 1
             consumed.append(m.span())
             continue
-        obs = validate(m.group("label") or "", None, deg)
+        # DEG_ONLY 语境门（2026-11-26）：无山名的度数片段必须是「带方位指示字」的观测，
+        # 否则是散文/地理/教程噪声（北纬23度、每隔8度、寻龙尺、缠度、老族坟…立），
+        # 实测它们占了 UNCLASSIFIED 与 needs_review 假阳性的一半以上。
+        if _NOISE_PAT.search(label) or not any(h in label for h in _DEG_HINT):
+            skipped_noise += 1
+            consumed.append(m.span())
+            continue
+        obs = validate(label, None, deg)
         obs.raw_text = m.group(0)
         out.append(obs)
         consumed.append(m.span())
     if stats is not None:
         stats["skipped_jianxiang"] = skipped_jx
         stats["skipped_astro"] = skipped_astro
+        stats["skipped_noise"] = skipped_noise
     return out

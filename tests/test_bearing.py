@@ -141,3 +141,28 @@ def test_zhoutian_label_survives() -> None:
     obs = extract_bearings("水口于周天297度")
     assert len(obs) == 1 and obs[0].degree == 297.0
     assert obs[0].category == "去水"
+
+
+def test_zhoutian_fangwei_shanxiang_categories() -> None:
+    """2026-11-26 分类扩展：周天/方位/X山Y向坐向（此前全落 UNCLASSIFIED）。"""
+    # 含「周天」→ 周天类
+    obs = extract_bearings("庚字周天98度")[0]
+    assert obs.category == "周天"
+    # 「X山Y向」形态优先于周天 → 坐向
+    obs = extract_bearings("辛山乙向周天247度")[0]
+    assert obs.category == "坐向"
+    # 「X方」结尾 → 方位
+    obs = extract_bearings("甲方120度")[0]
+    assert obs.category == "方位"
+
+
+def test_deg_only_noise_filtered() -> None:
+    """DEG_ONLY 语境门：散文/地理噪声不再入观测（实测占 UNCLASSIFIED 假阳性一半以上）。"""
+    assert extract_bearings("北纬23度") == []
+    assert extract_bearings("东经116度") == []
+    assert extract_bearings("每隔8度设一个点") == []
+    assert extract_bearings("转动寻龙尺及将身体作45度倾斜") == []
+    assert extract_bearings("田宅亥宫。是日天星缠度：日寅24度") == []
+    # 真观测仍在：带山名/带方位指示字（空 label + 山名维持既有 UNCLASSIFIED+needs_review 设计）
+    assert extract_bearings("碑坐寅山66度")[0].shan24 == "寅"
+    assert extract_bearings("亥山共25度")[0].shan24 == "亥"

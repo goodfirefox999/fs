@@ -37,6 +37,11 @@ PCT_OPEN = re.compile(r'<div class="pct[ "]', re.I)
 QUOTE_MARK = re.compile(r'<div class="quote"[^>]*>', re.I)
 
 
+# Discuz 编辑痕迹：「本帖最后由 XXX 于 2026-1-1 12:00 编辑」（含无理由/有理由两种尾部）。
+# 2026-11-26 实测 posts_clean 里 15.7 万行残留；龙坛线（PHPWind）无此形态。
+DISCUZ_EDIT = re.compile(r"^[^\n]*本帖最后由[^\n]*编辑[^\n]*$", re.M)
+
+
 def strip_attach_tips(s: str) -> str:
     """删除游客附件提示块（<div class="attach_nopermission">…</div>，按 div 配对取尾）。"""
     out = []
@@ -139,6 +144,9 @@ def clean_post_html(raw: str) -> tuple[str, list[dict]]:
     s = _html.unescape(s)
     s = SPACES.sub(" ", s)
     s = NEWLINES.sub("\n\n", s)
+    # 步骤9：Discuz 编辑痕迹与 NBSP（2026-11-26：实测 15.7 万行残留）
+    s = DISCUZ_EDIT.sub("", s)
+    s = s.replace("\u00a0", " ")
     return s.strip(), images
 
 
@@ -150,6 +158,10 @@ def assert_clean(s: str) -> list[str]:
         bad.append("js_fragment")
     if "attach_nopermission" in s:
         bad.append("guest_tips")
+    if "本帖最后由" in s:
+        bad.append("discuz_edit_mark")
+    if "\u00a0" in s:
+        bad.append("nbsp")
     return bad
 
 
