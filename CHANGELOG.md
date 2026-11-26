@@ -2,7 +2,28 @@
 
 遵循 [Keep a Changelog](https://keepachangelog.com/)；版本号遵循语义化版本。
 
-## [Unreleased] 天文底座升级：Skyfield/DE440s 节气与均时差，及四离四绝证据链更正（2026-11-04）
+## [Unreleased]
+
+### 性能：全年穷举提速 ~15%（3.62s → 2.95–3.18s，2026-11-26）
+
+cProfile 实测热点（v3 评审猜测的「逐候选×逐时辰叠加」不成立）：133,542 次判定各做一次
+整个 params_snapshot 的 json.dumps（含恒定长 condition 文本）+ 一次性 Provenance 构造，
+以及 _select_cached 键构造每调用重复序列化全量 rule_ids（43.8k 次 dumps）。
+
+- `provenance.params_hash_fast_pre()`：condition/target 按规则预序列化后，
+  哈希退化为「两个短字符串编码 + 一次 sha256」，与 `stable_hash` **逐字节一致**
+  （等价性由 `tests/unit/test_perf_equivalence.py` 8 例锁死：中文/嵌套/转义/回退/缓存不串味）；
+  非 JSON 安全类型自动回退原路径
+- 引擎跳过一次性 Provenance 构造；`citation.to_dict()` 按实例 lru；
+  `Judgment` 加 `slots=True`（无反射/无子类，已核实）
+- `_select_cached` 重前缀（86 个 rule_ids 序列化）按 (fingerprint, version, rule_ids)
+  lru 备忘，末段键仍逐调用经 `stable_cache_key` 构造
+- `dsl._split_path` / `ganzhi._all_relations_between_zhi` 纯函数 lru（后者返回 list 防缓存污染）
+- 全部新缓存点位过 `cache_key_lint`（C19-exempt 注记齐全）；
+  规则预序列化备忘按 `id(rule.condition)` + 对象同一性校验键控，比 version 键更严
+- 门禁：`make determinism` **双指纹与优化前逐位相同**（decision=2117634d…/output=730dd34c…）；
+  test-fast 1524 passed；bench 3 项 slow 全过（本地 2.95–3.20s < 3.5s 预算）
+ 天文底座升级：Skyfield/DE440s 节气与均时差，及四离四绝证据链更正（2026-11-04）
 
 ### 节气精度：VSOP87 后备 → Skyfield/DE440s 可选高精度后端（ADR-0016）
 

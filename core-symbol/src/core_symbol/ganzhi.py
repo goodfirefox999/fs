@@ -13,6 +13,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import lru_cache
 from typing import Iterable, Literal
 
 __all__ = [
@@ -194,7 +195,16 @@ def relation_between_zhi(a: str, b: str) -> ZhiRelation:
 
 
 def all_relations_between_zhi(a: str, b: str) -> list[ZhiRelation]:
-    """返回两支的**全部**关系（按优先级排序）。"""
+    """返回两支的**全部**关系（按优先级排序）。
+
+    纯查表函数（两支字符串 → 固定结果），全年调用 7 万+ 次：
+    结果经 lru_cache 备忘（内部返回不可变 tuple，对外包一层 list 防止
+    调用方改写污染缓存——lru 返回可变对象的经典陷阱）。"""
+    return list(_all_relations_between_zhi_cached(a, b))
+
+
+@lru_cache(maxsize=None)  # C19-exempt：两个不可变 str 参数的纯查表函数备忘（12×12 组合上限），非复合缓存点
+def _all_relations_between_zhi_cached(a: str, b: str) -> tuple[ZhiRelation, ...]:
     out: list[ZhiRelation] = []
     if a == b and a in ZIXING:
         out.append(ZhiRelation(a, b, "自刑"))
@@ -221,7 +231,7 @@ def all_relations_between_zhi(a: str, b: str) -> list[ZhiRelation]:
         "害": 6, "刑": 7, "破": 8, "同支": 9, "无": 10,
     }
     out.sort(key=lambda r: order[r.kind])
-    return out
+    return tuple(out)
 
 
 def relation_between_gan(a: str, b: str) -> ZhiRelation:

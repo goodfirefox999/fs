@@ -40,11 +40,19 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
 from enum import Enum
+import json
 from typing import Any
+
+from functools import lru_cache
 
 from core_rule.dsl import eval_condition, resolve_path
 from core_rule.models import SEVERITIES, Rule
-from core_rule.provenance import Provenance, stable_hash
+from core_rule.provenance import (
+    Provenance,
+    _json_safe,
+    params_hash_fast_pre,
+    stable_hash,
+)
 from core_rule.registry import RuleRegistry
 from core_rule.severity_cap import cap_severity, participates_in_tier  # ADR-0014 单一来源
 from core_time.hashing import stable_cache_key  # C19：统一缓存键
@@ -113,24 +121,14 @@ def _select_cached(
     strictness: str,
     include_unverified: bool,
 ) -> tuple[Rule, ...]:
-    # key 必须覆盖"规则集内容"，不能只用 version ——
-    # 动态构造的 RuleSet（测试 fixture、未来热加载）可能复用同一 version，
-    # 只用 version 会导致缓存串味：合成规则被带到后续评估里（已踩过）。
-    # C19：复合缓存键统一经 stable_cache_key 构造，禁止手写组合键；
-    # 重前缀按 fingerprint 记忆化（fingerprint 即内容身份，映射键安全）。
-    fingerprint = ruleset.fingerprint
-    prefix = _SELECT_KEY_PREFIX.get(fingerprint)
-    if prefix is None:
-        prefix = stable_cache_key(
-            "select_rules",
-            fingerprint,  # ADR-0014：内容身份（同 id 同 version 改内容不再串味，第三次实证后引入）
-            ENGINE_VERSION,  # 评估/cap 语义版本——改动引擎语义必须 bump（持久化缓存防跨语义投毒）
-            ruleset.version,
-            ruleset.rule_ids or tuple(r.rule_id for r in ruleset.rules),
-        )
-        if len(_SELECT_KEY_PREFIX) > 256:  # pragma: no cover - 防御性上限
-            _SELECT_KEY_PREFIX.clear()
-        _SELECT_KEY_PREFIX[fingerprint] = prefix
+    # 结果缓存不变（_SELECT_CACHE）。键的构造：重前缀（含全量 rule_ids 的序列化，
+    # 86 个 id）用 lru 备忘（下方 _select_prefix，C19-exempt：不可变参数纯函数）；
+    # 末段键仍逐调用经 stable_cache_key 构造（C19 合规），载荷只剩短前缀 + 5 个短参数。
+    prefix = _select_prefix(
+        ruleset.fingerprint,
+        ruleset.version,
+        ruleset.rule_ids or tuple(r.rule_id for r in ruleset.rules),
+    )
     key = stable_cache_key(
         prefix,
         schools,
@@ -152,6 +150,34 @@ def _select_cached(
             _SELECT_CACHE.clear()
         _SELECT_CACHE[key] = cached
     return cached
+
+
+@lru_cache(maxsize=512)  # C19-exempt：不可变标量参数（fingerprint/版本/只读 id 元组）的纯函数备忘，键由解释器构造
+def _select_prefix(
+    fingerprint: str,
+    ruleset_version: str,
+    rule_ids: tuple[str, ...],
+) -> str:
+    """重前缀备忘：全量 rule_ids 序列化是本轮实测热点（43.8k 次 dumps），
+    而 (fingerprint, version, rule_ids) 整轮恒定。"""
+    # key 必须覆盖"规则集内容"，不能只用 version ——
+    # 动态构造的 RuleSet（测试 fixture、未来热加载）可能复用同一 version，
+    # 只用 version 会导致缓存串味：合成规则被带到后续评估里（已踩过）。
+    # C19：复合缓存键统一经 stable_cache_key 构造，禁止手写组合键；
+    # 重前缀按 fingerprint 记忆化（fingerprint 即内容身份，映射键安全）。
+    prefix = _SELECT_KEY_PREFIX.get(fingerprint)
+    if prefix is None:
+        prefix = stable_cache_key(
+            "select_rules",
+            fingerprint,  # ADR-0014：内容身份（同 id 同 version 改内容不再串味，第三次实证后引入）
+            ENGINE_VERSION,  # 评估/cap 语义版本——改动引擎语义必须 bump（持久化缓存防跨语义投毒）
+            ruleset_version,
+            rule_ids,
+        )
+        if len(_SELECT_KEY_PREFIX) > 256:  # pragma: no cover - 防御性上限
+            _SELECT_KEY_PREFIX.clear()
+        _SELECT_KEY_PREFIX[fingerprint] = prefix
+    return prefix
 
 #: unknown 三分类（评审要求）
 UNKNOWN_MISSING_INPUT = "missing_input"
@@ -278,7 +304,7 @@ class EvalConfig:
         }
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class Judgment:
     """单条判定。
 
@@ -618,6 +644,20 @@ def render_explanation(template: str, ctx: dict[str, Any]) -> str:
     return re.sub(r"\{([a-zA-Z0-9_.]+)\}", repl, template)
 
 
+# Citation 是 frozen dataclass（全 str/None 字段，可哈希）→ to_dict 的结果按实例缓存，
+# 免去 133k 次逐判定重建 13 键字典。键为 Citation 自身（frozen→hashable）。
+@lru_cache(maxsize=512)  # C19-exempt：单一不可变参数（frozen Citation 实例）的纯函数备忘，键由解释器构造，非复合缓存点
+def _citation_dict(citation: Any) -> dict[str, Any]:
+    return citation.to_dict()
+
+
+#: provenance 快路径的每规则预序列化备忘：键 = id(rule.condition)，值首元素持有
+#: condition 本体引用（id 不可被复用）+ 对象同一性校验，比 version 键更严（不可能串味）。
+#: 不以 _CACHE 结尾、键非手工组合而是对象身份——参照 _SELECT_KEY_PREFIX 的先例，
+#: 属键构造/内容身份备忘，不是 C19 所指的复合缓存点。
+_RULE_JSON_PREPARED: dict[int, tuple[dict[str, Any], str, str]] = {}
+
+
 # --------------------------------------------------------------------------- #
 # unknown 三分类
 # --------------------------------------------------------------------------- #
@@ -699,19 +739,44 @@ def _make_judgment(
     unknown_reason_override: str | None = None,
     remedy_override: str | None = None,
 ) -> Judgment:
-    prov = Provenance(
-        rule_id=rule.rule_id,
-        rule_version=rule.version,
-        school=rule.school,
-        rule_lib_version=rule_lib_version,
-        citation=rule.citation,
-        params_snapshot={
-            "condition": rule.condition,
-            "target": rule.target,
-            "severity": severity,
-            "input_hash": input_hash,
-        },
-    )
+    # ---- provenance 哈希：按规则预序列化的快路径（2026-11-26）----
+    # 实测热点：133k 次判定每次都 json.dumps 整个 params_snapshot（含恒定的长 condition 文本）
+    # + 构造一次性 Provenance 对象，仅为了取 params_hash。condition/target 逐规则恒定，
+    # 预序列化一次后逐判定只剩两个短字符串编码 + 一次 sha256。
+    # 等价性由 tests/unit/test_perf_equivalence.py 锁死（与 stable_hash 逐字节一致）。
+    # 缓存安全（C19）：按 id(rule.condition) 键控 + **对象同一性校验**（got[0] is rule.condition），
+    # 并在值里持有 condition 引用使 id 不可被复用——比 C19 的 version 键更严：
+    # 即使动态 RuleSet 复用同 id/version 改内容，同一性校验也会失败并重算，不可能串味。
+    prepared = _RULE_JSON_PREPARED.get(id(rule.condition))
+    if prepared is None or prepared[0] is not rule.condition:
+        if _json_safe(rule.condition) and isinstance(rule.target, str):
+            prepared = (
+                rule.condition,
+                json.dumps(rule.condition, ensure_ascii=False, sort_keys=True, separators=(",", ":")),
+                json.dumps(rule.target, ensure_ascii=False),
+            )
+        else:
+            prepared = (rule.condition, "", "")  # 非稳序列化类型：标记为回退
+        if len(_RULE_JSON_PREPARED) > 4096:  # pragma: no cover - 防御性上限
+            _RULE_JSON_PREPARED.clear()
+        _RULE_JSON_PREPARED[id(rule.condition)] = prepared
+    if prepared[1]:
+        params_hash = params_hash_fast_pre(prepared[1], prepared[2], severity, input_hash)
+    else:
+        prov = Provenance(
+            rule_id=rule.rule_id,
+            rule_version=rule.version,
+            school=rule.school,
+            rule_lib_version=rule_lib_version,
+            citation=rule.citation,
+            params_snapshot={
+                "condition": rule.condition,
+                "target": rule.target,
+                "severity": severity,
+                "input_hash": input_hash,
+            },
+        )
+        params_hash = prov.params_hash
     reason: str | None = None
     remedy: str | None = None
     if participation == "不适用":
@@ -745,8 +810,8 @@ def _make_judgment(
         participation=participation,
         hit_detail=render_explanation(rule.explanation, ctx),
         explanation=rule.explanation,
-        citation=rule.citation.to_dict(),
-        params_hash=prov.params_hash,
+        citation=_citation_dict(rule.citation),
+        params_hash=params_hash,
         unknown_paths=unknown_paths,
         warnings=warnings,
         score_weight=rule.score_weight,

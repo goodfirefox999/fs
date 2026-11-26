@@ -11,15 +11,93 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass, field
+from functools import lru_cache
 from typing import Any
 
-__all__ = ["Citation", "Provenance", "stable_hash"]
+__all__ = ["Citation", "Provenance", "stable_hash", "params_hash_fast"]
 
 
 def stable_hash(payload: Any) -> str:
     """对任意 JSON 可序列化对象求稳定哈希（键排序、紧凑分隔符）。"""
     text = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"), default=str)
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
+
+
+def _json_safe(obj: Any) -> bool:
+    """是否 JSON 可稳序列化（无需 ``default=str`` 兑底）。
+
+    与 ``core_time.hashing._canonical`` 同一口径：str/int/float/bool/None/
+    list/tuple/dict（键为 str）。date 等其它类型不在内。"""
+    if obj is None or isinstance(obj, (str, int, float, bool)):
+        return True
+    if isinstance(obj, (list, tuple)):
+        return all(_json_safe(x) for x in obj)
+    if isinstance(obj, dict):
+        return all(isinstance(k, str) and _json_safe(v) for k, v in obj.items())
+    return False
+
+
+def _dumps_compact(obj: Any) -> str:
+    return json.dumps(obj, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+
+
+@lru_cache(maxsize=4096)  # C19-exempt：单一不可变参数（str）的纯函数备忘，键由解释器构造，非复合缓存点
+def _dumps_short(text: str) -> str:
+    """短字符串的 JSON 编码（引号+转义）。lru 吸收 severity/input_hash 的重复。"""
+    return json.dumps(text, ensure_ascii=False)
+
+
+def params_hash_fast_pre(
+    condition_json: str,
+    target_json: str,
+    severity: str,
+    input_hash: str,
+) -> str:
+    """预序列化快路径：与 ``stable_hash`` 对四键字典**逐字节一致**。
+
+    等价于 ``stable_hash({"condition": C, "input_hash": I,
+    "severity": S, "target": T})``（键序 condition<input_hash<severity<target），
+    其中 C/T 的序列化结果由调用方按规则缓存传入，逐判定只剩
+    两个短字符串编码与一次 sha256。
+
+    前置条件：condition_json/target_json 必须是对 JSON 安全对象
+    ``json.dumps(x, ensure_ascii=False, sort_keys=True, separators=(",", ":"))``
+    的结果（engine 侧用 ``_json_safe`` 守卫后缓存）；
+    severity/input_hash 必须是 str（否则调用方回退 ``stable_hash`` 原路径）。
+    """
+    text = (
+        '{"condition":' + condition_json
+        + ',"input_hash":' + _dumps_short(input_hash)
+        + ',"severity":' + _dumps_short(severity)
+        + ',"target":' + target_json
+        + '}'
+    )
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
+
+
+def params_hash_fast(condition: Any, target: Any, severity: Any, input_hash: Any) -> str:
+    """快路径公开入口（原始输入版）：对 JSON 安全输入等价于 ``stable_hash`` 四键字典。
+
+    condition/target 非 JSON 安全、或 severity/input_hash 非 str 时，
+    回退 ``stable_hash`` 原路径（含 ``default=str`` 兑底行为）——
+    哈希值不允许变，慢一点可以。
+    """
+    if (
+        isinstance(severity, str)
+        and isinstance(input_hash, str)
+        and _json_safe(condition)
+        and isinstance(target, str)
+    ):
+        return params_hash_fast_pre(
+            _dumps_compact(condition),
+            _dumps_short(target),
+            severity,
+            input_hash,
+        )
+    return stable_hash(
+        {"condition": condition, "input_hash": input_hash,
+         "severity": severity, "target": target}
+    )
 
 
 @dataclass(frozen=True)

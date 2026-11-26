@@ -20,6 +20,7 @@ fact 白名单
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from functools import lru_cache
 from typing import Any, Callable, Iterable
 
 from .errors import DSLValidationError
@@ -54,6 +55,14 @@ MAX_DEPTH = 4
 _MISSING = object()
 
 
+@lru_cache(maxsize=1024)  # C19-exempt：单一不可变参数（str 路径）的纯函数备忘，键由解释器构造，非复合缓存点
+def _split_path(path: str) -> tuple[str, ...]:
+    """点路径拆段的进程内备忘：规则 DSL 的 fact 路径是恒定字符串，
+    逐候选重复 split 是纯浪费（43 万次/全年）。
+    单个基本类型参数的纯函数备忘，非 C19 所指的复合缓存键。"""
+    return tuple(path.split("."))
+
+
 def resolve_path(ctx: dict[str, Any], path: str) -> tuple[bool, Any]:
     """按点路径取值，返回 ``(是否找到, 值)``。
 
@@ -62,7 +71,7 @@ def resolve_path(ctx: dict[str, Any], path: str) -> tuple[bool, Any]:
     if not isinstance(path, str) or not path:
         return False, None
     node: Any = ctx
-    for part in path.split("."):
+    for part in _split_path(path):
         if isinstance(node, dict):
             if part not in node:
                 return False, None
