@@ -120,6 +120,11 @@ async function deliver(orders, entitlements, order, payload) {
 
 async function refund(orders, entitlements, order, payload) {
   const now = Date.now()
+  // 只允许从已支付状态进入退款：PENDING/未知状态的伪造 refund 通知
+  // 不得凭空删除权益（无权益可删也应幂等成功，不给攻击者探测信号）。
+  if (order.status !== 'PAID' && order.status !== 'REFUNDED') {
+    return success()
+  }
   if (order.status !== 'REFUNDED') {
     await orders.doc(order._id).update({
       data: {

@@ -287,8 +287,99 @@ export function buildZeRi(query: ZeRiQuery): ZeRiResult {
   }
 }
 
-/** 通书宜项与用事类别的匹配结果；桌面端日历复用，避免两处口径不同。 */
-export function evaluateCategoryTerms(
+/**
+ * 合并多个分片计算结果（小程序择日页分片计算用）。
+ *
+ * 分片只改「何时出结果」，不改任何判定口径：逐日累加的计数器直接求和；
+ * items 按日期序拼接后按展示上限截断；rejections 按 name 聚合；
+ * notes 保留各片一致的固定说明，重建含片内数字的范围行与汇总行。
+ * 单元测试：tests/unit/merge-zeri.test.ts。
+ */
+export function mergeZeRiResults(
+  parts: ZeRiResult[],
+  options: { displayLimit: number; startDate: string; daysCount: number; category: ZeRiCategory },
+): ZeRiResult {
+  if (!parts.length) throw new Error('mergeZeRiResults：parts 为空')
+
+  const items: ZeRiItem[] = []
+  let scanned = 0
+  let rejected = 0
+  let unmatched = 0
+  let eligible = 0
+  let excludedByAlmanac = 0
+  let excludedByHuangDao = 0
+  let excludedByXiu = 0
+  const byName = new Map<string, ZeRiRejection>()
+
+  for (const part of parts) {
+    items.push(...part.items)
+    scanned += part.scanned
+    rejected += part.rejected
+    unmatched += part.unmatched
+    eligible += part.eligible
+    excludedByAlmanac += part.excludedByAlmanac
+    excludedByHuangDao += part.excludedByHuangDao
+    excludedByXiu += part.excludedByXiu
+    for (const rej of part.rejections) {
+      const got = byName.get(rej.name)
+      if (got) {
+        got.count += rej.count
+        got.luckyStarDays += rej.luckyStarDays
+        got.luckyStarSamples = [...got.luckyStarSamples, ...rej.luckyStarSamples]
+        got.review = got.review || rej.review
+      } else {
+        byName.set(rej.name, { ...rej })
+      }
+    }
+  }
+  items.sort((a, b) => (a.solarDate < b.solarDate ? -1 : a.solarDate > b.solarDate ? 1 : 0))
+  const shown = items.slice(0, Math.max(1, options.displayLimit))
+  const rejections = [...byName.values()].sort((a, b) => b.count - a.count)
+
+  // notes：保留各片一致的固定说明（去重），重建含片内数字的范围行与汇总行。
+  const scopeRe = /^筛选范围：/
+  const summaryRe = /^本次完整扫描 /
+  const emptyRe = /^当前条件下无候选日：/
+  const seen = new Set<string>()
+  const notes: string[] = [
+    `筛选范围：${options.startDate} 起 ${options.daysCount} 天，用途为${categoryLabel(options.category)}。`,
+  ]
+  let summaryInserted = false
+  for (const note of parts[0].notes) {
+    if (scopeRe.test(note) || summaryRe.test(note) || emptyRe.test(note)) continue
+    const key = note.trim()
+    if (!key || seen.has(key)) continue
+    seen.add(key)
+    notes.push(note)
+  }
+  notes.push(
+    `本次完整扫描 ${scanned} 天：前置层排除 ${rejected} 天，附加条件跳过 ${unmatched} 天` +
+      `（通书宜忌 ${excludedByAlmanac}、黄道 ${excludedByHuangDao}、宿吉 ${excludedByXiu}），` +
+      `符合全部条件 ${eligible} 天，当前按日期升序展示 ${shown.length} 天。`,
+  )
+  summaryInserted = true
+  if (!items.length && rejections.length) {
+    const top = [...rejections].sort((a, b) => b.count - a.count)[0]
+    notes.unshift(`当前条件下无候选日：主因「${top.name}」排除 ${top.count}/${scanned} 天。${top.guidance}`)
+  }
+  void summaryInserted
+
+  return {
+    items: shown,
+    scanned,
+    rejected,
+    unmatched,
+    eligible,
+    truncated: eligible > shown.length,
+    excludedByAlmanac,
+    excludedByHuangDao,
+    excludedByXiu,
+    rejections,
+    notes,
+  }
+}
+
+/** 通书宜项与用事类别的匹配结果；桌面端日历复用，避免两处口径不同。 */export function evaluateCategoryTerms(
   category: ZeRiCategory,
   dayYi: string[],
   dayJi: string[],

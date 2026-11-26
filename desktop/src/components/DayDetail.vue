@@ -271,9 +271,9 @@ function tone(school: SchoolResult): string {
           <p class="src">涉及规则：{{ conflict.ruleIds.join('、') || '未列出计分项' }}</p>
         </div>
         <div class="weights">
-          <span class="muted">用事权重：</span>
+          <span class="muted">各派用事倾向（并列展示，不参与合议）：</span>
           <span v-for="weight in evaluation.arbitration.weights" :key="weight.school" class="chip tiny">
-            {{ SCHOOL_LABELS[weight.school] }} × {{ weight.weight }}
+            {{ SCHOOL_LABELS[weight.school] }}
           </span>
         </div>
       </section>

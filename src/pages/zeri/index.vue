@@ -4,10 +4,10 @@ import { onLoad, onUnload } from '@dcloudio/uni-app'
 import type { ZeRiCategory, ZeRiItem, ZeRiResult } from '@/core/types'
 import { BEHAVIOR_LABELS } from '@/core/constants/xieji'
 import { ZHI } from '@/core/constants/nayin60'
-import { buildZeRi, schoolTendencyLabel } from '@/core/engines/zeri'
+import { buildZeRi, mergeZeRiResults, schoolTendencyLabel } from '@/core/engines/zeri'
 import type { SchoolConflict, SchoolResult } from '@/core/zeri/types'
 import { zeriCategoryOf, zeriQueryForArchive } from '@/core/engines/report'
-import { todayYmd } from '@/core/utils/date'
+import { addDays, todayYmd } from '@/core/utils/date'
 import { useArchiveStore } from '@/stores/archive'
 import { modeLabel, sittingFacingText } from '@/utils/display'
 import AppHeader from '@/components/AppHeader.vue'
@@ -130,39 +130,70 @@ function execute() {
     return
   }
   running.value = true
+  // 分片计算（P1-6）：90 天全量同步计算在低端安卓上会冻结主线程 7~11s。
+  // 每 15 天一片，片间 setTimeout(0) 让出主线程；首片完成即可渲染，
+  // 后续片用 mergeZeRiResults 合并（合并语义有单测锁定）。
+  // 分片只改「何时出结果」，不改任何判定口径——合并函数在核心层且有测试。
+  const CHUNK_DAYS = 15
   setTimeout(() => {
-    try {
-      const query = zeriQueryForArchive(
-        archive.value!,
-        startDate.value,
-        days.value,
-        displayLimit.value
-      )
-      query.category = category.value
-      query.hourBranch = hourBranch.value || null
-      query.sanShaMode = sanShaMode.value
-      query.chongSangMode = isYin.value ? chongSangMode.value : 'reject'
-      query.includesConstruction = isMove.value && includeConstruction.value
-      query.jinShenMode = jinShenMode.value
-      query.folkMode = folkMode.value
-      query.onlyHuangDao = onlyHuangDao.value
-      query.avoidXiuXiong = avoidXiuXiong.value
-      result.value = buildZeRi(query)
-      expanded.value = {}
-      openSchools.value = {}
-      showAllRejections.value = false
-    } catch (error) {
-      uni.showToast({
-        title: error instanceof Error ? error.message : '筛选失败',
-        icon: 'none',
-      })
-    } finally {
-      running.value = false
-      if (pendingRun.value) {
-        pendingRun.value = false
-        scheduleRun(60)
+    const totalDays = days.value
+    const parts: ZeRiResult[] = []
+    let chunkIndex = 0
+    const step = () => {
+      let finished = false
+      try {
+        const chunkDays = Math.min(CHUNK_DAYS, totalDays - chunkIndex * CHUNK_DAYS)
+        const query = zeriQueryForArchive(
+          archive.value!,
+          addDays(startDate.value, chunkIndex * CHUNK_DAYS),
+          chunkDays,
+          displayLimit.value
+        )
+        query.category = category.value
+        query.hourBranch = hourBranch.value || null
+        query.sanShaMode = sanShaMode.value
+        query.chongSangMode = isYin.value ? chongSangMode.value : 'reject'
+        query.includesConstruction = isMove.value && includeConstruction.value
+        query.jinShenMode = jinShenMode.value
+        query.folkMode = folkMode.value
+        query.onlyHuangDao = onlyHuangDao.value
+        query.avoidXiuXiong = avoidXiuXiong.value
+        parts.push(buildZeRi(query))
+        chunkIndex++
+        result.value = mergeZeRiResults(parts, {
+          displayLimit: displayLimit.value,
+          startDate: startDate.value,
+          daysCount: totalDays,
+          category: category.value,
+        })
+        finished = chunkIndex * CHUNK_DAYS >= totalDays
+        if (!finished) {
+          expanded.value = {}
+          openSchools.value = {}
+          showAllRejections.value = false
+          setTimeout(step, 0)
+        } else {
+          expanded.value = {}
+          openSchools.value = {}
+          showAllRejections.value = false
+        }
+      } catch (error) {
+        uni.showToast({
+          title: error instanceof Error ? error.message : '筛选失败',
+          icon: 'none',
+        })
+        finished = true
+      } finally {
+        if (finished) {
+          running.value = false
+          if (pendingRun.value) {
+            pendingRun.value = false
+            scheduleRun(60)
+          }
+        }
       }
     }
+    step()
   }, 24)
 }
 
